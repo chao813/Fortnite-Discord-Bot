@@ -1,4 +1,4 @@
-# Fortnite Stats Discord Bot
+# Fortnite Player Stats Discord Bot
 Discord bot for Fortnite Battle Royale
 
 ### Player Stats Bot
