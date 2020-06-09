@@ -11,7 +11,11 @@ Usage:
 
 ```
 
-Example Output:
+Example Output:\s\s
+```
+!hunted SypherPK
+```
+\s\s
 ![Alt text](/image/example.png?raw=true)
 
 
