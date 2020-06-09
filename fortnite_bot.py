@@ -65,6 +65,13 @@ async def player_search(ctx, *player_name):
             overall_winp = (solos["winrate"] + duos["winrate"] + squads["winrate"])/3
             overall_kills = solos["kills"] + duos["kills"] + squads["kills"]
             overall_matchplayed = solos["matchesplayed"] + duos["matchesplayed"] + squads["matchesplayed"]
+
+            if overall_KD >= 3:
+                overallskulls = u'\u2620' + u'\u2620' + u'\u2620' 
+            elif overall_KD < 3 and overall_KD >= 2:
+                overallskulls = u'\u2620' + u'\u2620'
+            else:
+                overallskulls = u'\u2620' 
             overall_stats = "[Overall] - KD: {:0.2f}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(overall_KD, overall_wins, overall_winp*100, overall_kills, overall_matchplayed)
 
             #GET Recent matches
@@ -77,9 +84,9 @@ async def player_search(ctx, *player_name):
 
             
             #Format stats to make it look prettier
-            output_stats = "Username: {} \nLevel: {} \n\n".format(stats['name'], stats['account']['level']) + solo_stats + duo_stats + squad_stats + "\n" + overall_stats + FORTNITE_TRACKER_URL.format(stats['name'])
+            output_stats = "Username: {} \nLevel: {} \n\n".format(stats['name'], stats['account']['level']) + solo_stats + duo_stats + squad_stats + "\n" + overall_stats + overallskulls + "\n"+ FORTNITE_TRACKER_URL.format(stats['name'])
             await ctx.send(output_stats)
-
+            
             
             #Check to see if player streaming on Twitch
             #if "TTV" in username or "ttv" in username:
