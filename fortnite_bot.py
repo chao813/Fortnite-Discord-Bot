@@ -42,73 +42,78 @@ async def player_search(ctx, *player_name):
             FORTNITE_ACCOUNT_ID_URL.format(player_name), headers={"Authorization": FORTNITE_API_TOKEN})
         result = await raw_response.json()
 
-        if result['result'] == False:
+        if not result['result']:
             await ctx.send("No Epic username found")
             return
-        if result['result'] == True:
-            #GET Global player stats 
-            raw_response = await session.get(
-            FORTNITE_PLAYER_STATS_URL.format(result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
-            stats = await raw_response.json()
+        
+        #GET Global player stats 
+        raw_response = await session.get(FORTNITE_PLAYER_STATS_URL.format(result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
+        stats = await raw_response.json()
 
-            username = stats['name']
-            solos = stats["global_stats"]["solo"]
-            duos = stats["global_stats"]["duo"]
-            squads = stats["global_stats"]["squad"]
+        username = stats['name']
+        level = stats['account'].get("level", 0)
+        solos = stats['global_stats'].get("solo", {})
+        duos = stats['global_stats'].get("duo", {})
+        squads = stats['global_stats'].get("squad", {})
 
-            solo_stats = "[Solo] - KD: {}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(solos["kd"], solos["placetop1"], solos["winrate"]*100, solos["kills"],solos["matchesplayed"])
-            duo_stats = "[Duo] - KD: {}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(duos["kd"], duos["placetop1"], duos["winrate"]*100, duos["kills"],duos["matchesplayed"])
-            squad_stats = "[Squad] - KD: {}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(squads["kd"], squads["placetop1"], squads["winrate"]*100, squads["kills"],squads["matchesplayed"])
-            
-            overall_KD = (solos["kd"] + duos["kd"] + squads["kd"])/3
-            overall_wins = solos["placetop1"] + duos["placetop1"] + squads["placetop1"]
-            overall_winp = (solos["winrate"] + duos["winrate"] + squads["winrate"])/3
-            overall_kills = solos["kills"] + duos["kills"] + squads["kills"]
-            overall_matchplayed = solos["matchesplayed"] + duos["matchesplayed"] + squads["matchesplayed"]
+        solo_stats = "[Solo] - KD: {}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(solos.get("kd", 0), solos.get("placetop1", 0), round(solos.get("winrate", 0)*100,2), solos.get("kills", 0),solos.get("matchesplayed", 0))
+        duo_stats = "[Duo] - KD: {}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(duos.get("kd", 0), duos.get("placetop1", 0), round(duos.get("winrate", 0)*100, 2), duos.get("kills", 0),duos.get("matchesplayed", 0))
+        squad_stats = "[Squad] - KD: {}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(squads.get("kd", 0), squads.get("placetop1", 0), round(squads.get("winrate", 0)*100, 2), squads.get("kills", 0),squads.get("matchesplayed", 0))
+        
+        overall_KD = (solos.get("kd", 0) + duos.get("kd", 0) + squads.get("kd", 0))/3
+        overall_wins = solos.get("placetop1", 0) + duos.get("placetop1", 0) + squads.get("placetop1", 0)
+        overall_winp = ((solos.get("winrate", 0)*100) + (duos.get("winrate", 0)*100) + (squads.get("winrate", 0)*100))/3
+        overall_kills = solos.get("kills", 0) + duos.get("kills", 0) + squads.get("kills", 0)
+        overall_matchplayed = solos.get("matchesplayed", 0) + duos.get("matchesplayed", 0) + squads.get("matchesplayed", 0)
 
-            if overall_KD >= 3:
-                overallskulls = u'\u2620' + u'\u2620' + u'\u2620' 
-            elif overall_KD < 3 and overall_KD >= 2:
-                overallskulls = u'\u2620' + u'\u2620'
-            else:
-                overallskulls = u'\u2620' 
-            overall_stats = "[Overall] - KD: {:0.2f}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(overall_KD, overall_wins, overall_winp*100, overall_kills, overall_matchplayed)
+        if overall_KD >= 3:
+            overallskulls = ':purple_circle:' 
+            gif = "https://giphy.com/gifs/memecandy-W5lF9jj0dkU56bQTHF"
+        elif overall_KD < 3 and overall_KD >= 2:
+            overallskulls = ':red_circle:' 
+            gif = "https://giphy.com/gifs/dancing-fortnite-skull-trooper-1APhATvqD65r966yCP"
+        elif overall_KD < 2 and overall_KD >= 1:
+            overallskulls = ':orange_circle:' 
+            gif = "https://giphy.com/gifs/fortnite-emote-skull-trooper-TDKxZPossicXJEm455"
+        else:
+            overallskulls = ':green_circle:' 
+            gif = "https://giphy.com/gifs/fortnite-65VBy9Ccvyww9or9IR"
+        overall_stats = "[Overall] - KD: {:0.2f}, Wins: {}, Win %: {:0.2f}, Kills: {}, Matches Played: {} \n".format(overall_KD, overall_wins, overall_winp*100, overall_kills, overall_matchplayed)
 
-            #GET Recent matches
-            # r_response = await session.get(
-            # FORTNITE_RECENT_MATCHES_URL.format(result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
-            # match_stats = await r_response.json()
-            
-            # for match in match_stats['matches']:
-            #     if match_stats['matches']["readable_name"] == "Squads" or match_stats['matches']["readable_name"] == "Solo" or match_stats['matches']["readable_name"] == "Duos"
+        #GET Recent matches
+        # r_response = await session.get(
+        # FORTNITE_RECENT_MATCHES_URL.format(result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
+        # match_stats = await r_response.json()
+        
+        # for match in match_stats['matches']:
+        #     if match_stats['matches']["readable_name"] == "Squads" or match_stats['matches']["readable_name"] == "Solo" or match_stats['matches']["readable_name"] == "Duos"
 
-            
-            #Format stats to make it look prettier
-            output_stats = "Username: {} \nLevel: {} \n\n".format(stats['name'], stats['account']['level']) + solo_stats + duo_stats + squad_stats + "\n" + overall_stats + overallskulls + "\n"+ FORTNITE_TRACKER_URL.format(stats['name'])
-            await ctx.send(output_stats)
-            
-            
-            #Check to see if player streaming on Twitch
-            #if "TTV" in username or "ttv" in username:
-            if "TTV" in username:
-                user_login = username.strip('TTV')
-            elif "ttv" in username:
-                user_login = username.strip('ttv')
-            else:
-                user_login = username
+        
+        #Format stats to make it look prettier
+        output_stats = "Username: {} {}\nLevel: {} \n".format(username, overallskulls, level) + "```" + solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username) + "\n" + gif
+        await ctx.send(output_stats)
+        
+        #Check to see if player streaming on Twitch
+        #if "TTV" in username or "ttv" in username:
+        if "TTV" in username:
+            user_login = username.strip('TTV')
+        elif "ttv" in username:
+            user_login = username.strip('ttv')
+        else:
+            user_login = username
 
-            twitch_auth_response = await session.post(TWITCH_AUTHENTICATION_URL.format(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET))
-            twitch_bearer_token = await twitch_auth_response.json()
-            
-            twitch_game_reponse = await session.get(TWITCH_GAME_URL, headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID})
-            twitch_game = await twitch_game_reponse.json()
+        twitch_auth_response = await session.post(TWITCH_AUTHENTICATION_URL.format(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET))
+        twitch_bearer_token = await twitch_auth_response.json()
+        
+        twitch_game_reponse = await session.get(TWITCH_GAME_URL, headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID})
+        twitch_game = await twitch_game_reponse.json()
 
-            twitch_stream_response = await session.get(TWITCH_STREAM_URL.format(twitch_game['data'][0]['id'], user_login), headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID})
-            twitch_fortnite_streams = await twitch_stream_response.json()
+        twitch_stream_response = await session.get(TWITCH_STREAM_URL.format(twitch_game['data'][0]['id'], user_login), headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID})
+        twitch_fortnite_streams = await twitch_stream_response.json()
 
-            if len(twitch_fortnite_streams['data']) != 0:
-                await ctx.send("{} is streaming at https://www.twitch.tv/{}".format(username,username))
-                            
+        if len(twitch_fortnite_streams['data']) != 0:
+            await ctx.send("{} is streaming at https://www.twitch.tv/{}".format(username,username))
+                        
 
             
 
