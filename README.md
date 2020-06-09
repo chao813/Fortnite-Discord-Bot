@@ -12,7 +12,6 @@ Usage:
 ```
 
 Example Output:
-```
 ![Alt text](/image/example.png?raw=true)
 
-```
+
