@@ -10,3 +10,9 @@ Usage:
 !player EpicUsername
 
 ```
+
+Example Output:
+```
+![Alt text](/image/example.png?raw=true)
+
+```
