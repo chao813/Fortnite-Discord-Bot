@@ -11,11 +11,10 @@ Usage:
 
 ```
 
-Example Output:\s\s
+Example Output:
 ```
 !hunted SypherPK
 ```
-\s\s
 ![Alt text](/image/example.png?raw=true)
 
 
