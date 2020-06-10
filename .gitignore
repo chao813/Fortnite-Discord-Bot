@@ -130,7 +130,7 @@ dmypy.json
 .pyre/
 
 # VS Code
-.vscode/
+.vscode/   
 
 # 
 */.DS_Store
