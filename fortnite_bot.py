@@ -29,7 +29,7 @@ logging.getLogger("discord").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 def calculate_stats(game_mode, mode):
-    return "[{mode}] - KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}, Kills: {kills}, Matches Played: {matches_played} \n".format(
+    return "[{mode}] - KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
         mode=mode, KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2), 
         kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
     )
@@ -101,8 +101,8 @@ async def player_search(ctx, *player_name):
             ranking_emoji = ':green_circle:' 
             gif = "https://giphy.com/gifs/fortnite-65VBy9Ccvyww9or9IR"
         
-        overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}, Kills: {kills}, Matches Played: {matches_played} \n".format(
-            KD=overall_KD, wins=overall_wins, win_percentage=overall_winp*100, kills=overall_kills, matches_played=overall_matchplayed
+        overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
+            KD=overall_KD, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
         )
         
         #Format stats to make it look prettier
