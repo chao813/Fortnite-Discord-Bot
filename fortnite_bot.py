@@ -21,7 +21,12 @@ TWITCH_AUTHENTICATION_URL = "https://id.twitch.tv/oauth2/token?client_id={client
 TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first=100&user_login={user_login}"
 TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
 
-bot = commands.Bot(command_prefix='!')
+logging.basicConfig(
+    level="INFO",
+    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
+    datefmt="%H:%M:%S")
+logging.getLogger("discord").setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 def calculate_stats(game_mode, mode):
     return "[{mode}] - KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}, Kills: {kills}, Matches Played: {matches_played} \n".format(
@@ -29,13 +34,24 @@ def calculate_stats(game_mode, mode):
         kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
     )
 
+bot = commands.Bot(command_prefix="!")
+
 @bot.event
 async def on_ready():
-    print(f'{bot.user.name} has connected to Discord!')
+    logger.info("Started up %s", bot.user.name)
+    logger.info("Bot running on servers: %s",
+                ", ".join([guild.name for guild in bot.guilds]))
+
+@bot.event
+async def on_guild_join(guild):
+    logger.info("Bot added to new server! Server name: %s", guild.name)
 
 @bot.command(name="hunted", help="shows player stats", aliases=['player', 'findnoob', 'wreckedby'])
 async def player_search(ctx, *player_name):
     player_name = " ".join(player_name)
+
+    logger.info("Looking up stats for '%s' ", player_name)
+
     if not player_name:
         await ctx.send(
             "Please specify an Epic username after the command, "
