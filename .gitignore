@@ -133,7 +133,7 @@ dmypy.json
 .vscode/
 
 # 
-image/.DS_Store
+*/.DS_Store
 
 # OLD test files
 test 
