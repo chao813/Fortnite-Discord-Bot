@@ -90,16 +90,12 @@ async def player_search(ctx, *player_name):
 
         if overall_KD >= 3:
             ranking_emoji = ':purple_circle:' 
-            gif = "https://giphy.com/gifs/memecandy-W5lF9jj0dkU56bQTHF"
         elif overall_KD < 3 and overall_KD >= 2:
             ranking_emoji = ':red_circle:' 
-            gif = "https://giphy.com/gifs/dancing-fortnite-skull-trooper-1APhATvqD65r966yCP"
         elif overall_KD < 2 and overall_KD >= 1:
             ranking_emoji = ':orange_circle:' 
-            gif = "https://giphy.com/gifs/fortnite-emote-skull-trooper-TDKxZPossicXJEm455"
         else:
             ranking_emoji = ':green_circle:' 
-            gif = "https://giphy.com/gifs/fortnite-65VBy9Ccvyww9or9IR"
         
         overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
             KD=overall_KD, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
@@ -107,7 +103,7 @@ async def player_search(ctx, *player_name):
         
         #Format stats to make it look prettier
         output_stats = ("Username: {username} {emoji}\nLevel: {level} \n".format(username=username, emoji=ranking_emoji, level=level) + "```" + 
-            solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username=username) + "\n" + gif
+            solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username=username) + "\n" 
         )
         await ctx.send(output_stats)
         
