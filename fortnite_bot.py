@@ -13,7 +13,7 @@ FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
 
-FORTNITE_ACCOUNT_ID_URL = "https://fortniteapi.io/lookup?username={username}"
+FORTNITE_ACCOUNT_ID_URL = "https://fortniteapi.io/lookup?username={username}&platform={platform}"
 FORTNITE_PLAYER_STATS_URL = "https://fortniteapi.io/stats?account={accountid}"
 FORTNITE_RECENT_MATCHES_URL = "https://fortniteapi.io/matches?account={}"
 FORTNITE_TRACKER_URL = "https://fortnitetracker.com/profile/all/{username}"
@@ -29,6 +29,9 @@ logging.getLogger("discord").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 def calculate_stats(game_mode, mode):
+    """
+    Calculate player stats in specific game mode
+    """
     return "[{mode}] - KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
         mode=mode, KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2), 
         kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
@@ -59,21 +62,30 @@ async def player_search(ctx, *player_name):
         return
 
     async with aiohttp.ClientSession() as session:
+        #GET Account ID
         raw_response = await session.get(
-            FORTNITE_ACCOUNT_ID_URL.format(username=player_name), headers={"Authorization": FORTNITE_API_TOKEN})
+            FORTNITE_ACCOUNT_ID_URL.format(username=player_name, format=""), headers={"Authorization": FORTNITE_API_TOKEN})
         result = await raw_response.json()
 
         if not result['result']:
             await ctx.send("No Epic username found")
             return
-        
+
         #GET Global player stats 
         raw_response = await session.get(FORTNITE_PLAYER_STATS_URL.format(accountid=result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
         stats = await raw_response.json()
 
+        if stats['global_stats'] is None:
+            raw_response = await session.get(
+                FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform=psn), headers={"Authorization": FORTNITE_API_TOKEN})
+            result = await raw_response.json()
+
+            raw_response = await session.get(FORTNITE_PLAYER_STATS_URL.format(accountid=result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
+            stats = await raw_response.json()
+
         username = stats['name']
         level = stats['account'].get("level", 0)
-        
+
         solo = stats['global_stats'].get("solo", {})
         duo = stats['global_stats'].get("duo", {})
         squad = stats['global_stats'].get("squad", {})
