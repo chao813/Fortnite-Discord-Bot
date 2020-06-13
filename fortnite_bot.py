@@ -64,7 +64,7 @@ async def player_search(ctx, *player_name):
     async with aiohttp.ClientSession() as session:
         #GET Account ID
         raw_response = await session.get(
-            FORTNITE_ACCOUNT_ID_URL.format(username=player_name, format=""), headers={"Authorization": FORTNITE_API_TOKEN})
+            FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform=""), headers={"Authorization": FORTNITE_API_TOKEN})
         result = await raw_response.json()
 
         if not result['result']:
@@ -77,7 +77,7 @@ async def player_search(ctx, *player_name):
 
         if stats['global_stats'] is None:
             raw_response = await session.get(
-                FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform=psn), headers={"Authorization": FORTNITE_API_TOKEN})
+                FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform="psn"), headers={"Authorization": FORTNITE_API_TOKEN})
             result = await raw_response.json()
 
             raw_response = await session.get(FORTNITE_PLAYER_STATS_URL.format(accountid=result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
