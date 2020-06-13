@@ -20,10 +20,10 @@ Retrieve player statistics in Fortnite Battle Royale
 
 - Show player's level
 - Quick view of player's KD (Colored circle next to player name)
-    - Green :green_circle:: KD <= 1
-    - Orange :orange_circle:: 1 < KD <= 2
-    - Red :red_circle:: 2 < KD <= 3
-    - Purple :purple_circle:: KD > 3
+    - :green_circle: Green : KD <= 1
+    - :orange_circle: Orange : 1 < KD <= 2
+    - :red_circle: Red : 2 < KD <= 3
+    - :purple_circle: Purple : KD > 3
 - Link to Fortnite Tracker player profile
 - Link to player's Twitch stream if currently streaming    
 
