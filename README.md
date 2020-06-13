@@ -8,10 +8,10 @@ Retrieve player statistics in Fortnite Battle Royale
 * [Examples](#examples)
 
 ## Features
-- Calculates player stats in different Game Modes (Solo, Duos, Squads)
-- Calculates player's overall stats
+- Calculates player statistics in different Game Modes (Solo, Duos, Squads)
+- Calculates player's overall statistics
 
-> Stats include:
+> Statistics include:
 >    - KD 
 >    - Wins
 >    - Win Percentage
