@@ -87,7 +87,7 @@ async def player_search(ctx, *player_name):
         level = stats['account'].get("level", 0)
 
         solo = stats['global_stats'].get("solo", {})
-        duo = stats['global_stats'].get("duo", {})
+        duo = stats['global_stats'].get("duo", {})    
         squad = stats['global_stats'].get("squad", {})
 
         solo_stats = calculate_stats(solo, "Solo")
