@@ -1,6 +1,7 @@
 import aiohttp
 import json
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 
 from discord.ext import commands
@@ -21,12 +22,24 @@ TWITCH_AUTHENTICATION_URL = "https://id.twitch.tv/oauth2/token?client_id={client
 TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first=100&user_login={user_login}"
 TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
 
-logging.basicConfig(
-    level="INFO",
-    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-    datefmt="%H:%M:%S")
 logging.getLogger("discord").setLevel(logging.ERROR)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
+file_handler = TimedRotatingFileHandler('logs/fortnite_discord_bot.log', when="W0", interval=7, backupCount=4)
+stream_handler = logging.StreamHandler()
+file_handler.setLevel(logging.INFO)
+stream_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+stream_handler.setFormatter(formatter)
 logger = logging.getLogger(__name__)
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
+print(logger.handlers)
+logger.debug('debug message')
+logger.info('info message')
+logger.warning('warn message')
+logger.error('error message')
+logger.critical('critical message')
+
 
 def calculate_stats(game_mode, mode):
     """
