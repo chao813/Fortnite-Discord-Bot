@@ -1,6 +1,7 @@
 import aiohttp
 import json
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 
 from discord.ext import commands
@@ -12,7 +13,9 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
+LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
 
+LOG_FILE_PATH = "logs/fortnite_discord_bot.log"
 FORTNITE_ACCOUNT_ID_URL = "https://fortniteapi.io/lookup?username={username}&platform={platform}"
 FORTNITE_PLAYER_STATS_URL = "https://fortniteapi.io/stats?account={accountid}"
 FORTNITE_RECENT_MATCHES_URL = "https://fortniteapi.io/matches?account={}"
@@ -20,22 +23,6 @@ FORTNITE_TRACKER_URL = "https://fortnitetracker.com/profile/all/{username}"
 TWITCH_AUTHENTICATION_URL = "https://id.twitch.tv/oauth2/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials"
 TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first=100&user_login={user_login}"
 TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
-
-logging.basicConfig(
-    level="INFO",
-    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-    datefmt="%H:%M:%S")
-logging.getLogger("discord").setLevel(logging.ERROR)
-logger = logging.getLogger(__name__)
-
-def calculate_stats(game_mode, mode):
-    """
-    Calculate player stats in specific game mode
-    """
-    return "[{mode}] - KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
-        mode=mode, KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2), 
-        kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
-    )
 
 bot = commands.Bot(command_prefix="!")
 
@@ -140,6 +127,34 @@ async def player_search(ctx, *player_name):
 
         if len(twitch_fortnite_streams['data']) != 0:
             await ctx.send("{username} is streaming at https://www.twitch.tv/{username}".format(username=username))
- 
+
+def calculate_stats(game_mode, mode):
+    """
+    Calculate player stats in specific game mode
+    """
+    return "[{mode}] - KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
+        mode=mode, KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2), 
+        kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
+    )
+    
+def configure_logger():
+    """
+    Abstract logger setup
+    """
+    logging.root.setLevel(LOGGER_LEVEL)
+    
+    file_handler = TimedRotatingFileHandler(LOG_FILE_PATH, when="W0", interval=7, backupCount=4)
+    stream_handler = logging.StreamHandler()
+    
+    formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+    
+    logger = logging.getLogger(__name__)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+    return logger
+
+logger = configure_logger()
 bot.run(DISCORD_BOT_TOKEN)
 
