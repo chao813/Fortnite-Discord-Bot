@@ -22,7 +22,8 @@ TWITCH_AUTHENTICATION_URL = "https://id.twitch.tv/oauth2/token?client_id={client
 TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first=100&user_login={user_login}"
 TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
 
-logging.getLogger("discord").setLevel(logging.ERROR)
+logging.root.setLevel(logging.DEBUG)
+logging.getLogger("discord")
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
 file_handler = TimedRotatingFileHandler('logs/fortnite_discord_bot.log', when="W0", interval=7, backupCount=4)
 stream_handler = logging.StreamHandler()
