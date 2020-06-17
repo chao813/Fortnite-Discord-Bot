@@ -28,18 +28,24 @@ bot = commands.Bot(command_prefix="!")
 
 @bot.event
 async def on_ready():
+    logger = add_logger_context(logging.getLogger(__name__), "Main")
     logger.info("Started up %s", bot.user.name)
     logger.info("Bot running on servers: %s",
                 ", ".join([guild.name for guild in bot.guilds]))
 
 @bot.event
 async def on_guild_join(guild):
+    logger = add_logger_context(logging.getLogger(__name__), "Main")
     logger.info("Bot added to new server! Server name: %s", guild.name)
 
 @bot.command(name="hunted", help="shows player stats", aliases=['player', 'findnoob', 'wreckedby'])
 async def player_search(ctx, *player_name):
     player_name = " ".join(player_name)
+    server = ctx.guild.name
+    author = ctx.author
+    identifier = server + ":" + str(author)
 
+    logger = add_logger_context(logging.getLogger(__name__), identifier)
     logger.info("Looking up stats for '%s' ", player_name)
 
     if not player_name:
@@ -146,17 +152,21 @@ def configure_logger():
     file_handler = TimedRotatingFileHandler(LOG_FILE_PATH, when="W0", interval=7, backupCount=4)
     stream_handler = logging.StreamHandler()
     
-    formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
+    formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] [%(identifier)s] %(message)s')
     file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
     
     logger = logging.getLogger(__name__)
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+
+    return logger
+
+def add_logger_context(logger, identifier):
     extra = {
-        'test': "test this",
+        'identifier' : identifier
     }
-    return logging.LoggerAdapter(logger, extra) 
+    return logging.LoggerAdapter(logger, extra)  
 
 logger = configure_logger()
 bot.run(DISCORD_BOT_TOKEN)
