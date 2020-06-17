@@ -161,7 +161,7 @@ def configure_logger():
     logger.addHandler(stream_handler)
 
     return logger
-
+ 
 def get_logger_with_context(identifier):
     extra = {
         'identifier' : identifier
