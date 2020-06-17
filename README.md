@@ -37,15 +37,22 @@ Retrieve player statistics in Fortnite Battle Royale
 ```
 
 ## Examples
-Player Found:
-```
-!hunted SypherPK
-```
-![Alt text](/image/example.png?raw=true)
-
-
 Player Not Found:
 ```
 !hunted EpicBotAccount
 ```
-![Alt text](/image/failexample.png?raw=true)
+![Alt text](/images/failexample.png?raw=true)
+
+Player Found:
+```
+!hunted SypherPK
+```
+![Alt text](/images/example.png?raw=true)
+
+Player Found and Streaming:
+```
+!hunted Scoped
+```
+![Alt text](/images/twitchexample.png?raw=true)
+
+
