@@ -1,9 +1,9 @@
 import aiohttp
 import json
 import logging
-from logging.handlers import TimedRotatingFileHandler
 import os
 
+from logging.handlers import TimedRotatingFileHandler
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -40,7 +40,7 @@ async def on_guild_join(guild):
     logger.info("Bot added to new server! Server name: %s", guild.name)
 
 
-@bot.command(name="hunted", help="shows player stats", aliases=['player', 'findnoob', 'wreckedby'])
+@bot.command(name="hunted", help="shows player stats", aliases=["player", "findnoob", "wreckedby"])
 async def player_search(ctx, *player_name):
     player_name = " ".join(player_name)
     server = ctx.guild.name
@@ -59,24 +59,25 @@ async def player_search(ctx, *player_name):
     async with aiohttp.ClientSession() as session:
         result = await get_player_account_id(session, player_name, "")
 
-        if not result['result']:
+        if not result["result"]:
             await ctx.send("No Epic username found")
             return
 
-        stats = await get_player_stats(session, result['account_id'])
-        if stats['global_stats'] is None:
+        stats = await get_player_stats(session, result["account_id"])
+        if stats["global_stats"] is None:
+            #Try psn/xbl as player's platform
             result = await get_player_account_id(session, player_name, "psn")
-            stats = await get_player_stats(session, result['account_id'])
-            if stats['global_stats'] is None:
+            stats = await get_player_stats(session, result["account_id"])
+            if stats["global_stats"] is None:
                 await ctx.send("{player_name}'s statistics are hidden".format(player_name=player_name))
                 return
 
-        username = stats['name']
-        level = stats['account'].get("level", 0)
+        username = stats["name"]
+        level = stats["account"].get("level", 0)
 
-        solo = stats['global_stats'].get("solo", {})
-        duo = stats['global_stats'].get("duo", {})    
-        squad = stats['global_stats'].get("squad", {})
+        solo = stats["global_stats"].get("solo", {})
+        duo = stats["global_stats"].get("duo", {})    
+        squad = stats["global_stats"].get("squad", {})
 
         solo_stats = calculate_stats(solo, "Solo")
         duo_stats = calculate_stats(duo, "Duo")
@@ -100,6 +101,7 @@ async def get_player_account_id(session, player_name, platform):
 
 async def get_player_stats(session, account_id):
     """
+    Get player stats given account id
     """
     raw_response = await session.get(
         FORTNITE_PLAYER_STATS_URL.format(accountid=account_id), headers={"Authorization": FORTNITE_API_TOKEN}
@@ -121,23 +123,23 @@ def calculate_overall_stats(solo, duo, squad):
     """
     Calculate player's overall stats using solo, duo, squad stats
     """
-    overall_KD = (solo.get("kd", 0) + duo.get("kd", 0) + squad.get("kd", 0))/3
+    overall_kd = (solo.get("kd", 0) + duo.get("kd", 0) + squad.get("kd", 0))/3
     overall_wins = solo.get("placetop1", 0) + duo.get("placetop1", 0) + squad.get("placetop1", 0)
     overall_winp = ((solo.get("winrate", 0)*100) + (duo.get("winrate", 0)*100) + (squad.get("winrate", 0)*100))/3
     overall_kills = solo.get("kills", 0) + duo.get("kills", 0) + squad.get("kills", 0)
     overall_matchplayed = solo.get("matchesplayed", 0) + duo.get("matchesplayed", 0) + squad.get("matchesplayed", 0)
 
-    if overall_KD >= 3:
-        ranking_emoji = ':purple_circle:' 
-    elif overall_KD < 3 and overall_KD >= 2:
-        ranking_emoji = ':red_circle:' 
-    elif overall_KD < 2 and overall_KD >= 1:
-        ranking_emoji = ':orange_circle:' 
+    if overall_kd >= 3:
+        ranking_emoji = ":purple_circle:"
+    elif overall_kd < 3 and overall_kd >= 2:
+        ranking_emoji = ":red_circle:"
+    elif overall_kd < 2 and overall_kd >= 1:
+        ranking_emoji = ":orange_circle:" 
     else:
-        ranking_emoji = ':green_circle:' 
+        ranking_emoji = ":green_circle:"
     
     overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
-        KD=overall_KD, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
+        KD=overall_kd, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
     )
     return overall_stats, ranking_emoji
 
@@ -146,24 +148,23 @@ async def get_twitch_stream(session, username):
     """
     Get Twitch stream if player is streaming
     """
+    user_login = username
     if "TTV" in username:
-        user_login = username.strip('TTV')
-    elif "ttv" in username:
-        user_login = username.strip('ttv')
-    else:
-        user_login = username
+        user_login = username.strip("TTV")
+    if "ttv" in username:
+        user_login = username.strip("ttv")
 
     twitch_auth_response = await session.post(TWITCH_AUTHENTICATION_URL.format(client_id=TWITCH_CLIENT_ID, client_secret=TWITCH_CLIENT_SECRET))
     twitch_bearer_token = await twitch_auth_response.json()
     
-    twitch_game_reponse = await session.get(TWITCH_GAME_URL, headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID})
+    twitch_game_reponse = await session.get(TWITCH_GAME_URL, headers={"Authorization": "Bearer " + twitch_bearer_token["access_token"], "Client-ID": TWITCH_CLIENT_ID})
     twitch_game = await twitch_game_reponse.json()    
 
-    twitch_stream_response = await session.get(TWITCH_STREAM_URL.format(game_id=twitch_game['data'][0]['id'], user_login=user_login), headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID}) 
+    twitch_stream_response = await session.get(TWITCH_STREAM_URL.format(game_id=twitch_game["data"][0]["id"], user_login=user_login), headers={"Authorization": "Bearer " + twitch_bearer_token["access_token"], "Client-ID": TWITCH_CLIENT_ID}) 
     twitch_fortnite_streams = await twitch_stream_response.json()
 
     twitch_stream = ""
-    if twitch_stream_response.status == 200 and len(twitch_fortnite_streams['data']) != 0:
+    if twitch_stream_response.status == 200 and twitch_fortnite_streams["data"]:
         twitch_stream = "{username} is streaming at https://www.twitch.tv/{username}".format(username=username)
     return twitch_stream
 
@@ -186,7 +187,7 @@ def configure_logger():
     file_handler = TimedRotatingFileHandler(LOG_FILE_PATH, when="W0", interval=7, backupCount=4)
     stream_handler = logging.StreamHandler()
     
-    formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] [%(identifier)s] %(message)s')
+    formatter = logging.Formatter("[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] [%(identifier)s] %(message)s")
     file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
     
@@ -199,7 +200,7 @@ def configure_logger():
 
 def get_logger_with_context(identifier):
     extra = {
-        'identifier' : identifier
+        "identifier" : identifier
     }
     return logging.LoggerAdapter(logging.getLogger(__name__), extra)  
 
