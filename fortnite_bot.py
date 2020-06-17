@@ -55,26 +55,16 @@ async def player_search(ctx, *player_name):
         return
 
     async with aiohttp.ClientSession() as session:
-        #GET Account ID
-        raw_response = await session.get(
-            FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform=""), headers={"Authorization": FORTNITE_API_TOKEN})
-        result = await raw_response.json()
+        result = get_player_account_id(player_name, "")
 
         if not result['result']:
             await ctx.send("No Epic username found")
             return
 
-        #GET Global player stats 
-        raw_response = await session.get(FORTNITE_PLAYER_STATS_URL.format(accountid=result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
-        stats = await raw_response.json()
-
+        stats = get_player_stats(result['account_id'])
         if stats['global_stats'] is None:
-            raw_response = await session.get(
-                FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform="psn"), headers={"Authorization": FORTNITE_API_TOKEN})
-            result = await raw_response.json()
-
-            raw_response = await session.get(FORTNITE_PLAYER_STATS_URL.format(accountid=result['account_id']), headers={"Authorization": FORTNITE_API_TOKEN})
-            stats = await raw_response.json()
+            result = get_player_account_id(player_name, "psn")
+            stats = get_player_stats(result['account_id'])
 
         username = stats['name']
         level = stats['account'].get("level", 0)
@@ -86,53 +76,27 @@ async def player_search(ctx, *player_name):
         solo_stats = calculate_stats(solo, "Solo")
         duo_stats = calculate_stats(duo, "Duo")
         squad_stats = calculate_stats(squad, "Squad")
+        overall_stats, ranking_emoji = calculate_overall_stats(solo, duo, squad)
         
-        overall_KD = (solo.get("kd", 0) + duo.get("kd", 0) + squad.get("kd", 0))/3
-        overall_wins = solo.get("placetop1", 0) + duo.get("placetop1", 0) + squad.get("placetop1", 0)
-        overall_winp = ((solo.get("winrate", 0)*100) + (duo.get("winrate", 0)*100) + (squad.get("winrate", 0)*100))/3
-        overall_kills = solo.get("kills", 0) + duo.get("kills", 0) + squad.get("kills", 0)
-        overall_matchplayed = solo.get("matchesplayed", 0) + duo.get("matchesplayed", 0) + squad.get("matchesplayed", 0)
+        twitch_stream = get_twitch_stream(username)
+        output = construct_output(username, ranking_emoji, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream)
+        await ctx.send(output)
 
-        if overall_KD >= 3:
-            ranking_emoji = ':purple_circle:' 
-        elif overall_KD < 3 and overall_KD >= 2:
-            ranking_emoji = ':red_circle:' 
-        elif overall_KD < 2 and overall_KD >= 1:
-            ranking_emoji = ':orange_circle:' 
-        else:
-            ranking_emoji = ':green_circle:' 
-        
-        overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
-            KD=overall_KD, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
-        )
-        
-        #Format stats to make it look prettier
-        output_stats = ("Username: {username} {emoji}\nLevel: {level} \n".format(username=username, emoji=ranking_emoji, level=level) + "```" + 
-            solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username=username) + "\n" 
-        )
-        await ctx.send(output_stats)
-        
-        #Check to see if player streaming on Twitch
-        if "TTV" in username:
-            user_login = username.strip('TTV')
-        elif "ttv" in username:
-            user_login = username.strip('ttv')
-        else:
-            user_login = username
+def get_player_account_id(player_name, platform):
+    """
+    Get account id given player name and platform
+    """
+    raw_response = await session.get(
+        FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform=platform), headers={"Authorization": FORTNITE_API_TOKEN})
+    result = await raw_response.json()
+    return result
 
-        twitch_auth_response = await session.post(TWITCH_AUTHENTICATION_URL.format(client_id=TWITCH_CLIENT_ID, client_secret=TWITCH_CLIENT_SECRET))
-        twitch_bearer_token = await twitch_auth_response.json()
-        
-        twitch_game_reponse = await session.get(TWITCH_GAME_URL, headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID})
-        twitch_game = await twitch_game_reponse.json()
-
-        twitch_stream_response = await session.get(TWITCH_STREAM_URL.format(game_id=twitch_game['data'][0]['id'], 
-            user_login=user_login), headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID}
-        )
-        twitch_fortnite_streams = await twitch_stream_response.json()
-
-        if len(twitch_fortnite_streams['data']) != 0:
-            await ctx.send("{username} is streaming at https://www.twitch.tv/{username}".format(username=username))
+def get_player_stats(account_id):
+    """
+    """
+    raw_response = await session.get(FORTNITE_PLAYER_STATS_URL.format(accountid=account_id), headers={"Authorization": FORTNITE_API_TOKEN})
+    stats = await raw_response.json()
+    return stats
 
 def calculate_stats(game_mode, mode):
     """
@@ -142,7 +106,66 @@ def calculate_stats(game_mode, mode):
         mode=mode, KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2), 
         kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
     )
+
+def calculate_overall_stats(solo, duo, squad):
+    """
+    Calculate player's overall stats using solo, duo, squad stats
+    """
+    overall_KD = (solo.get("kd", 0) + duo.get("kd", 0) + squad.get("kd", 0))/3
+    overall_wins = solo.get("placetop1", 0) + duo.get("placetop1", 0) + squad.get("placetop1", 0)
+    overall_winp = ((solo.get("winrate", 0)*100) + (duo.get("winrate", 0)*100) + (squad.get("winrate", 0)*100))/3
+    overall_kills = solo.get("kills", 0) + duo.get("kills", 0) + squad.get("kills", 0)
+    overall_matchplayed = solo.get("matchesplayed", 0) + duo.get("matchesplayed", 0) + squad.get("matchesplayed", 0)
+
+    if overall_KD >= 3:
+        ranking_emoji = ':purple_circle:' 
+    elif overall_KD < 3 and overall_KD >= 2:
+        ranking_emoji = ':red_circle:' 
+    elif overall_KD < 2 and overall_KD >= 1:
+        ranking_emoji = ':orange_circle:' 
+    else:
+        ranking_emoji = ':green_circle:' 
     
+    overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
+        KD=overall_KD, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
+    )
+    return overall_stats, ranking_emoji
+
+def get_twitch_stream(username):
+    """
+    Get Twitch stream if player is streaming
+    """
+    if "TTV" in username:
+        user_login = username.strip('TTV')
+    elif "ttv" in username:
+        user_login = username.strip('ttv')
+    else:
+        user_login = username
+
+    twitch_auth_response = await session.post(TWITCH_AUTHENTICATION_URL.format(client_id=TWITCH_CLIENT_ID, client_secret=TWITCH_CLIENT_SECRET))
+    twitch_bearer_token = await twitch_auth_response.json()
+    
+    twitch_game_reponse = await session.get(TWITCH_GAME_URL, headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID})
+    twitch_game = await twitch_game_reponse.json()
+
+    twitch_stream_response = await session.get(TWITCH_STREAM_URL.format(game_id=twitch_game['data'][0]['id'], 
+        user_login=user_login), headers={"Authorization": "Bearer " + twitch_bearer_token['access_token'], "Client-ID": TWITCH_CLIENT_ID}
+    )
+    twitch_fortnite_streams = await twitch_stream_response.json()
+
+    twitch_stream = ""
+    if len(twitch_fortnite_streams['data']) != 0:
+        twitch_stream = "{username} is streaming at https://www.twitch.tv/{username}".format(username=username)
+    return twitch_stream
+
+def construct_output(username, ranking_emoji, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream):
+    """
+    Format output 
+    """
+    return ("Username: {username} {emoji}\nLevel: {level} \n".format(username=username, emoji=ranking_emoji, level=level) + "```" + 
+        solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username=username) + "\n" + twitch_stream
+    )
+
 def configure_logger():
     """
     Abstract logger setup
