@@ -28,14 +28,14 @@ bot = commands.Bot(command_prefix="!")
 
 @bot.event
 async def on_ready():
-    logger = add_logger_context(logging.getLogger(__name__), "Main")
+    logger = get_logger_with_context("Main")
     logger.info("Started up %s", bot.user.name)
     logger.info("Bot running on servers: %s",
                 ", ".join([guild.name for guild in bot.guilds]))
 
 @bot.event
 async def on_guild_join(guild):
-    logger = add_logger_context(logging.getLogger(__name__), "Main")
+    logger = get_logger_with_context("Main")
     logger.info("Bot added to new server! Server name: %s", guild.name)
 
 @bot.command(name="hunted", help="shows player stats", aliases=['player', 'findnoob', 'wreckedby'])
@@ -45,7 +45,7 @@ async def player_search(ctx, *player_name):
     author = ctx.author
     identifier = server + ":" + str(author)
 
-    logger = add_logger_context(logging.getLogger(__name__), identifier)
+    logger = get_logger_with_context(identifier)
     logger.info("Looking up stats for '%s' ", player_name)
 
     if not player_name:
@@ -162,11 +162,11 @@ def configure_logger():
 
     return logger
 
-def add_logger_context(logger, identifier):
+def get_logger_with_context(identifier):
     extra = {
         'identifier' : identifier
     }
-    return logging.LoggerAdapter(logger, extra)  
+    return logging.LoggerAdapter(logging.getLogger(__name__), extra)  
 
 logger = configure_logger()
 bot.run(DISCORD_BOT_TOKEN)
