@@ -174,7 +174,7 @@ def construct_output(username, ranking_emoji, level, solo_stats, duo_stats, squa
     Format output 
     """
     return ("Username: {username} {emoji}\nLevel: {level} \n".format(username=username, emoji=ranking_emoji, level=level) + "```" + 
-        solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username=username) + "\n" + twitch_stream
+        solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username=username.replace(" ", "%20")) + "\n" + twitch_stream
     )
 
 
