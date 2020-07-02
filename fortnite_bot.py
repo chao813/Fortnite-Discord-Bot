@@ -14,8 +14,8 @@ FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
 LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
+LOG_FILE_PATH = os.getenv("LOG_FILE_PATH")
 
-LOG_FILE_PATH = "../logs/fortnite_discord_bot/fortnite_discord_bot.log"
 FORTNITE_ACCOUNT_ID_URL = "https://fortniteapi.io/lookup?username={username}&platform={platform}"
 FORTNITE_PLAYER_STATS_URL = "https://fortniteapi.io/stats?account={accountid}"
 FORTNITE_RECENT_MATCHES_URL = "https://fortniteapi.io/matches?account={}"
