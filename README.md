@@ -57,7 +57,7 @@ Player Found:
 
 Player Found and Streaming:
 ```
-!hunted Scoped
+!hunted Fresh
 ```
 ![Alt text](/images/twitch_example.png?raw=true)
 
