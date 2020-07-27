@@ -52,9 +52,8 @@ async def player_search(ctx, *player_name):
     logger.info("Looking up stats for '%s' ", player_name)
 
     if not player_name:
-        await ctx.send(
-            embed=discord.Embed(color=0xff0400, description="Please specify an Epic username after the command, "
-            "ex: `!hunted LigmaBalls12`"))
+        await ctx.send("Please specify an Epic username after the command, "
+            "ex: `!hunted LigmaBalls12`")
         return
 
     async with aiohttp.ClientSession() as session:

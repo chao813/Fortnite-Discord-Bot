@@ -18,11 +18,11 @@ Retrieve player statistics in Fortnite Battle Royale
     >    - Matches Played
 
 - Show player's level
-- Quick view of player's KD (Colored circle next to player name)
-    - :green_circle: Green : KD <= 1
-    - :orange_circle: Orange : 1 < KD <= 2
-    - :red_circle: Red : 2 < KD <= 3
-    - :purple_circle: Purple : KD > 3
+- Quick view of player's KD (Color of embed content)
+    - Green : KD <= 1
+    - Orange : 1 < KD <= 2
+    - Red : 2 < KD <= 3
+    - Purple : KD > 3
 - Link to Fortnite Tracker player profile
 - Link to player's Twitch stream if currently streaming    
 
@@ -37,11 +37,17 @@ Retrieve player statistics in Fortnite Battle Royale
 ```
 
 ## Examples
+Player Not Specified:
+```
+!hunted
+```
+![Alt text](/images/provide_username_example.png?raw=true)
+
 Player Not Found:
 ```
 !hunted EpicBotAccount
 ```
-![Alt text](/images/failexample.png?raw=true)
+![Alt text](/images/fail_example.png?raw=true)
 
 Player Found:
 ```
@@ -53,6 +59,6 @@ Player Found and Streaming:
 ```
 !hunted Scoped
 ```
-![Alt text](/images/twitchexample.png?raw=true)
+![Alt text](/images/twitch_example.png?raw=true)
 
 
