@@ -18,12 +18,12 @@ Retrieve player statistics in Fortnite Battle Royale
     >    - Matches Played
 
 - Show player's level
-- Quick view of player's KD (Color of embed content)
+- Quick view of player's KD (color of embed content)
     - Green : KD <= 1
     - Orange : 1 < KD <= 2
     - Red : 2 < KD <= 3
     - Purple : KD > 3
-- Link to Fortnite Tracker player profile
+- Link to Fortnite Tracker player profile (click on username to navigate)
 - Link to player's Twitch stream if currently streaming    
 
 
