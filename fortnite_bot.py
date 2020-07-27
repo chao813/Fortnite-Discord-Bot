@@ -2,6 +2,7 @@ import aiohttp
 import json
 import logging
 import os
+import discord
 
 from logging.handlers import TimedRotatingFileHandler
 from discord.ext import commands
@@ -28,6 +29,7 @@ bot = commands.Bot(command_prefix="!")
 
 @bot.event
 async def on_ready():
+    await client.edit_profile(avatar=pfp)
     logger = get_logger_with_context("Main")
     logger.info("Started up %s", bot.user.name)
     logger.info("Bot running on servers: %s",
@@ -51,12 +53,9 @@ async def player_search(ctx, *player_name):
     logger.info("Looking up stats for '%s' ", player_name)
 
     if not player_name:
-        #await ctx.send(
-        #    "Please specify an Epic username after the command, "
-        #    "ex: `!hunted LigmaBalls12`")
         await ctx.send(
-            embed=discord.Embed(color=discord.Color.green(), description="Hold on! Villager Bot is still starting up!"))
-
+            embed=discord.Embed(color=0xff0400, description="Please specify an Epic username after the command, "
+            "ex: `!hunted LigmaBalls12`"))
         return
 
     async with aiohttp.ClientSession() as session:
@@ -85,11 +84,11 @@ async def player_search(ctx, *player_name):
         solo_stats = calculate_stats(solo, "Solo")
         duo_stats = calculate_stats(duo, "Duo")
         squad_stats = calculate_stats(squad, "Squad")
-        overall_stats, ranking_emoji = calculate_overall_stats(solo, duo, squad)
+        overall_stats, ranking_color = calculate_overall_stats(solo, duo, squad)
         
         twitch_stream = await get_twitch_stream(session, username)
-        output = construct_output(username, ranking_emoji, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream)
-        await ctx.send(output)
+        output = construct_output(username, ranking_color, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream)
+        await ctx.send(embed=output)
 
 
 async def get_player_account_id(session, player_name, platform):
@@ -133,18 +132,18 @@ def calculate_overall_stats(solo, duo, squad):
     overall_matchplayed = solo.get("matchesplayed", 0) + duo.get("matchesplayed", 0) + squad.get("matchesplayed", 0)
 
     if overall_kd >= 3:
-        ranking_emoji = ":purple_circle:"
+        ranking_color = 0xa600ff
     elif overall_kd < 3 and overall_kd >= 2:
-        ranking_emoji = ":red_circle:"
+        ranking_color = 0xff0000
     elif overall_kd < 2 and overall_kd >= 1:
-        ranking_emoji = ":orange_circle:" 
+        ranking_color = 0xff8800 
     else:
-        ranking_emoji = ":green_circle:"
+        ranking_color = 0x17b532
     
     overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
         KD=overall_kd, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
     )
-    return overall_stats, ranking_emoji
+    return overall_stats, ranking_color
 
 
 async def get_twitch_stream(session, username):
@@ -172,14 +171,21 @@ async def get_twitch_stream(session, username):
     return twitch_stream
 
 
-def construct_output(username, ranking_emoji, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream):
+def construct_output(username, ranking_color, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream):
     """
     Format output 
     """
-    return ("Username: {username} {emoji}\nLevel: {level} \n".format(username=username, emoji=ranking_emoji, level=level) + "```" + 
-        solo_stats + duo_stats + squad_stats + "\n" + overall_stats + "```" + FORTNITE_TRACKER_URL.format(username=username.replace(" ", "%20")) + "\n" + twitch_stream
-    )
-
+    embed=discord.Embed(title="Username: " + username, 
+                    url=FORTNITE_TRACKER_URL.format(username=username.replace(" ", "%20")), 
+                    description="level: " + level, 
+                    color=ranking_color)
+    embed.add_field(name=[Solo] , value=solo_stats, inline=True)
+    embed.add_field(name=[Duo], value=duo_stats, inline=True)
+    embed.add_field(name=[Squad], value=squad_stats, inline=True)
+    embed.add_field(name= [Overall], value=overall_stats, inline=True)
+    if twitch_stream != "":
+        embed.add_field(name=[Twitch], value=twitch_stream, inline=True)
+    return embed
 
 def configure_logger():
     """
