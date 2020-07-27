@@ -29,7 +29,6 @@ bot = commands.Bot(command_prefix="!")
 
 @bot.event
 async def on_ready():
-    await client.edit_profile(avatar=pfp)
     logger = get_logger_with_context("Main")
     logger.info("Started up %s", bot.user.name)
     logger.info("Bot running on servers: %s",
@@ -81,9 +80,9 @@ async def player_search(ctx, *player_name):
         duo = stats["global_stats"].get("duo", {})    
         squad = stats["global_stats"].get("squad", {})
 
-        solo_stats = calculate_stats(solo, "Solo")
-        duo_stats = calculate_stats(duo, "Duo")
-        squad_stats = calculate_stats(squad, "Squad")
+        solo_stats = calculate_stats(solo)
+        duo_stats = calculate_stats(duo)
+        squad_stats = calculate_stats(squad)
         overall_stats, ranking_color = calculate_overall_stats(solo, duo, squad)
         
         twitch_stream = await get_twitch_stream(session, username)
@@ -111,12 +110,12 @@ async def get_player_stats(session, account_id):
     return await raw_response.json()
 
 
-def calculate_stats(game_mode, mode):
+def calculate_stats(game_mode):
     """
     Calculate player stats in specific game mode
     """
-    return "[{mode}] - KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
-        mode=mode, KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2), 
+    return "KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
+        KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2), 
         kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
     )
 
@@ -140,7 +139,7 @@ def calculate_overall_stats(solo, duo, squad):
     else:
         ranking_color = 0x17b532
     
-    overall_stats = "[Overall] - KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
+    overall_stats = "KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
         KD=overall_kd, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
     )
     return overall_stats, ranking_color
@@ -167,7 +166,7 @@ async def get_twitch_stream(session, username):
 
     twitch_stream = ""
     if twitch_stream_response.status == 200 and twitch_fortnite_streams["data"]:
-        twitch_stream = "{username} is streaming at https://www.twitch.tv/{username}".format(username=username)
+        twitch_stream = "https://www.twitch.tv/{username}".format(username=username)
     return twitch_stream
 
 
@@ -177,14 +176,14 @@ def construct_output(username, ranking_color, level, solo_stats, duo_stats, squa
     """
     embed=discord.Embed(title="Username: " + username, 
                     url=FORTNITE_TRACKER_URL.format(username=username.replace(" ", "%20")), 
-                    description="level: " + level, 
+                    description="Level: " + str(level), 
                     color=ranking_color)
-    embed.add_field(name=[Solo] , value=solo_stats, inline=True)
-    embed.add_field(name=[Duo], value=duo_stats, inline=True)
-    embed.add_field(name=[Squad], value=squad_stats, inline=True)
-    embed.add_field(name= [Overall], value=overall_stats, inline=True)
+    embed.add_field(name="[Solo]" , value=solo_stats, inline=False)
+    embed.add_field(name="[Duo]", value=duo_stats, inline=False)
+    embed.add_field(name="[Squad]", value=squad_stats, inline=False)
+    embed.add_field(name= "[Overall]", value=overall_stats, inline=False)
     if twitch_stream != "":
-        embed.add_field(name=[Twitch], value=twitch_stream, inline=True)
+        embed.add_field(name="[Twitch]", value="[Streaming here]({stream_url})".format(stream_url=twitch_stream), inline=False)
     return embed
 
 def configure_logger():
