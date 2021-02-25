@@ -146,4 +146,3 @@ def _construct_output(username, ranking_color, level, solo_stats, duo_stats, squ
     if twitch_stream != "":
         embed.add_field(name="[Twitch]", value="[Streaming here]({stream_url})".format(stream_url=twitch_stream), inline=False)
     return embed
-  
