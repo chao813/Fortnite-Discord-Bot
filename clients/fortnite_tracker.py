@@ -34,6 +34,7 @@ async def get_player_stats(ctx, player_name):
     # Find data stored in JS script
     stats = _find_stats_dataset(soup)
 
+    # TODO: If latest season has no data, pull lifetime instead of continue searching from past seasons
     season_stats = _find_season_stats(stats["stats"])
 
     # TODO: Add more stats to be captured
@@ -62,8 +63,6 @@ async def _get_player_profile_html(username):
 
     async with aiohttp.ClientSession() as client:
         async with client.get(url, headers=HEADERS) as r:
-            print(url)
-            print("Status: {}".format(r.status))
             assert r.status == 200
             return await r.text()
 
