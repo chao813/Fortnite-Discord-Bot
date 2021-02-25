@@ -1,15 +1,16 @@
+from dotenv import load_dotenv
+load_dotenv()
+
+
 import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 
 from discord.ext import commands
-from dotenv import load_dotenv
 
 import clients.fortnite_api as fortnite_api
 import clients.fortnite_tracker as fortnite_tracker
 
-
-load_dotenv()
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
@@ -49,9 +50,10 @@ async def player_search(ctx, *player_name):
         return
 
     try:
-        fortnite_tracker.get_player_stats()
-    except:  # TODO: Custom exception
-        fortnite_api.get_player_stats()
+        await fortnite_tracker.get_player_stats(ctx, player_name)
+    except:
+        logger.warning("Falling back to Fortnite API..", exc_info=True)
+        await fortnite_api.get_player_stats(ctx, player_name)
 
 
 def configure_logger():
