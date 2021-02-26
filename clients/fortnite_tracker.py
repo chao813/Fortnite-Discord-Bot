@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 ACCOUNT_SEARCH_URL = "https://search-api.tracker.network/search/fortnite?advanced=1&q={username}"
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
 STATS_REGEX = "var imp_data = (.[\s\S]*);"
+LATEST_SEASON_ID = 15
 
 MODES = [
     "all",
@@ -81,9 +82,10 @@ async def _get_player_profile_html(username):
 
 def _get_latest_season_id():
     """ Find latest season ID
-    TODO: Parse dropdown or something
+    TODO: Loop through availableSegments to find the latest season ID. If there
+          is a newer season, refetch player profile HTML with the new season ID
     """
-    return 15
+    return LATEST_SEASON_ID
 
 
 def _find_stats_dataset(soup):
@@ -132,6 +134,7 @@ def _create_message(username, stats_breakdown):
     embed=discord.Embed(
         title=f"Username: {username}",
         url=ACCOUNT_PROFILE_URL.format(username=username, season=_get_latest_season_id()),
+        description=f"Wins: {stats_breakdown['all']['Top1']} ({stats_breakdown['all']['Matches']})",
         color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
 
     for mode in MODES:
@@ -147,6 +150,7 @@ def _create_message(username, stats_breakdown):
 
     return embed
 
+
 def _calculate_skill_color_indicator(overall_kd):
     """ Return the skill color indicator """
     if overall_kd >= 3:
@@ -158,11 +162,12 @@ def _calculate_skill_color_indicator(overall_kd):
     else:
         return 0x17b532
 
+
 def _create_stats_str(mode, stats_breakdown):
     """ Create stats string for output """
     mode_stats = stats_breakdown[mode]
     return (f"KD: {mode_stats['KD']} • "
-            f"Wins: {int(mode_stats['Top1'])} • "
-            f"Win Percentage: {mode_stats['WinRatio']}% • "
-            f"Matches: {int(mode_stats['Matches'])} • "
-            f"TRN: {int(mode_stats['TRNRating'])}")
+            f"Wins: {int(mode_stats['Top1']):,} • "
+            f"Win Percentage: {mode_stats['WinRatio']:,.1f}% • "
+            f"Matches: {int(mode_stats['Matches']):,} • "
+            f"TRN: {int(mode_stats['TRNRating']):,}")
