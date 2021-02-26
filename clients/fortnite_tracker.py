@@ -1,5 +1,6 @@
 import json
 import re
+from collections import defaultdict
 
 import aiohttp
 import discord
@@ -17,6 +18,14 @@ MODES = [
     "squads"
 ]
 
+STATS = [
+    "KD",
+    "Top1",
+    "WinRatio",
+    "Matches",
+    "TRNRating"
+]
+
 HEADERS = {
     "origin": "https://fortnitetracker.com/",
     "referer": "https://fortnitetracker.com/",
@@ -32,13 +41,16 @@ async def get_player_stats(ctx, player_name):
     soup = BeautifulSoup(page_html, features="html.parser")
 
     # Find data stored in JS script
-    stats = _find_stats_dataset(soup)
+    dataset = _find_stats_dataset(soup)
 
     # TODO: If latest season has no data, pull lifetime instead of continue searching from past seasons
-    season_stats = _find_season_stats(stats["stats"])
+    season_stats = _find_season_stats(dataset["stats"])
 
-    # TODO: Add more stats to be captured
-    message = _create_message(username, _get_kd_breakdown(season_stats))
+    # Above TODO (quick fix): fail if not enough data found for this season
+    if _find_mode_stat("Matches", season_stats["all"]) < 5:
+        raise ValueError("Not enough data, reverting to Fortnite API temporarily")
+
+    message = _create_message(username, _get_stats_breakdown(season_stats))
     await ctx.send(embed=message)
 
 
@@ -93,42 +105,45 @@ def _find_stats_dataset(soup):
 
 def _find_season_stats(season_stats):
     """ Find season stats for all platforms combined """
-    return next(season for season in season_stats if season["season"] == _get_latest_season_id() and season["platform"] is None)
+    return next(stats["stats"] for stats in season_stats if stats["season"] == _get_latest_season_id() and stats["platform"] is None)
 
 
-def _get_kd_breakdown(season_stats):
+def _get_stats_breakdown(season_stats):
     """ Find KD for all modes (solo, duo, squad) """
-    kd_stats = {}
+    breakdown = defaultdict(dict)
     for mode in MODES:
-        mode_stats = season_stats["stats"].get(mode)
+        mode_stats = season_stats.get(mode)
         if mode_stats is None:
             continue
-        kd_stats[mode] = _find_mode_kd(mode_stats)
+        for stat in STATS:
+            breakdown[mode][stat] = _find_mode_stat(stat, mode_stats)
 
-    return kd_stats
-
-
-def _find_mode_kd(mode):
-    """ Find KD within the mode """
-    kd_item = next(stat for stat in mode if stat["metadata"]["key"] == "KD")
-    return kd_item["value"]
+    return breakdown
 
 
-def _create_message(username, kd_breakdown):
+def _find_mode_stat(stat_name, mode_stats):
+    """ Find stats within the game mode """
+    stat = next((stat for stat in mode_stats if stat["metadata"]["key"] == stat_name), 0)
+    return stat["value"]
+
+
+def _create_message(username, stats_breakdown):
     """ Create Discord message """
     embed=discord.Embed(
         title=f"Username: {username}",
         url=ACCOUNT_PROFILE_URL.format(username=username, season=_get_latest_season_id()),
-        color=_calculate_skill_color_indicator(kd_breakdown["all"]))
+        color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
 
-    embed.add_field(name= "[Overall]", value=kd_breakdown["all"], inline=False)
+    for mode in MODES:
+        if mode not in stats_breakdown:
+            continue
 
-    if "solo" in kd_breakdown:
-        embed.add_field(name="[Solo]" , value=kd_breakdown["solo"], inline=False)
-    if "duos" in kd_breakdown:
-        embed.add_field(name="[Duo]", value=kd_breakdown["duos"], inline=False)
-    if "squads" in kd_breakdown:
-        embed.add_field(name="[Squad]", value=kd_breakdown["squads"], inline=False)
+        if mode == "all":
+            name = "Overall"
+        else:
+            name = mode.capitalize()
+
+        embed.add_field(name=f"[{name}]", value=_create_stats_str(mode, stats_breakdown), inline=False)
 
     return embed
 
@@ -142,3 +157,12 @@ def _calculate_skill_color_indicator(overall_kd):
         return 0xff8800
     else:
         return 0x17b532
+
+def _create_stats_str(mode, stats_breakdown):
+    """ Create stats string for output """
+    mode_stats = stats_breakdown[mode]
+    return (f"KD: {mode_stats['KD']} • "
+            f"Wins: {int(mode_stats['Top1'])} • "
+            f"Win Percentage: {mode_stats['WinRatio']}% • "
+            f"Matches: {int(mode_stats['Matches'])} • "
+            f"TRN: {int(mode_stats['TRNRating'])}")
