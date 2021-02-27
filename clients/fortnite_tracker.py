@@ -134,7 +134,7 @@ def _create_message(username, stats_breakdown):
     embed=discord.Embed(
         title=f"Username: {username}",
         url=ACCOUNT_PROFILE_URL.format(username=username, season=_get_latest_season_id()),
-        description=f"Wins: {int(stats_breakdown['all']['Top1'])} / {int(stats_breakdown['all']['Matches'])} played",
+        description=f"Wins: {int(stats_breakdown['all']['Top1'])} / {int(stats_breakdown['all']['Matches']):,} played",
         color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
 
     for mode in MODES:
