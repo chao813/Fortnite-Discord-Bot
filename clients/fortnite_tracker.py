@@ -193,6 +193,7 @@ def _create_stats_str(mode, stats_breakdown):
             f"Matches: {int(mode_stats['Matches']):,} • "
             f"TRN: {int(mode_stats['TRNRating']):,}")
 
+
 async def _track_player(username, stats_breakdown):
     """ Insert player stats into database """
     params = []
