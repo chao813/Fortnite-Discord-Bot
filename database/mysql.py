@@ -3,9 +3,6 @@ import os
 import aiomysql
 
 
-SAME_DAY_HOUR_THRESHOLD_UTC = 11
-
-
 class MySQL:
     """ Super barebone MySQL class """
     @classmethod
@@ -44,7 +41,7 @@ class MySQL:
         query = ("SELECT * "
                  "FROM players "
                  "WHERE date_inserted >= %()s;")
-        params = None  # TODO: Starting from 3 am of the current day
+        params = None  # TODO: Starting from 3 am of the current day in PT
         return await self._fetch_all(query, params)
 
     async def _executemany(self, query, params=None):
