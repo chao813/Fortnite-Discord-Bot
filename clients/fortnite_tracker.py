@@ -1,16 +1,20 @@
+import asyncio
 import json
 import re
 from collections import defaultdict
+from datetime import datetime
 
 import aiohttp
 import discord
 from bs4 import BeautifulSoup
 
+from database.mysql import MySQL
+
 
 ACCOUNT_SEARCH_URL = "https://search-api.tracker.network/search/fortnite?advanced=1&q={username}"
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
 STATS_REGEX = "var imp_data = (.[\s\S]*);"
-LATEST_SEASON_ID = 15
+LATEST_SEASON_ID = 15  # TODO: 16
 
 MODES = [
     "all",
@@ -51,9 +55,13 @@ async def get_player_stats(ctx, player_name):
     if _find_mode_stat("Matches", season_stats["all"]) < 5:
         raise ValueError("Not enough data, reverting to Fortnite API temporarily")
 
-    message = _create_message(username, _get_stats_breakdown(season_stats))
-    await ctx.send(embed=message)
+    stats_breakdown = _get_stats_breakdown(season_stats)
 
+    message = _create_message(username, stats_breakdown)
+
+    await asyncio.gather(
+        ctx.send(embed=message),
+        _track_player(username, stats_breakdown))
 
 async def _search_username(player_name):
     """ Returns the player's username """
@@ -107,8 +115,21 @@ def _find_stats_dataset(soup):
 
 def _find_season_stats(season_stats):
     """ Find season stats for all platforms combined """
-    return next(stats["stats"] for stats in season_stats if stats["season"] == _get_latest_season_id() and stats["platform"] is None)
+    return next(stats["stats"] for stats in season_stats
+                if _is_latest_season(stats["season"]) and
+                   _is_combined_platform(stats["platform"]))
 
+def _is_latest_season(season_id):
+    """ Return True if the season ID is the latest season,
+    otherwise return False
+    """
+    return season_id == _get_latest_season_id()
+
+def _is_combined_platform(platform):
+    """ Return True if the dataset is for all platforms combined,
+    otherwise return False
+    """
+    return platform is None
 
 def _get_stats_breakdown(season_stats):
     """ Find KD for all modes (solo, duo, squad) """
@@ -171,3 +192,22 @@ def _create_stats_str(mode, stats_breakdown):
             f"Win Percentage: {mode_stats['WinRatio']:,.1f}% • "
             f"Matches: {int(mode_stats['Matches']):,} • "
             f"TRN: {int(mode_stats['TRNRating']):,}")
+
+async def _track_player(username, stats_breakdown):
+    """ Insert player stats into database """
+    params = []
+    for mode, stats in stats_breakdown.items():
+        params.append({
+            "username": username,
+            "season": _get_latest_season_id(),
+            "mode": mode,
+            "kd": stats["KD"],
+            "games": stats["Matches"],
+            "wins": stats["Top1"],
+            "win_rate": stats["WinRatio"],
+            "trn": stats["TRNRating"],
+            "date_added": datetime.utcnow()
+        })
+
+    mysql = await MySQL.create()
+    await mysql.insert_player(params)
