@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import re
 from collections import defaultdict
 from datetime import datetime
@@ -14,7 +15,6 @@ from database.mysql import MySQL
 ACCOUNT_SEARCH_URL = "https://search-api.tracker.network/search/fortnite?advanced=1&q={username}"
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
 STATS_REGEX = "var imp_data = (.[\s\S]*);"
-LATEST_SEASON_ID = 15  # TODO: 16
 
 MODES = [
     "all",
@@ -41,17 +41,9 @@ HEADERS = {
 async def get_player_stats(ctx, player_name):
     """ Get player stats and output to Discord """
     username = await _search_username(player_name)
-    page_html = await _get_player_profile_html(username)
+    season_stats = await _get_player_season_dataset(username)
 
-    soup = BeautifulSoup(page_html, features="html.parser")
-
-    # Find data stored in JS script
-    dataset = _find_stats_dataset(soup)
-
-    # TODO: If latest season has no data, pull lifetime instead of continue searching from past seasons
-    season_stats = _find_season_stats(dataset["stats"])
-
-    # Above TODO (quick fix): fail if not enough data found for this season
+    # TODO (quick fix): fail if not enough data found for this season
     if _find_mode_stat("Matches", season_stats["all"]) < 5:
         raise ValueError("Not enough data, reverting to Fortnite API temporarily")
 
@@ -62,6 +54,7 @@ async def get_player_stats(ctx, player_name):
     await asyncio.gather(
         ctx.send(embed=message),
         _track_player(username, stats_breakdown))
+
 
 async def _search_username(player_name):
     """ Returns the player's username """
@@ -78,9 +71,30 @@ async def _search_username(player_name):
     return r[0]["name"]
 
 
+async def _get_player_season_dataset(username):
+    """ Get the player's season statistics """
+    dataset = await _get_player_dataset(username)
+
+    latest_season_id = _find_latest_season_id(dataset["availableSegments"])
+
+    if _newer_season_available(latest_season_id):
+        _set_fortnite_season_id(latest_season_id)
+        dataset = await _get_player_dataset(username)
+
+    # TODO: If latest season has no data, pull lifetime instead of continue searching from past seasons
+    return _find_season_stats(dataset["stats"])
+
+
+async def _get_player_dataset(username):
+    """ Fetch player profile HTML and parse statistics dataset to dict """
+    page_html = await _get_player_profile_html(username)
+    soup = BeautifulSoup(page_html, features="html.parser")
+    return _find_stats_segment(soup)
+
+
 async def _get_player_profile_html(username):
     """ Get the player stats page in HTML """
-    url = ACCOUNT_PROFILE_URL.format(username=username, season=_get_latest_season_id())
+    url = ACCOUNT_PROFILE_URL.format(username=username, season=_get_season_id())
 
     async with aiohttp.ClientSession() as client:
         async with client.get(url, headers=HEADERS) as r:
@@ -88,15 +102,7 @@ async def _get_player_profile_html(username):
             return await r.text()
 
 
-def _get_latest_season_id():
-    """ Find latest season ID
-    TODO: Loop through availableSegments to find the latest season ID. If there
-          is a newer season, refetch player profile HTML with the new season ID
-    """
-    return LATEST_SEASON_ID
-
-
-def _find_stats_dataset(soup):
+def _find_stats_segment(soup):
     """ Find the stats dataset from within the script's scripts JS """
     pattern = re.compile(STATS_REGEX)
     scripts = soup.find_all("script", type="text/javascript")
@@ -113,23 +119,48 @@ def _find_stats_dataset(soup):
     return stats
 
 
+def _find_latest_season_id(segments):
+    """ Returns the latest season ID with available data """
+    return max([seg['season'] for seg in segments if seg['season'] is not None])
+
+
+def _newer_season_available(latest_season_id):
+    """ Returns True if there is a newer Fortnite season available,
+    otherwise return False
+    """
+    return latest_season_id > _get_season_id()
+
+
+def _get_season_id():
+    """ Returns the latest season ID that the bot knows of """
+    return int(os.getenv("FORTNITE_SEASON_ID"))
+
+
+def _set_fortnite_season_id(season_id):
+    """ Set the Fortnite season ID to the latest """
+    os.environ["FORTNITE_SEASON_ID"] = str(season_id)
+
+
 def _find_season_stats(season_stats):
     """ Find season stats for all platforms combined """
-    return next(stats["stats"] for stats in season_stats
-                if _is_latest_season(stats["season"]) and
-                   _is_combined_platform(stats["platform"]))
+    return next(stats["stats"] for stats in season_stats if
+                _is_latest_season(stats["season"]) and
+                _is_combined_platform(stats["platform"]))
+
 
 def _is_latest_season(season_id):
     """ Return True if the season ID is the latest season,
     otherwise return False
     """
-    return season_id == _get_latest_season_id()
+    return season_id == _get_season_id()
+
 
 def _is_combined_platform(platform):
     """ Return True if the dataset is for all platforms combined,
     otherwise return False
     """
     return platform is None
+
 
 def _get_stats_breakdown(season_stats):
     """ Find KD for all modes (solo, duo, squad) """
@@ -154,7 +185,7 @@ def _create_message(username, stats_breakdown):
     """ Create Discord message """
     embed=discord.Embed(
         title=f"Username: {username}",
-        url=ACCOUNT_PROFILE_URL.format(username=username, season=_get_latest_season_id()),
+        url=ACCOUNT_PROFILE_URL.format(username=username, season=_get_season_id()),
         description=f"Wins: {int(stats_breakdown['all']['Top1'])} / {int(stats_breakdown['all']['Matches']):,} played",
         color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
 
@@ -200,7 +231,7 @@ async def _track_player(username, stats_breakdown):
     for mode, stats in stats_breakdown.items():
         params.append({
             "username": username,
-            "season": _get_latest_season_id(),
+            "season": _get_season_id(),
             "mode": mode,
             "kd": stats["KD"],
             "games": stats["Matches"],
