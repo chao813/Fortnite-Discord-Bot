@@ -3,13 +3,14 @@ import json
 import os
 import re
 from collections import defaultdict
-from datetime import datetime
 
 import aiohttp
 import discord
 from bs4 import BeautifulSoup
 
 from database.mysql import MySQL
+from exceptions import UserDoesNotExist, NoSeasonDataError
+from utils.dates import get_playing_session_date
 
 
 ACCOUNT_SEARCH_URL = "https://search-api.tracker.network/search/fortnite?advanced=1&q={username}"
@@ -43,10 +44,6 @@ async def get_player_stats(ctx, player_name):
     username = await _search_username(player_name)
     season_stats = await _get_player_season_dataset(username)
 
-    # TODO (quick fix): fail if not enough data found for this season
-    if _find_mode_stat("Matches", season_stats["all"]) < 5:
-        raise ValueError("Not enough data, reverting to Fortnite API temporarily")
-
     stats_breakdown = _get_stats_breakdown(season_stats)
 
     message = _create_message(username, stats_breakdown)
@@ -66,7 +63,7 @@ async def _search_username(player_name):
             r = await r.json()
 
     if not r:
-        raise ValueError("Username not found in FN Tracker")
+        raise UserDoesNotExist("Username not found in FN Tracker")
 
     return r[0]["name"]
 
@@ -143,9 +140,13 @@ def _set_fortnite_season_id(season_id):
 
 def _find_season_stats(season_stats):
     """ Find season stats for all platforms combined """
-    return next(stats["stats"] for stats in season_stats if
-                _is_latest_season(stats["season"]) and
-                _is_combined_platform(stats["platform"]))
+    try:
+        return next(stats["stats"] for stats in season_stats if
+                    _is_latest_season(stats["season"]) and
+                    _is_combined_platform(stats["platform"]))
+    except StopIteration as e:
+        # TODO (quick fix): fail if no data found for this season
+        raise NoSeasonDataError("No data found in this season")
 
 
 def _is_latest_season(season_id):
@@ -238,7 +239,7 @@ async def _track_player(username, stats_breakdown):
             "wins": stats["Top1"],
             "win_rate": stats["WinRatio"],
             "trn": stats["TRNRating"],
-            "date_added": datetime.utcnow()
+            "date_added": get_playing_session_date()
         })
 
     mysql = await MySQL.create()
