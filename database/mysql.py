@@ -2,6 +2,8 @@ import os
 
 import aiomysql
 
+from utils.dates import get_playing_session_date
+
 
 class MySQL:
     """ Super barebone MySQL class """
@@ -26,22 +28,22 @@ class MySQL:
 
     async def insert_player(self, params):
         """ Insert player into the table """
-        query = """INSERT INTO players (`username`, `season`, `mode`, `kd`, `games`,
-                                        `wins`, `win_rate`, `trn`, `date_added`)
+        query = """INSERT IGNORE INTO players (`username`, `season`, `mode`, `kd`, `games`,
+                                               `wins`, `win_rate`, `trn`, `date_added`)
                    VALUES (%(username)s, %(season)s, %(mode)s, %(kd)s, %(games)s, %(wins)s,
                            %(win_rate)s, %(trn)s, %(date_added)s);
                 """
         await self._executemany(query, params)
 
-    async def fetch_players_today(self):
-        """ Fetch all players from the current playing session.
-        A playing session is defined as from 3 am of the current
-        day to now.
-        """
-        query = ("SELECT * "
+    async def fetch_avg_player_stats_today(self):
+        """ Fetch avg player stats from the playing session today """
+        query = ("SELECT MODE, AVG(kd), AVG(games), AVG(wins), AVG(win_rate), AVG(trn) "
                  "FROM players "
-                 "WHERE date_inserted >= %()s;")
-        params = None  # TODO: Starting from 3 am of the current day in PT
+                 "WHERE date_added = %(date_added)s "
+                 "GROUP BY 1;")
+        params = {
+            "date_added": get_playing_session_date()
+        }
         return await self._fetch_all(query, params)
 
     async def _executemany(self, query, params=None):
@@ -52,6 +54,6 @@ class MySQL:
 
     async def _fetch_all(self, query, params=None):
         """ Fetch rows from MySQL """
-        async with self._sql_connection.cursor() as cursor:
+        async with self._conn.cursor() as cursor:
             await cursor.execute(query, params)
             return await cursor.fetchall()
