@@ -64,7 +64,7 @@ async def player_search(ctx, *player_name, silent=False):
             return
 
         logger.warning(f"Falling back to Fortnite API for '{player_name}'..")
-        await fortnite_api.get_player_stats(ctx, player_name, silent)
+        await fortnite_api.get_player_stats(ctx, player_name)
 
 
 @bot.command(name="track", help="tracks the current stats of the squad players",
