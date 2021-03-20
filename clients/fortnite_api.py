@@ -47,6 +47,7 @@ async def get_player_stats(ctx, player_name):
         overall_stats, ranking_color = _calculate_overall_stats(solo, duo, squad)
 
         twitch_stream = await _get_twitch_stream(session, username)
+
         output = _construct_output(username, ranking_color, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream)
         await ctx.send(embed=output)
 
