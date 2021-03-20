@@ -27,7 +27,7 @@ bot = commands.Bot(command_prefix="!")
 @bot.event
 async def on_ready():
     """ Event handler to setup logger on load """
-    logger = get_logger_with_context("Main")
+    logger = get_logger_with_context(identifier="Main")
     logger.info("Started up %s", bot.user.name)
     logger.info("Bot running on servers: %s",
                 ", ".join([guild.name for guild in bot.guilds]))
@@ -36,19 +36,17 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild):
     """ Event handler to log when the bot joins a new server """
-    logger = get_logger_with_context("Main")
+    logger = get_logger_with_context(identifier="Main")
     logger.info("Bot added to new server! Server name: %s", guild.name)
 
 
-@bot.command(name="hunted", help="shows player stats", aliases=["player", "findnoob", "wreckedby"])
-async def player_search(ctx, *player_name):
+@bot.command(name="hunted", help="shows player stats",
+             aliases=["h", "player", "findnoob", "wreckedby"])
+async def player_search(ctx, *player_name, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
-    server = ctx.guild.name
-    author = ctx.author
-    identifier = server + ":" + str(author)
 
-    logger = get_logger_with_context(identifier)
+    logger = get_logger_with_context(ctx)
     logger.info("Looking up stats for '%s' ", player_name)
 
     if not player_name:
@@ -57,27 +55,76 @@ async def player_search(ctx, *player_name):
         return
 
     try:
-        await fortnite_tracker.get_player_stats(ctx, player_name)
+        await fortnite_tracker.get_player_stats(ctx, player_name, silent)
     except Exception as e:
-        logger.warning(e)
-        logger.warning(f"Falling back to Fortnite API for '{player_name}'..",
-                       exc_info=should_log_traceback(e))
-        await fortnite_api.get_player_stats(ctx, player_name)
+        logger.warning(e, exc_info=should_log_traceback(e))
+
+        # Fortnite API stats are unnecessary in silent mode
+        if not silent:
+            return
+
+        logger.warning(f"Falling back to Fortnite API for '{player_name}'..")
+        await fortnite_api.get_player_stats(ctx, player_name, silent)
 
 
-@bot.command(name="track", help="tracks the current stats of the squad players")
+@bot.command(name="track", help="tracks the current stats of the squad players",
+             aliases=["squad"])
 async def track(ctx):
-    """ Tracks the current stats of the squad players """
+    """ Tracks and logs the current stats of the squad players """
     tasks = [player_search(ctx, username) for username in SQUAD_PLAYERS_LIST]
     await asyncio.gather(*tasks)
 
 
-@bot.command(name="stats-today", help="returns the stats of the players faced today",
-             aliases=["noobs-killed", "stats", "noobs"])
-async def player_stats_today(ctx):
-    """ Returns the stats of the players faced today """
+@bot.command(name="stats", help="returns the stats based on parameters provided")
+async def stats_operations(ctx, *params):
+    """ Outputs stats based on the parameters provided.
+    Valid parameters are:
+        1. today
+            - Stats diff of the squad players today
+        2. played, opponents, noobs, enemy
+            - Stats of the players faced today
+    """
+    logger = get_logger_with_context(ctx)
+    params = list(params)
+
+    command = params.pop(0) if params else None
+    if not command:
+        message = "Please specify a command, ex: `!stats diff` or `!stats played`"
+        logger.warning(message)
+        await ctx.send(message)
+        return
+
+    usernames = params or SQUAD_PLAYERS_LIST
+
+    if command in ("today", "diff"):
+        logger.info(f"Querying stats diff today for {', '.join(usernames)}")
+        await stats_diff_today(ctx, usernames)
+    elif command in ("played", "opponents", "noobs", "enemy"):
+        logger.info("Querying opponent stats today")
+        await opponent_stats_today(ctx)
+    else:
+        await ctx.send(f"Command provided '{command}' is not valid")
+
+
+async def stats_diff_today(ctx, usernames):
+    """ Outputs the stats diff of the squad players today.
+    Perform a silent update of the player stats in the database first
+    """
+    update_tasks = []
+    calculate_tasks = []
+
+    for username in usernames:
+        update_tasks.append(player_search(ctx, username, silent=True))
+        calculate_tasks.append(stats.get_stats_diff_today(ctx, username))
+
+    await asyncio.gather(*update_tasks)
+    await asyncio.gather(*calculate_tasks)
+
+
+async def opponent_stats_today(ctx):
+    """ Outputs the stats of the players faced today """
     # TODO: Wrap this up
-    res = await stats.get_player_stats_today()
+    res = await stats.get_opponent_stats_today()
     print(res)
 
 
@@ -107,12 +154,18 @@ def configure_logger():
     return logger
 
 
-def get_logger_with_context(identifier):
+def get_logger_with_context(ctx=None, identifier=None):
     """ Returns a LoggerAdapter with context """
+    if not identifier:
+        server = ctx.guild.name
+        author = ctx.author
+        identifier = server + ":" + str(author)
+
     extra = {
         "identifier" : identifier
     }
     return logging.LoggerAdapter(logging.getLogger(__name__), extra)
+
 
 logger = configure_logger()
 bot.run(DISCORD_BOT_TOKEN)

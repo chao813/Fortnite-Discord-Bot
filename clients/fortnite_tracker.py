@@ -3,6 +3,7 @@ import json
 import os
 import re
 from collections import defaultdict
+from urllib.parse import quote
 
 import aiohttp
 import discord
@@ -39,7 +40,7 @@ HEADERS = {
 }
 
 
-async def get_player_stats(ctx, player_name):
+async def get_player_stats(ctx, player_name, silent):
     """ Get player stats and output to Discord """
     username = await _search_username(player_name)
     season_stats = await _get_player_season_dataset(username)
@@ -48,9 +49,11 @@ async def get_player_stats(ctx, player_name):
 
     message = _create_message(username, stats_breakdown)
 
-    await asyncio.gather(
-        ctx.send(embed=message),
-        _track_player(username, stats_breakdown))
+    tasks = [_track_player(username, stats_breakdown)]
+    if not silent:
+        tasks.append(ctx.send(embed=message))
+
+    await asyncio.gather(*tasks)
 
 
 async def _search_username(player_name):
@@ -79,7 +82,7 @@ async def _get_player_season_dataset(username):
         dataset = await _get_player_dataset(username)
 
     # TODO: If latest season has no data, pull lifetime instead of continue searching from past seasons
-    return _find_season_stats(dataset["stats"])
+    return _find_season_stats(dataset["stats"], username)
 
 
 async def _get_player_dataset(username):
@@ -134,19 +137,19 @@ def _get_season_id():
 
 
 def _set_fortnite_season_id(season_id):
-    """ Set the Fortnite season ID to the latest """
+    """ Set the Fortnite season ID to the latest season ID """
     os.environ["FORTNITE_SEASON_ID"] = str(season_id)
 
 
-def _find_season_stats(season_stats):
+def _find_season_stats(season_stats, username):
     """ Find season stats for all platforms combined """
     try:
         return next(stats["stats"] for stats in season_stats if
                     _is_latest_season(stats["season"]) and
                     _is_combined_platform(stats["platform"]))
     except StopIteration as e:
-        # TODO (quick fix): fail if no data found for this season
-        raise NoSeasonDataError("No data found in this season")
+        # TODO (quick fix): fail if no data was found for the season
+        raise NoSeasonDataError(f"No data found in this season for '{username}'")
 
 
 def _is_latest_season(season_id):
@@ -186,7 +189,7 @@ def _create_message(username, stats_breakdown):
     """ Create Discord message """
     embed=discord.Embed(
         title=f"Username: {username}",
-        url=ACCOUNT_PROFILE_URL.format(username=username, season=_get_season_id()),
+        url=ACCOUNT_PROFILE_URL.format(username=quote(username), season=_get_season_id()),
         description=f"Wins: {int(stats_breakdown['all']['Top1'])} / {int(stats_breakdown['all']['Matches']):,} played",
         color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
 

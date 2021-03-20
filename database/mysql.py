@@ -35,12 +35,35 @@ class MySQL:
                 """
         await self._executemany(query, params)
 
+    async def fetch_player_stats_diff_today(self, username, season):
+        """ """
+        query = """SELECT *
+                   FROM (
+                       SELECT DISTINCT
+                           *,
+                           DENSE_RANK() OVER (PARTITION BY MODE, season ORDER BY date_added DESC) AS date_rank,
+                           DENSE_RANK() OVER (PARTITION BY date_added, MODE, season ORDER BY games DESC) AS game_rank
+                       FROM
+                           players
+                       WHERE
+                           username = %(username)s
+                           AND season = %(season)s
+                       ) as latest_stats
+                   WHERE game_rank = 1 AND date_rank IN (1, 2);
+                """
+        params = {
+            "username": username,
+            "season": season
+        }
+        return await self._fetch_all(query, params)
+
     async def fetch_avg_player_stats_today(self):
         """ Fetch avg player stats from the playing session today """
-        query = ("SELECT MODE, AVG(kd), AVG(games), AVG(wins), AVG(win_rate), AVG(trn) "
-                 "FROM players "
-                 "WHERE date_added = %(date_added)s "
-                 "GROUP BY 1;")
+        query = """SELECT MODE, AVG(kd), AVG(games), AVG(wins), AVG(win_rate), AVG(trn)
+                   FROM players
+                   WHERE date_added = %(date_added)s
+                   GROUP BY 1;
+                """
         params = {
             "date_added": get_playing_session_date()
         }
