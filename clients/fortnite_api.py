@@ -17,7 +17,7 @@ TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first
 TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
 
 
-async def get_player_stats(ctx, player_name, silent):
+async def get_player_stats(ctx, player_name):
     async with aiohttp.ClientSession() as session:
         result = await _get_player_account_id(session, player_name, "")
 
