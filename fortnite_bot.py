@@ -7,22 +7,25 @@ import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 
-from discord.ext import commands
+from discord.ext.commands import Bot
 
+import commands
 import clients.fortnite_api as fortnite_api
 import clients.fortnite_tracker as fortnite_tracker
 import clients.stats as stats
+import clients.interactions as interactions
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+FORTNITE_DISCORD_VOICE_CHANNEL_NAME = os.getenv("FORTNITE_DISCORD_VOICE_CHANNEL_NAME")
 
 LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH")
 
 SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
 
+bot = Bot(command_prefix="!")
 
-bot = commands.Bot(command_prefix="!")
 
 @bot.event
 async def on_ready():
@@ -40,8 +43,49 @@ async def on_guild_join(guild):
     logger.info("Bot added to new server! Server name: %s", guild.name)
 
 
-@bot.command(name="hunted", help="shows player stats",
-             aliases=["h", "player", "findnoob", "wreckedby"])
+@bot.event
+async def on_voice_state_update(member, _, after):
+    """ Event handler to track squad stats on voice channel join """
+    if not in_fortnite_role(member) or \
+       not has_joined_fortnite_voice_channel(after) or \
+       not is_first_joiner_of_channel(after):
+        return
+
+    ctx, silent = await interactions.send_track_question_and_wait(bot)
+
+    await track(ctx, silent)
+
+def in_fortnite_role(member):
+    """ Return True if the member is part of the "fortnite"
+    Discord role, otherwise False
+    """
+    return any(x.name == "fortnite" for x in member.roles)
+
+
+def has_joined_fortnite_voice_channel(voice_state):
+    """ Return True if the channel joined is the Fortnite
+    voice chat
+    """
+    return voice_state.channel is not None \
+        and voice_state.channel.name == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
+
+
+def is_first_joiner_of_channel(voice_state):
+    """ Return True if the member is the only person in the
+    voice channel, otherwise False
+    """
+    return len(voice_state.channel.members) > 0
+
+
+@bot.command(name=commands.HELP_COMMAND, help=commands.HELP_DESCRIPTION,
+             aliases=commands.HELP_ALIASES)
+async def help(ctx):
+    """ Lists available commands """
+    interactions.send_commands_list(ctx)
+
+
+@bot.command(name=commands.PLAYER_SEARCH_COMMAND, help=commands.PLAYER_SEARCH_DESCRIPTION,
+             aliases=commands.PLAYER_SEARCH_ALIASES)
 async def player_search(ctx, *player_name, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
@@ -64,18 +108,18 @@ async def player_search(ctx, *player_name, silent=False):
             return
 
         logger.warning(f"Falling back to Fortnite API for '{player_name}'..")
-        await fortnite_api.get_player_stats(ctx, player_name, silent)
+        await fortnite_api.get_player_stats(ctx, player_name)
 
 
-@bot.command(name="track", help="tracks the current stats of the squad players",
-             aliases=["squad"])
-async def track(ctx):
+@bot.command(name=commands.TRACK_COMMAND, help=commands.TRACK_DESCRIPTION,
+             aliases=commands.TRACK_ALIASES)
+async def track(ctx, silent=False):
     """ Tracks and logs the current stats of the squad players """
-    tasks = [player_search(ctx, username) for username in SQUAD_PLAYERS_LIST]
+    tasks = [player_search(ctx, username, silent=silent) for username in SQUAD_PLAYERS_LIST]
     await asyncio.gather(*tasks)
 
 
-@bot.command(name="stats", help="returns the stats based on parameters provided")
+@bot.command(name=commands.STATS_COMMAND, help="returns the stats based on parameters provided")
 async def stats_operations(ctx, *params):
     """ Outputs stats based on the parameters provided.
     Valid parameters are:
@@ -96,10 +140,10 @@ async def stats_operations(ctx, *params):
 
     usernames = params or SQUAD_PLAYERS_LIST
 
-    if command in ("today", "diff"):
+    if command in commands.STATS_DIFF_COMMANDS:
         logger.info(f"Querying stats diff today for {', '.join(usernames)}")
         await stats_diff_today(ctx, usernames)
-    elif command in ("played", "opponents", "noobs", "enemy"):
+    elif command in commands.STATS_OPPONENTS_COMMANDS:
         logger.info("Querying opponent stats today")
         await opponent_stats_today(ctx)
     else:

@@ -52,7 +52,7 @@ def _breakdown_player_snapshots(player_snapshots):
         stats[mode] = {
             "KD": {
                 "current": row_current.get("kd", 0),
-                "diff": _pad_symbol(f'{row_current.get("kd", 0) - row_previous.get("kd", 0)}')
+                "diff": _pad_symbol(f'{row_current.get("kd", 0) - row_previous.get("kd", 0):,.2f}')
             },
             "Top1": {
                 "current": row_current.get("wins", 0),
@@ -75,11 +75,11 @@ def _breakdown_player_snapshots(player_snapshots):
     return stats
 
 def _pad_symbol(val: str):
-    """ """
-    return f"+{val}" if int(float(val)) >= 0 else val
+    """ Left pad a plus sign if the number if above zero """
+    return f"+{val}" if float(val) >= 0 else val
 
 async def get_opponent_stats_today():
-    """ """
+    """ Outputs the stats of the opponents faced today """
     mysql = await MySQL.create()
     return await mysql.fetch_avg_player_stats_today()
 
@@ -124,7 +124,7 @@ def _create_message(username, stats_breakdown):
 
 
 def _create_wins_str(win_stats):
-    """ """
+    """ Create stats string for output """
     wins_str = f"{int(win_stats['Top1']['current'])} ({win_stats['Top1']['diff']})"
     matches_str = f"{int(win_stats['Matches']['current']):,} ({win_stats['Matches']['diff']}) played"
     return f"Wins: {wins_str} / {matches_str}"
