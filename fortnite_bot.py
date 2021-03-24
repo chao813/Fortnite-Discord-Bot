@@ -104,7 +104,7 @@ async def player_search(ctx, *player_name, silent=False):
         logger.warning(e, exc_info=should_log_traceback(e))
 
         # Fortnite API stats are unnecessary in silent mode
-        if not silent:
+        if silent:
             return
 
         logger.warning(f"Falling back to Fortnite API for '{player_name}'..")
