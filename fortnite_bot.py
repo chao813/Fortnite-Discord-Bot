@@ -125,7 +125,7 @@ async def opponent_stats_today(ctx):
     """ Outputs the stats of the players faced today """
     # TODO: Wrap this up
     res = await stats.get_opponent_stats_today()
-    print(res)
+    await asyncio.gather(*res)
 
 
 def should_log_traceback(e):
