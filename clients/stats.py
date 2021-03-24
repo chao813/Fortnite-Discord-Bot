@@ -81,13 +81,7 @@ def _pad_symbol(val: str):
 async def get_opponent_stats_today():
     """ """
     mysql = await MySQL.create()
-    player_snapshots = await mysql.fetch_avg_player_stats_today()
-
-    stats_breakdown = _breakdown_player_snapshots(player_snapshots)
-
-    message = _create_message(username, stats_breakdown)
-    await ctx.send(embed=message)
-
+    return await mysql.fetch_avg_player_stats_today()
 
 
 # TODO: Move the following to discord_base so they can be inherited and overloaded
