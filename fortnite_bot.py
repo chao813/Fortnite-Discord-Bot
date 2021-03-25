@@ -17,6 +17,7 @@ import clients.interactions as interactions
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+FORTNITE_DISCORD_ROLE = os.getenv("FORTNITE_DISCORD_ROLE")
 FORTNITE_DISCORD_VOICE_CHANNEL_NAME = os.getenv("FORTNITE_DISCORD_VOICE_CHANNEL_NAME")
 
 LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
@@ -51,7 +52,9 @@ async def on_voice_state_update(member, _, after):
        not is_first_joiner_of_channel(after):
         return
 
-    ctx, silent = await interactions.send_track_question_and_wait(bot)
+    ctx, silent = await interactions.send_track_question_and_wait(
+        bot,
+        member.display_name)
 
     await track(ctx, silent)
 
@@ -59,7 +62,7 @@ def in_fortnite_role(member):
     """ Return True if the member is part of the "fortnite"
     Discord role, otherwise False
     """
-    return any(x.name == "fortnite" for x in member.roles)
+    return any(x.name == FORTNITE_DISCORD_ROLE for x in member.roles)
 
 
 def has_joined_fortnite_voice_channel(voice_state):
