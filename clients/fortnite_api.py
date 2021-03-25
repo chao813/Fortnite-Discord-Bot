@@ -146,5 +146,5 @@ def _construct_output(username, ranking_color, level, solo_stats, duo_stats, squ
     embed.add_field(name= "[Overall]", value=overall_stats, inline=False)
     if twitch_stream != "":
         embed.add_field(name="[Twitch]", value="[Streaming here]({stream_url})".format(stream_url=twitch_stream), inline=False)
-    embed.add_field(name= "[Source]", value="Fornite API", inline=False)
+    embed.add_field(name= "[Source]", value="Fortnite API", inline=False)
     return embed

@@ -14,7 +14,7 @@ NO_EMOJI  = "❌"
 async def send_commands_list(ctx):
     """ Send the commands list """
     message = discord.Embed(
-        title = 'Commands list',
+        title = "Commands list",
         colour = discord.Colour.orange()
     )
 
@@ -27,22 +27,22 @@ async def send_commands_list(ctx):
     await ctx.send(embed=message)
 
 
-async def send_track_question_and_wait(bot):
+async def send_track_question_and_wait(bot, discord_name):
     """ Send a question asking if the user wants to see current stats
     for the squad. If yes, return silent=False, otherwise return
     silent=True
     """
-    message = await _send_message(bot)
+    message = await _send_message(bot, discord_name)
     silent_mode = await _wait_for_response(bot, message)
     ctx = await _get_message_context(bot, message)
     return ctx, silent_mode
 
 
-async def _send_message(bot):
+async def _send_message(bot, discord_name):
     """ Send the question with emojis """
     track_question = discord.Embed(
-        title = 'Welcome to the Fortnite Voice Chat',
-        description = 'Get good, noob!',
+        title = f"Welcome, {discord_name.title()}",
+        description = "Get good, noob!",
         colour = discord.Colour.orange()
     )
 
