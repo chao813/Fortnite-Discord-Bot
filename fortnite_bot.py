@@ -82,7 +82,7 @@ def is_first_joiner_of_channel(voice_state):
     """ Return True if the member is the only person in the
     voice channel, otherwise False
     """
-    return len(voice_state.channel.members) > 0
+    return len(voice_state.channel.members) == 1
 
 
 @bot.command(name=commands.HELP_COMMAND, help=commands.HELP_DESCRIPTION,
