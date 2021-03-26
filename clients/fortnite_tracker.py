@@ -13,8 +13,9 @@ from database.mysql import MySQL
 from exceptions import UserDoesNotExist, NoSeasonDataError
 from utils.dates import get_playing_session_date
 
+from urllib.parse import unquote
 
-ACCOUNT_SEARCH_URL = "https://search-api.tracker.network/search/fortnite?advanced=1&q={username}"
+ACCOUNT_SEARCH_URL = "https://fortnitetracker.com/profile/search?q={username}"
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
 STATS_REGEX = "var imp_data = (.[\s\S]*);"
 
@@ -61,14 +62,17 @@ async def _search_username(player_name):
     url = ACCOUNT_SEARCH_URL.format(username=player_name)
 
     async with aiohttp.ClientSession() as client:
-        async with client.get(url, headers=HEADERS) as r:
-            assert r.status == 200
-            r = await r.json()
+        async with client.get(url, headers=HEADERS, allow_redirects=False) as r:
+            assert r.status == 302
+            r = r.headers
 
     if not r:
         raise UserDoesNotExist("Username not found in FN Tracker")
 
-    return r[0]["name"]
+    name = r['location'].split("/")
+    name = unquote(name[len(name) - 1])
+
+    return name
 
 
 async def _get_player_season_dataset(username):
