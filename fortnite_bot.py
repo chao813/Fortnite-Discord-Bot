@@ -45,10 +45,10 @@ async def on_guild_join(guild):
 
 
 @bot.event
-async def on_voice_state_update(member, _, after):
+async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
     if not in_fortnite_role(member) or \
-       not has_joined_fortnite_voice_channel(after) or \
+       not has_joined_fortnite_voice_channel(before, after) or \
        not is_first_joiner_of_channel(after):
         return
 
@@ -65,12 +65,17 @@ def in_fortnite_role(member):
     return any(x.name == FORTNITE_DISCORD_ROLE for x in member.roles)
 
 
-def has_joined_fortnite_voice_channel(voice_state):
+def has_joined_fortnite_voice_channel(before_voice_state, after_voice_state):
     """ Return True if the channel joined is the Fortnite
     voice chat
     """
-    return voice_state.channel is not None \
-        and voice_state.channel.name == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
+    channel_before = before_voice_state.channel.name if before_voice_state.channel else None
+    channel_after = after_voice_state.channel.name if after_voice_state.channel else None
+
+    switched_channel = channel_before != channel_after
+    joined_fortnite_channel = channel_after == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
+
+    return switched_channel and joined_fortnite_channel
 
 
 def is_first_joiner_of_channel(voice_state):
