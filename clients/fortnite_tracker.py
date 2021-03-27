@@ -63,11 +63,10 @@ async def _search_username(player_name):
 
     async with aiohttp.ClientSession() as client:
         async with client.get(url, headers=HEADERS, allow_redirects=False) as r:
-            assert r.status == 302
-            r = r.headers
-
-    if not r:
-        raise UserDoesNotExist("Username not found in FN Tracker")
+            if r.status == 302:
+                r = r.headers
+            else:
+                raise UserDoesNotExist("Username not found in FN Tracker")
 
     name = unquote(r["Location"].split("/")[-1])
 
