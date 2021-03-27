@@ -4,6 +4,7 @@ import os
 import re
 from collections import defaultdict
 from urllib.parse import quote
+from urllib.parse import unquote
 
 import aiohttp
 import discord
@@ -13,7 +14,6 @@ from database.mysql import MySQL
 from exceptions import UserDoesNotExist, NoSeasonDataError
 from utils.dates import get_playing_session_date
 
-from urllib.parse import unquote
 
 ACCOUNT_SEARCH_URL = "https://fortnitetracker.com/profile/search?q={username}"
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
@@ -69,8 +69,7 @@ async def _search_username(player_name):
     if not r:
         raise UserDoesNotExist("Username not found in FN Tracker")
 
-    name = r['location'].split("/")
-    name = unquote(name[len(name) - 1])
+    name = unquote(r["Location"].split("/")[-1])
 
     return name
 
