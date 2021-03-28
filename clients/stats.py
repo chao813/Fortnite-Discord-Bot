@@ -90,10 +90,11 @@ async def get_opponent_stats_today():
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
 
 MODES = [
-    "all",
     "solo",
     "duos",
-    "squads"
+    "trios",
+    "squads",
+    "all"
 ]
 
 def _get_season_id():

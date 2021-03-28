@@ -20,10 +20,11 @@ ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season
 STATS_REGEX = "var imp_data = (.[\s\S]*);"
 
 MODES = [
-    "all",
     "solo",
     "duos",
-    "squads"
+    "trios",
+    "squads",
+    "all"
 ]
 
 STATS = [
