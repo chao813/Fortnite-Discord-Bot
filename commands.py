@@ -22,7 +22,12 @@ COMMANDS = {
                         "LigmaBalls12`, `!stats played`)."),
         "diff_commands": ["today", "diff"],
         "opponent_commands": ["played", "opponents", "noobs", "enemy"]
-    }
+    },
+    "Rate Difficulty": {
+        "command": "rate",
+        "aliases": ["gg"],
+        "description": "Rate how good opponents are today"
+    } 
 }
 
 # Help
@@ -45,3 +50,10 @@ STATS_COMMAND = COMMANDS["Stats"]["command"]
 STATS_DESCRIPTION = COMMANDS["Stats"]["description"]
 STATS_DIFF_COMMANDS = COMMANDS["Stats"]["diff_commands"]
 STATS_OPPONENTS_COMMANDS = COMMANDS["Stats"]["opponent_commands"]
+
+# Rate Difficulty
+RATE_COMMAND = COMMANDS["Rate Difficulty"]["command"]
+RATE_DESCRIPTION = COMMANDS["Rate Difficulty"]["description"]
+RATE_ALIASES = COMMANDS["Rate Difficulty"]["aliases"]
+
+
