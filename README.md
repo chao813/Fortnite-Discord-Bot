@@ -66,7 +66,7 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
 ```
 
 ## Examples
-Prompt when joining Fortnite Discord channel:
+Prompt when joining Fortnite Discord channel:\
 ![Alt text](/images/prompt_example.png?raw=true)
 
 Player Not Specified:
