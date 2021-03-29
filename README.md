@@ -67,7 +67,7 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
 
 ## Examples
 Prompt when joining Fortnite Discord channel:
-![Alt text](/images/prompt_example.png?raw=true
+![Alt text](/images/prompt_example.png?raw=true)
 
 Player Not Specified:
 ```
@@ -80,12 +80,6 @@ Player Not Found:
 !hunted EpicBotAccount
 ```
 ![Alt text](/images/fail_example.png?raw=true)
-
-Player Found (Fortnite Tracker search):
-```
-!hunted SypherPK
-```
-![Alt text](/images/fortnite_tracker_example.png?raw=true)
 
 Player Found (Fortnite Tracker search):
 ```
