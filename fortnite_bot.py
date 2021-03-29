@@ -126,6 +126,12 @@ async def track(ctx, silent=False):
     tasks = [player_search(ctx, username, silent=silent) for username in SQUAD_PLAYERS_LIST]
     await asyncio.gather(*tasks)
 
+@bot.command(name=commands.RATE_COMMAND, help=commands.RATE_DESCRIPTION,
+             aliases=commands.RATE_ALIASES)
+async def rate(ctx, silent=False):
+    """ Rate how good opponents are today """
+    await stats.rate_opponent_stats_today(ctx)
+
 
 @bot.command(name=commands.STATS_COMMAND, help="returns the stats based on parameters provided")
 async def stats_operations(ctx, *params):
@@ -175,10 +181,8 @@ async def stats_diff_today(ctx, usernames):
 
 async def opponent_stats_today(ctx):
     """ Outputs the stats of the players faced today """
-    # TODO: Wrap this up
-    res = await stats.get_opponent_stats_today()
-    print(res)
-
+    # TODO: 
+    await stats.get_opponent_stats_today(ctx)
 
 def should_log_traceback(e):
     """ Returns True if a traceback should be logged,
