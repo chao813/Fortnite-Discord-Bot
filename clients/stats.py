@@ -220,9 +220,9 @@ def _calculate_skill_rate_indicator(overall_kd):
         return "Aim Botters"   
     elif overall_kd >= 3:
         return "Sweats"
-    elif overall_kd < 3 and overall_kd >= 2:
+    elif overall_kd >= 2:
         return "High"
-    elif overall_kd < 2 and overall_kd >= 1:
+    elif overall_kd >= 1:
         return "Medium"
     else:
         return "Bots"

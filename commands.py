@@ -27,6 +27,20 @@ COMMANDS = {
         "command": "rate",
         "aliases": ["gg"],
         "description": "Rate how good opponents are today"
+    },
+    "Upgrade Locations": {
+        "command": "upgrade",
+        "aliases": ["gold"],
+        "description": "Show map of upgrade locations"
+    },
+    "Chest Locations": {
+        "command": "chests",
+        "aliases": ["loot"],
+        "description": "Show map of chest locations"
+    },
+    "Hireable NPC Locations": {
+        "command": "hire",
+        "description": "Show map of hireable NPC locations"
     } 
 }
 
@@ -56,4 +70,16 @@ RATE_COMMAND = COMMANDS["Rate Difficulty"]["command"]
 RATE_DESCRIPTION = COMMANDS["Rate Difficulty"]["description"]
 RATE_ALIASES = COMMANDS["Rate Difficulty"]["aliases"]
 
+# Upgrade Locations
+UPGRADE_COMMAND = COMMANDS["Upgrade Locations"]["command"]
+UPGRADE_DESCRIPTION = COMMANDS["Upgrade Locations"]["description"]
+UPGRADE_ALIASES = COMMANDS["Upgrade Locations"]["aliases"]
 
+# Chest Locations
+CHESTS_COMMAND = COMMANDS["Chest Locations"]["command"]
+CHESTS_DESCRIPTION = COMMANDS["Chest Locations"]["description"]
+CHESTS_ALIASES = COMMANDS["Chest Locations"]["aliases"]
+
+# Hireable NPC Locations
+HIRE_COMMAND = COMMANDS["Hireable NPC Locations"]["command"]
+HIRE_DESCRIPTION = COMMANDS["Hireable NPC Locations"]["description"]
