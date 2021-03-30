@@ -42,6 +42,10 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
     - Purple : KD > 3
 - Display current stats for the squad. If a username is provided, display only stats for that player (ex: `!track LigmaBalls12`).")
 - Display stats difference of a player or the squad, or average stats of the opponents played today (ex: `!stats diff`, `!stats diff LigmaBalls12`, `!stats played`)."
+- Display average stats of all opponents faced today
+- Show map of all upgrade locations
+- Show map of all bunker chest locations
+- Show map of all hireable NPC locations
 
 ## Usage
 ```
@@ -63,6 +67,14 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
 !stats opponents
 !stats noobs
 !stats enemy
+
+!upgrade
+!gold 
+
+!chests
+!loot
+
+!hire
 ```
 
 ## Examples
@@ -93,7 +105,7 @@ Player Found (Fortnite API search):
 ```
 ![Alt text](/images/example.png?raw=true)
 
-Player Found and Streaming:
+Player Found (Fortnite API search) and Streaming:
 ```
 !hunted Fresh
 ```
@@ -105,4 +117,9 @@ Stats Difference for Squad:
 ```
 ![Alt text](/images/stats_diff_example.png?raw=true)
 
+Average Stats of all Opponent Faced Today:
+```
+!stats noobs
+```
+![Alt text](/images/stats_noobs_example.png?raw=true)
 
