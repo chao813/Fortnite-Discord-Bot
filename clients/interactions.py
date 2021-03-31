@@ -4,6 +4,7 @@ import os
 import discord
 
 from commands import COMMANDS
+import clients.discord_base as discord_base
 
 
 FORTNITE_TEXT_CHANNEL_ID = int(os.getenv("FORTNITE_DISCORD_TEXT_CHANNEL_ID"))
@@ -25,6 +26,15 @@ async def send_commands_list(ctx):
             inline=False)
 
     await ctx.send(embed=message)
+
+
+def send_track_question(member, before, after):
+    """ Return True if the track question should be sent,
+    otherwise False
+    """
+    return not discord_base.in_fortnite_role(member) or \
+           not discord_base.joined_fortnite_voice_channel(before, after) or \
+           not discord_base.is_first_joiner_of_channel(after)
 
 
 async def send_track_question_and_wait(bot, discord_name):
@@ -90,3 +100,42 @@ async def _wait_for_response(bot, message):
 async def _get_message_context(bot, message):
     """ Return the message context """
     return await bot.get_context(message)
+
+
+async def send_upgrade_locations(ctx):
+    """ Send map of upgrade locations """
+    await ctx.send("https://img.fortniteintel.com/wp-content/uploads/2021/03/17151906/Fortnite-Season-6-upgrade-locations.jpg.webp")
+
+
+async def send_hirable_npc_locations(ctx):
+    """ Send map of hireable NPC locations """
+    await ctx.send("https://img.fortniteintel.com/wp-content/uploads/2021/03/29172627/Fortnite-hire-NPCs-768x748.jpg.webp")
+
+
+async def send_chest_locations(ctx):
+    """ Show map of bunker and regular chest locations """
+    chest_location_details = (
+        "1 - Inside a tower that’s located toward the northwest corner of the main structure.\n"
+        "2 - Buried in a field to the south of Stealthy Stronghold on a small hill, outside of the walls.\n"
+        "3 - In the house with a red roof under the staircase toward the western part of the town.\n"
+        "4 - In the attic of a house toward the landmark’s west.\n"
+        "5 - In the building that’s half covered in sand, and the Bunker chest will be waiting for you in its basement.\n"
+        "6 - Southeast of the landmark in the sand.\n"
+        "7 - In a small campsite west of the Green Steel Bridge.\n"
+        "8 - Head over to the house with storm shelter toward the southeastern corner of the landmark.\n"
+        "9 - In the attic of a house, located toward the southeastern part of the town.\n"
+        "10 - In a field, east of Flopper Pond.\n"
+        "11 - In the shack that’s on the top.\n"
+        "12 - Near a road that’s west of Durr Burger.\n"
+        "13 - Next to the control panel in a house toward the northern edge of the landmark.\n"
+        "14 - In a house on the southwestern edge of the landmark.\n"
+        "15 - In the flowery fields toward Retail Row’s west.\n"
+        "16 - In a field in between Loot Lake and Lazy Lake.\n"
+        "17 - Inside of the attic.\n"
+        "18 - In the basement of the house and you’ll need to destroy the floor beneath the table with your harvesting tool to access the room.\n"
+        "19 - In the large house in the flower fields, located toward the southwest of Misty Meadows.\n"
+        "20 - In a shack.\n"
+        "21 - In the crossroads between Sweaty Sand and Holly Hedges.\n"
+        "22 - Under the sand along the shore line.\n")
+    await ctx.send("https://cdn1.dotesports.com/wp-content/uploads/2021/03/25194519/fortnite-bunker-loc-1024x864.png")
+    await ctx.send(f"```{chest_location_details}```")

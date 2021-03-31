@@ -30,18 +30,18 @@ COMMANDS = {
     },
     "Upgrade Locations": {
         "command": "upgrade",
-        "aliases": ["gold"],
+        "aliases": ["up", "gold"],
         "description": "Show map of upgrade locations"
-    },
-    "Chest Locations": {
-        "command": "chests",
-        "aliases": ["loot"],
-        "description": "Show map of chest locations"
     },
     "Hireable NPC Locations": {
         "command": "hire",
         "description": "Show map of hireable NPC locations"
-    } 
+    },
+    "Chest Locations": {
+        "command": "chest",
+        "aliases": ["chests", "loot"],
+        "description": "Show map of bunker and regular chest locations"
+    }
 }
 
 # Help
