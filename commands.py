@@ -21,7 +21,7 @@ COMMANDS = {
                         "of the opponents `played` today (ex: `!stats diff`, `!stats diff "
                         "LigmaBalls12`, `!stats played`)."),
         "diff_commands": ["today", "diff"],
-        "opponent_commands": ["played", "opponents", "noobs", "enemy"]
+        "opponent_commands": ["played", "opp", "opponents", "noobs", "enemy"]
     },
     "Rate Difficulty": {
         "command": "rate",

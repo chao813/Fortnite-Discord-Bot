@@ -15,6 +15,7 @@ async def send_stats_diff_today(ctx, username):
 
     stats_breakdown = _breakdown_player_snapshots(player_snapshots)
 
+    # TODO: Pass in dict directly to create_stats_message()
     message = discord_base.create_stats_message(
         title=f"Username: {username}",
         url=discord_base.create_account_profile_url(username, season_id),
@@ -99,9 +100,13 @@ def _create_stats_diff_str(mode, stats_breakdown):
 async def send_opponent_stats_today(ctx):
     """ Outputs the stats of the opponents faced today """
     mysql = await MySQL.create()
-    opponent_stats = await mysql.fetch_avg_player_stats_today()
+    opponent_avg_stats = await mysql.fetch_avg_player_stats_today()
 
-    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_stats)
+    if not opponent_avg_stats:
+        await ctx.send("No opponents played today yet. Get some games in!")
+        return
+
+    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_avg_stats)
 
     message = discord_base.create_stats_message(
         title="Opponent Average Stats Today",
@@ -114,12 +119,12 @@ async def send_opponent_stats_today(ctx):
     await ctx.send(embed=message)
 
 
-def _breakdown_opponent_average_stats(opponent_stats):
+def _breakdown_opponent_average_stats(opponent_avg_stats):
     """ Format opponent avg stats into a dict """
     stats = {}
 
     # Format data
-    for row in opponent_stats:
+    for row in opponent_avg_stats:
         mode = row["MODE"]
 
         stats[mode] = {

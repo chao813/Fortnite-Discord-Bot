@@ -68,6 +68,7 @@ def create_stats_message(title, desc, create_stats_func, stats_breakdown, color,
     if url:
         message_params["url"] = url
 
+    # TODO: Pass in dict directly to here
     message = discord.Embed(**message_params)
 
     for mode in MODES:

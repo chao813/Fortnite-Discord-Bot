@@ -60,7 +60,7 @@ async def on_voice_state_update(member, before, after):
              aliases=commands.HELP_ALIASES)
 async def help(ctx):
     """ Lists available commands """
-    interactions.send_commands_list(ctx)
+    await interactions.send_commands_list(ctx)
 
 
 @bot.command(name=commands.PLAYER_SEARCH_COMMAND, help=commands.PLAYER_SEARCH_DESCRIPTION,
@@ -109,21 +109,20 @@ async def rate(ctx, silent=False):
              aliases=commands.UPGRADE_ALIASES)
 async def upgrade(ctx):
     """ Show map of upgrade locations """
-    interactions.send_upgrade_locations(ctx)
+    await interactions.send_upgrade_locations(ctx)
 
 
 @bot.command(name=commands.HIRE_COMMAND, help=commands.HIRE_DESCRIPTION)
 async def hire(ctx):
     """ Show map of hireable NPC locations """
-    interactions.send_hirable_npc_locations(ctx)
-    await ctx.send("https://img.fortniteintel.com/wp-content/uploads/2021/03/29172627/Fortnite-hire-NPCs-768x748.jpg.webp")
+    await interactions.send_hirable_npc_locations(ctx)
 
 
 @bot.command(name=commands.CHESTS_COMMAND, help=commands.CHESTS_DESCRIPTION,
              aliases=commands.CHESTS_ALIASES)
 async def chests(ctx):
     """ Show map of bunker and regular chest locations """
-    interactions.send_chest_locations(ctx)
+    await interactions.send_chest_locations(ctx)
 
 
 @bot.command(name=commands.STATS_COMMAND, help="returns the stats based on parameters provided")
