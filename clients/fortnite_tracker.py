@@ -10,6 +10,7 @@ import aiohttp
 import discord
 from bs4 import BeautifulSoup
 
+import clients.discord_base as discord_base
 from database.mysql import MySQL
 from exceptions import UserDoesNotExist, NoSeasonDataError
 from utils.dates import get_playing_session_date
@@ -190,24 +191,35 @@ def _find_mode_stat(stat_name, mode_stats):
 
 def _create_message(username, stats_breakdown):
     """ Create Discord message """
-    embed=discord.Embed(
+    return discord_base.create_stats_message(
         title=f"Username: {username}",
-        url=ACCOUNT_PROFILE_URL.format(username=quote(username), season=_get_season_id()),
-        description=f"Wins: {int(stats_breakdown['all']['Top1'])} / {int(stats_breakdown['all']['Matches']):,} played",
-        color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
+        url=discord_base.create_account_profile_url(username, discord_base.get_season_id()),
+        desc="<something first>",
+        create_stats_func=_create_stats_str,
+        stats_breakdown=stats_breakdown,
+        color_metric=stats_breakdown["all"]["KD"]
+    )
 
-    for mode in MODES:
-        if mode not in stats_breakdown:
-            continue
+    # TODO: Pick up from descriptions here
 
-        if mode == "all":
-            name = "Overall"
-        else:
-            name = mode.capitalize()
+    # embed=discord.Embed(
+    #     title=f"Username: {username}",
+    #     url=ACCOUNT_PROFILE_URL.format(username=quote(username), season=_get_season_id()),
+    #     description=f"Wins: {int(stats_breakdown['all']['Top1'])} / {int(stats_breakdown['all']['Matches']):,} played",
+    #     color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
 
-        embed.add_field(name=f"[{name}]", value=_create_stats_str(mode, stats_breakdown), inline=False)
+    # for mode in MODES:
+    #     if mode not in stats_breakdown:
+    #         continue
 
-    return embed
+    #     if mode == "all":
+    #         name = "Overall"
+    #     else:
+    #         name = mode.capitalize()
+
+    #     embed.add_field(name=f"[{name}]", value=_create_stats_str(mode, stats_breakdown), inline=False)
+
+    # return embed
 
 
 def _calculate_skill_color_indicator(overall_kd):

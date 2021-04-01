@@ -10,10 +10,11 @@ FORTNITE_DISCORD_ROLE = os.getenv("FORTNITE_DISCORD_ROLE")
 FORTNITE_DISCORD_VOICE_CHANNEL_NAME = os.getenv("FORTNITE_DISCORD_VOICE_CHANNEL_NAME")
 
 MODES = [
-    "all",
     "solo",
     "duos",
-    "squads"
+    "trios",
+    "squads",
+    "all"
 ]
 
 
@@ -56,19 +57,10 @@ def create_account_profile_url(username, season_id):
         season=season_id)
 
 
-def create_stats_message(title, desc, create_stats_func, stats_breakdown, color, url=None):
+def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, url=None):
     """ Create Discord message """
-    message_params = {
-        "title": title,
-        "url": url,
-        "description": desc,
-        "color": color
-    }
+    message_params = _create_stats_message_params(title, url, desc, color_metric)
 
-    if url:
-        message_params["url"] = url
-
-    # TODO: Pass in dict directly to here
     message = discord.Embed(**message_params)
 
     for mode in MODES:
@@ -85,7 +77,22 @@ def create_stats_message(title, desc, create_stats_func, stats_breakdown, color,
     return message
 
 
-def calculate_skill_color_indicator(overall_kd):
+def _create_stats_message_params(title, url, desc, color_metric):
+    """ Create the stats message embed params """
+    params = {
+        "title": title,
+        "url": url,
+        "description": desc,
+        "color": _calculate_skill_color_indicator(color_metric)
+    }
+
+    if url:
+        params["url"] = url
+
+    return params
+
+
+def _calculate_skill_color_indicator(overall_kd):
     """ Return the skill color indicator """
     if overall_kd >= 3:
         return 0xa600ff
@@ -111,4 +118,3 @@ def calculate_skill_rate_indicator(overall_kd):
         return "Medium"
     else:
         return "Bots"
-
