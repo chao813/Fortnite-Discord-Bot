@@ -20,9 +20,12 @@ async def send_commands_list(ctx):
     )
 
     for name, opt in COMMANDS.items():
+        keywords = ", ".join(opt["command"] + opt["aliases"])
+        usage_desc = f"{opt['description']}\nUsage: {opt['keywords']}"
+
         message.add_field(
             name=name,
-            value=opt["description"],
+            value=usage_desc,
             inline=False)
 
     await ctx.send(embed=message)

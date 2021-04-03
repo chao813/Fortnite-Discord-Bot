@@ -15,14 +15,7 @@ async def send_stats_diff_today(ctx, username):
 
     stats_breakdown = _breakdown_player_snapshots(player_snapshots)
 
-    message = discord_base.create_stats_message(
-        title=f"Username: {username}",
-        url=discord_base.create_account_profile_url(username, season_id),
-        desc=_create_wins_diff_str(stats_breakdown["all"]),
-        color_metric=stats_breakdown["all"]["KD"]["current"],
-        create_stats_func=_create_stats_diff_str,
-        stats_breakdown=stats_breakdown
-    )
+    message = _create_stats_diff_message(username, stats_breakdown)
     await ctx.send(embed=message)
 
 
@@ -47,14 +40,12 @@ def _breakdown_player_snapshots(player_snapshots):
         row_current = processed_snapshots["current"][mode]
         row_previous = processed_snapshots["previous"].get(mode, defaultdict(int))
 
+        # TODO: Change stats to our own naming convention
         stats[mode] = {
             "KD": {
                 "current": row_current.get("kd", 0),
                 "diff": _pad_symbol(f'{row_current.get("kd", 0) - row_previous.get("kd", 0):,.2f}')
             },
-
-            # TODO: Change stats to our own naming convention
-
             "Top1": {
                 "current": row_current.get("wins", 0),
                 "diff": _pad_symbol(f'{row_current.get("wins", 0) - row_previous.get("wins", 0):,}')
@@ -79,6 +70,18 @@ def _breakdown_player_snapshots(player_snapshots):
 def _pad_symbol(val: str):
     """ Left pad a plus sign if the number if above zero """
     return f"+{val}" if float(val) >= 0 else val
+
+
+def _create_stats_diff_message(username, stats_breakdown):
+    """ Create opponent stats Discord message """
+    return discord_base.create_stats_message(
+        title=f"Username: {username}",
+        desc=_create_wins_diff_str(stats_breakdown["all"]),
+        color_metric=stats_breakdown["all"]["KD"]["current"],
+        create_stats_func=_create_stats_diff_str,
+        stats_breakdown=stats_breakdown,
+        username=username
+    )
 
 
 def _create_wins_diff_str(win_stats):
@@ -109,13 +112,7 @@ async def send_opponent_stats_today(ctx):
 
     opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_avg_stats)
 
-    message = discord_base.create_stats_message(
-        title="Opponent Average Stats Today",
-        desc=_create_opponent_wins_str(opponent_stats_breakdown["all"]),
-        color_metric=opponent_stats_breakdown["all"]["KD"],
-        create_stats_func=_create_opponent_stats_str,
-        stats_breakdown=opponent_stats_breakdown
-    )
+    message = _create_opponents_stats_message(opponent_stats_breakdown)
     await ctx.send(embed=message)
 
 
@@ -138,11 +135,15 @@ def _breakdown_opponent_average_stats(opponent_avg_stats):
     return stats
 
 
-def _create_opponent_wins_str(opponent_win_stats):
-    """ Create opponent stats string for output """
-    wins_str = int(opponent_win_stats["Wins"])
-    matches_str = int(opponent_win_stats["Matches"])
-    return f"Wins: {wins_str} / {matches_str} played"
+def _create_opponents_stats_message(opponent_stats_breakdown):
+    """ Create opponent stats Discord message """
+    return discord_base.create_stats_message(
+        title="Opponent Average Stats Today",
+        desc=discord_base.create_wins_str(opponent_stats_breakdown["all"]),
+        color_metric=opponent_stats_breakdown["all"]["KD"],
+        create_stats_func=_create_opponent_stats_str,
+        stats_breakdown=opponent_stats_breakdown
+    )
 
 
 def _create_opponent_stats_str(mode, opponent_stats_breakdown):
@@ -164,5 +165,4 @@ async def rate_opponent_stats_today(ctx):
 
     skill_rate = discord_base.calculate_skill_rate_indicator(
         opponent_stats_breakdown["all"]["KD"])
-
     await ctx.send(skill_rate)

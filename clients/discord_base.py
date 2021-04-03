@@ -50,16 +50,9 @@ def get_season_id():
     return int(os.getenv("FORTNITE_SEASON_ID"))
 
 
-def create_account_profile_url(username, season_id):
-    """ Creates the FN Tracker profile URL """
-    return ACCOUNT_PROFILE_URL.format(
-        username=quote(username),
-        season=season_id)
-
-
-def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, url=None):
+def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, username=None):
     """ Create Discord message """
-    message_params = _create_stats_message_params(title, url, desc, color_metric)
+    message_params = _create_stats_message_params(title, desc, color_metric, username)
 
     message = discord.Embed(**message_params)
 
@@ -77,17 +70,16 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
     return message
 
 
-def _create_stats_message_params(title, url, desc, color_metric):
+def _create_stats_message_params(title, desc, color_metric, username):
     """ Create the stats message embed params """
     params = {
         "title": title,
-        "url": url,
         "description": desc,
         "color": _calculate_skill_color_indicator(color_metric)
     }
 
-    if url:
-        params["url"] = url
+    if username:
+        params["url"] = _create_account_profile_url(username, get_season_id()),
 
     return params
 
@@ -118,3 +110,17 @@ def calculate_skill_rate_indicator(overall_kd):
         return "Medium"
     else:
         return "Bots"
+
+
+def create_wins_str(stats):
+    """ Create opponent stats string for output """
+    wins_str = int(stats["Wins"])
+    matches_str = int(stats["Matches"])
+    return f"Wins: {wins_str} / {matches_str} played"
+
+
+def _create_account_profile_url(username, season_id):
+    """ Create the FN Tracker profile URL """
+    return ACCOUNT_PROFILE_URL.format(
+        username=quote(username),
+        season=season_id)

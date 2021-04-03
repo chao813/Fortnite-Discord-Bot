@@ -14,7 +14,6 @@ import clients.fortnite_api as fortnite_api
 import clients.fortnite_tracker as fortnite_tracker
 import clients.stats as stats
 import clients.interactions as interactions
-import clients.discord_base as discord_base
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -128,11 +127,9 @@ async def chests(ctx):
 @bot.command(name=commands.STATS_COMMAND, help="returns the stats based on parameters provided")
 async def stats_operations(ctx, *params):
     """ Outputs stats based on the parameters provided.
-    Valid parameters are:
-        1. today
-            - Stats diff of the squad players today
-        2. played, opponents, noobs, enemy
-            - Stats of the players faced today
+    Valid options are:
+        1. Stats diff of the squad players today
+        2. Average stats of the players faced today
     """
     logger = _get_logger_with_context(ctx)
     params = list(params)
@@ -207,7 +204,7 @@ def _get_logger_with_context(ctx=None, identifier=None):
     if not identifier:
         server = ctx.guild.name
         author = ctx.author
-        identifier = server + ":" + str(author)
+        identifier = f"{server}:{author}"
 
     extra = {
         "identifier" : identifier
