@@ -8,6 +8,7 @@ import clients.discord_base as discord_base
 
 
 FORTNITE_TEXT_CHANNEL_ID = int(os.getenv("FORTNITE_DISCORD_TEXT_CHANNEL_ID"))
+WAIT_FOR_TIMEOUT_SEC = 180
 YES_EMOJI = "✅"
 NO_EMOJI  = "❌"
 
@@ -21,7 +22,7 @@ async def send_commands_list(ctx):
 
     for name, opt in COMMANDS.items():
         keywords = ", ".join(opt["command"] + opt["aliases"])
-        usage_desc = f"{opt['description']}\nUsage: {opt['keywords']}"
+        usage_desc = f"{opt['description']}\nUsage: {keywords}"
 
         message.add_field(
             name=name,
@@ -84,7 +85,7 @@ async def _wait_for_response(bot, message):
     try:
         reaction, _ = await bot.wait_for(
             "reaction_add",
-            timeout=300.0,
+            timeout=WAIT_FOR_TIMEOUT_SEC,
             check=check)
     except asyncio.TimeoutError:
         reaction = None
