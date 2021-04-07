@@ -3,8 +3,8 @@ import os
 
 import discord
 
+import utils.discord as discord_utils
 from commands import COMMANDS
-import clients.discord_base as discord_base
 
 
 FORTNITE_TEXT_CHANNEL_ID = int(os.getenv("FORTNITE_DISCORD_TEXT_CHANNEL_ID"))
@@ -36,9 +36,9 @@ def send_track_question(member, before, after):
     """ Return True if the track question should be sent,
     otherwise False
     """
-    return not discord_base.in_fortnite_role(member) or \
-           not discord_base.joined_fortnite_voice_channel(before, after) or \
-           not discord_base.is_first_joiner_of_channel(after)
+    return not discord_utils.in_fortnite_role(member) or \
+           not discord_utils.joined_fortnite_voice_channel(before, after) or \
+           not discord_utils.is_first_joiner_of_channel(after)
 
 
 async def send_track_question_and_wait(bot, discord_name):
