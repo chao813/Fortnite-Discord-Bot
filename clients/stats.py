@@ -1,35 +1,26 @@
-import os
 from collections import defaultdict
-from urllib.parse import quote
 
-import discord
-
+import utils.discord as discord_utils
 from database.mysql import MySQL
 
 
-"""
-WIP: See TODO below. File needs to be refactored.
-"""
-
-
-async def get_stats_diff_today(ctx, username):
-    """ TODO: "output" instead """
+async def send_stats_diff_today(ctx, username):
+    """ Sends the stats diff between today and the last play date """
     mysql = await MySQL.create()
+    season_id = discord_utils.get_season_id()
+
     player_snapshots = await mysql.fetch_player_stats_diff_today(
         username,
-        _get_season_id())
+        season_id)
 
     stats_breakdown = _breakdown_player_snapshots(player_snapshots)
 
-    message = _create_message(username, stats_breakdown)
+    message = _create_stats_diff_message(username, stats_breakdown)
     await ctx.send(embed=message)
 
 
 def _breakdown_player_snapshots(player_snapshots):
-    """ Format player snapshots into a dict
-    TODO: This function is WIP and temporary until the TODO below is fixed
-    TODO: Store just the diff
-    """
+    """ Format player snapshots into a dict with current and diff data """
     processed_snapshots = {
         "previous": {},
         "current": {}
@@ -74,161 +65,32 @@ def _breakdown_player_snapshots(player_snapshots):
 
     return stats
 
+
 def _pad_symbol(val: str):
     """ Left pad a plus sign if the number if above zero """
     return f"+{val}" if float(val) >= 0 else val
 
-def _breakdown_opponent_average_stats(opponent_stats):
-    """ Format opponent snapshots into a dict
-    TODO: Refactor as part of discord_base
-    """
 
-    stats = {}
-    # Format data
-    for row in opponent_stats:
-        mode = row["MODE"]
-
-        stats[mode] = {
-            "KD": row["AVG(kd)"],
-            "Wins": row["AVG(wins)"],
-            "Win Percentage": row["AVG(win_rate)"],
-            "Matches": row["AVG(games)"],
-            "TRNRating": row["AVG(trn)"]
-        }
-
-    return stats
-
-def _create_opponents_message(opponent_stats_breakdown):
-    """ Create Discord message """
-    embed=discord.Embed(
-        title="Opponent Average Stats Today",
-        description=_create_opponent_wins_str(opponent_stats_breakdown['all']),
-        color=_calculate_skill_color_indicator(opponent_stats_breakdown["all"]["KD"]))
-
-    for mode in MODES:
-        if mode not in opponent_stats_breakdown:
-            continue
-
-        if mode == "all":
-            name = "Overall"
-        else:
-            name = mode.capitalize()
-
-        embed.add_field(name=f"[{name}]", value=_create_opponent_stats_str(mode, opponent_stats_breakdown), inline=False)
-
-    return embed
-
-def _create_opponent_wins_str(opponent_win_stats):
-    """ Create opponent stats string for output """
-    wins_str = int(opponent_win_stats["Wins"])
-    matches_str = int(opponent_win_stats["Matches"])
-    return f"Wins: {wins_str} / {matches_str} played" 
-
-def _create_opponent_stats_str(mode, opponent_stats_breakdown):
-    """ Create stats string for output """
-    mode_stats = opponent_stats_breakdown[mode]
-    return (f"KD: {mode_stats['KD']:,.2f} • "
-            f"Wins: {int(mode_stats['Wins'])} • "
-            f"Win Percentage: {mode_stats['Win Percentage']:,.1f}% • "
-            f"Matches: {int(mode_stats['Matches'])} • "
-            f"TRN: {int(mode_stats['TRNRating'])} ")
-
-async def get_opponent_stats_today(ctx):
-    """ Outputs the stats of the opponents faced today """
-    mysql = await MySQL.create()
-    opponent_stats = await mysql.fetch_avg_player_stats_today()
-
-    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_stats)
-
-    message = _create_opponents_message(opponent_stats_breakdown)
-    await ctx.send(embed=message)
-
-async def rate_opponent_stats_today(ctx):
-    """ Outputs the stats of the opponents faced today """
-    mysql = await MySQL.create()
-    opponent_stats = await mysql.fetch_avg_player_stats_today()
-
-    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_stats)
-
-    message = _calculate_skill_rate_indicator(opponent_stats_breakdown["all"]["KD"])
-    await ctx.send(message)
-
-
-# TODO: Move the following to discord_base so they can be inherited and overloaded
-#       Scrappy temporary solution until I have more time
-# _create_stats_str as overridden func
-ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
-
-MODES = [
-    "solo",
-    "duos",
-    "trios",
-    "squads",
-    "all"
-]
-
-def _get_season_id():
-    """ Returns the latest season ID that the bot knows of """
-    return int(os.getenv("FORTNITE_SEASON_ID"))
-
-
-def _create_message(username, stats_breakdown):
-    """ Create Discord message """
-    embed=discord.Embed(
+def _create_stats_diff_message(username, stats_breakdown):
+    """ Create opponent stats Discord message """
+    return discord_utils.create_stats_message(
         title=f"Username: {username}",
-        url=ACCOUNT_PROFILE_URL.format(username=quote(username), season=_get_season_id()),
-        description=_create_wins_str(stats_breakdown['all']),
-        color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]["current"]))
-
-    for mode in MODES:
-        if mode not in stats_breakdown:
-            continue
-
-        if mode == "all":
-            name = "Overall"
-        else:
-            name = mode.capitalize()
-
-        embed.add_field(name=f"[{name}]", value=_create_stats_str(mode, stats_breakdown), inline=False)
-
-    return embed
+        desc=_create_wins_diff_str(stats_breakdown["all"]),
+        color_metric=stats_breakdown["all"]["KD"]["current"],
+        create_stats_func=_create_stats_diff_str,
+        stats_breakdown=stats_breakdown,
+        username=username
+    )
 
 
-def _create_wins_str(win_stats):
+def _create_wins_diff_str(win_stats):
     """ Create stats string for output """
     wins_str = f"{int(win_stats['Top1']['current'])} ({win_stats['Top1']['diff']})"
     matches_str = f"{int(win_stats['Matches']['current']):,} ({win_stats['Matches']['diff']}) played"
     return f"Wins: {wins_str} / {matches_str}"
 
 
-def _calculate_skill_color_indicator(overall_kd):
-    """ Return the skill color indicator """
-    if overall_kd >= 3:
-        return 0xa600ff
-    elif overall_kd < 3 and overall_kd >= 2:
-        return 0xff0000
-    elif overall_kd < 2 and overall_kd >= 1:
-        return 0xff8800
-    else:
-        return 0x17b532
-
-def _calculate_skill_rate_indicator(overall_kd):
-    """ Return the skill rate indicator """
-    if overall_kd >= 5:
-        return "Hackers"
-    elif overall_kd >= 4:
-        return "Aim Botters"   
-    elif overall_kd >= 3:
-        return "Sweats"
-    elif overall_kd >= 2:
-        return "High"
-    elif overall_kd >= 1:
-        return "Medium"
-    else:
-        return "Bots"
-
-
-def _create_stats_str(mode, stats_breakdown):
+def _create_stats_diff_str(mode, stats_breakdown):
     """ Create stats string for output """
     mode_stats = stats_breakdown[mode]
     return (f"KD: {mode_stats['KD']['current']} ({mode_stats['KD']['diff']}) • "
@@ -236,3 +98,70 @@ def _create_stats_str(mode, stats_breakdown):
             f"Win Percentage: {mode_stats['WinRatio']['current']:,.1f}% ({mode_stats['WinRatio']['diff']}%) • "
             f"Matches: {int(mode_stats['Matches']['current'])} ({mode_stats['Matches']['diff']}) • "
             f"TRN: {int(mode_stats['TRNRating']['current'])} ({mode_stats['TRNRating']['diff']})")
+
+
+async def send_opponent_stats_today(ctx):
+    """ Outputs the stats of the opponents faced today """
+    mysql = await MySQL.create()
+    opponent_avg_stats = await mysql.fetch_avg_player_stats_today()
+
+    if not opponent_avg_stats:
+        await ctx.send("No opponents played today yet. Get some games in!")
+        return
+
+    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_avg_stats)
+
+    message = _create_opponents_stats_message(opponent_stats_breakdown)
+    await ctx.send(embed=message)
+
+
+def _breakdown_opponent_average_stats(opponent_avg_stats):
+    """ Format opponent avg stats into a dict """
+    stats = {}
+
+    # Format data
+    for row in opponent_avg_stats:
+        mode = row["MODE"]
+
+        stats[mode] = {
+            "KD": row["AVG(kd)"],
+            "Top1": row["AVG(wins)"],
+            "WinRatio": row["AVG(win_rate)"],
+            "Matches": row["AVG(games)"],
+            "TRNRating": row["AVG(trn)"]
+        }
+
+    return stats
+
+
+def _create_opponents_stats_message(opponent_stats_breakdown):
+    """ Create opponent stats Discord message """
+    return discord_utils.create_stats_message(
+        title="Opponent Average Stats Today",
+        desc=discord_utils.create_wins_str(opponent_stats_breakdown["all"]),
+        color_metric=opponent_stats_breakdown["all"]["KD"],
+        create_stats_func=_create_opponent_stats_str,
+        stats_breakdown=opponent_stats_breakdown
+    )
+
+
+def _create_opponent_stats_str(mode, opponent_stats_breakdown):
+    """ Create stats string for output """
+    mode_stats = opponent_stats_breakdown[mode]
+    return (f"KD: {mode_stats['KD']:,.2f} • "
+            f"Wins: {int(mode_stats['Top1'])} • "
+            f"Win Percentage: {mode_stats['WinRatio']:,.1f}% • "
+            f"Matches: {int(mode_stats['Matches'])} • "
+            f"TRN: {int(mode_stats['TRNRating'])} ")
+
+
+async def rate_opponent_stats_today(ctx):
+    """ Send the skill rate keyword indicator for the average opponent faced today """
+    mysql = await MySQL.create()
+    opponent_stats = await mysql.fetch_avg_player_stats_today()
+
+    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_stats)
+
+    skill_rate = discord_utils.calculate_skill_rate_indicator(
+        opponent_stats_breakdown["all"]["KD"])
+    await ctx.send(skill_rate)

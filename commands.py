@@ -21,7 +21,7 @@ COMMANDS = {
                         "of the opponents `played` today (ex: `!stats diff`, `!stats diff "
                         "LigmaBalls12`, `!stats played`)."),
         "diff_commands": ["today", "diff"],
-        "opponent_commands": ["played", "opponents", "noobs", "enemy"]
+        "opponent_commands": ["played", "opp", "opponents", "noobs", "enemy"]
     },
     "Rate Difficulty": {
         "command": "rate",
@@ -30,18 +30,18 @@ COMMANDS = {
     },
     "Upgrade Locations": {
         "command": "upgrade",
-        "aliases": ["gold"],
+        "aliases": ["up", "gold"],
         "description": "Show map of upgrade locations"
-    },
-    "Chest Locations": {
-        "command": "chests",
-        "aliases": ["loot"],
-        "description": "Show map of chest locations"
     },
     "Hireable NPC Locations": {
         "command": "hire",
         "description": "Show map of hireable NPC locations"
-    } 
+    },
+    "Chest Locations": {
+        "command": "chest",
+        "aliases": ["chests", "loot"],
+        "description": "Show map of bunker and regular chest locations"
+    }
 }
 
 # Help
