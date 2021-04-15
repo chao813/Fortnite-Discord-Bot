@@ -181,7 +181,7 @@ async def replays_operations(ctx, *params):
         1. list
         2. log
     """
-    # TODO: add log and list functionality
+    # TODO: add list functionality
 
     logger = _get_logger_with_context(ctx)
     params = list(params)
@@ -212,7 +212,7 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, sil
             squad_players_eliminated_by_player += squad_player + ", "    
         if not silent:
             await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
-        await fortnite_tracker.get_player_stats(ctx, player_guid, silent=silent)
+        await player_search(ctx, player_guid, silent=silent)#fortnite_tracker.get_player_stats(ctx, player_guid, silent=silent)
 
 
 def _should_log_traceback(e):
