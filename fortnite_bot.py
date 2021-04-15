@@ -14,6 +14,7 @@ import clients.fortnite_api as fortnite_api
 import clients.fortnite_tracker as fortnite_tracker
 import clients.stats as stats
 import clients.interactions as interactions
+import clients.replays as replays
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -171,6 +172,45 @@ async def _stats_diff_today(ctx, usernames):
 async def _opponent_stats_today(ctx):
     """ Outputs the stats of the players faced today """
     await stats.send_opponent_stats_today(ctx)
+
+
+@bot.command(name=commands.REPLAYS_COMMAND, help="returns the replays stats based on parameters provided")
+async def replays_operations(ctx, *params):
+    """ Outputs replays stats based on the command provided.
+    Valid options are:
+        1. list
+        2. log
+    """
+    # TODO: add log and list functionality
+
+    logger = _get_logger_with_context(ctx)
+    params = list(params)
+
+    eliminated_me_dict, eliminated_by_me_dict = replays.process_replays()
+    if not eliminated_me_dict and not eliminated_by_me_dict:
+        await ctx.send("No replay file found")
+        return 
+
+    command = params.pop(0) if params else None
+    if command in commands.REPLAYS_LIST_COMMANDS:
+        logger.info("Outputting players that eliminated us and got eliminated by us")
+        #await _stats_diff_today(ctx, usernames)
+    elif command in commands.REPLAYS_LOG_COMMANDS:
+        await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=True)
+    else:
+        if not command:
+            await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=False)
+        else:
+            await ctx.send(f"Command provided '{command}' is not valid")
+
+
+async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent):
+    """ Create Discord Message for the stats of the opponents that eliminated us"""
+    for squad_player in eliminated_me_dict:
+        for guid in eliminated_me_dict[squad_player]:
+            if not silent:
+                await ctx.send(f"Eliminated {squad_player}")
+            await fortnite_tracker.get_player_stats(ctx, guid, silent=silent)
 
 
 def _should_log_traceback(e):

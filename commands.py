@@ -41,7 +41,16 @@ COMMANDS = {
         "command": "chest",
         "aliases": ["chests", "loot"],
         "description": "Show map of bunker and regular chest locations"
-    }
+    },
+    "Replays": {
+        "command": "replays",
+        "aliases": ["r"],
+        "description": ("Display stats of a player that eliminated squad player"
+                        "or `list` all eliminations associated to squad players "
+                        "(ex: !replays`, `!replays list`)."),
+        "list_commands": ["list"],
+        "log_commands": ["log, silent"],
+    },
 }
 
 # Help
@@ -83,3 +92,9 @@ CHESTS_ALIASES = COMMANDS["Chest Locations"]["aliases"]
 # Hireable NPC Locations
 HIRE_COMMAND = COMMANDS["Hireable NPC Locations"]["command"]
 HIRE_DESCRIPTION = COMMANDS["Hireable NPC Locations"]["description"]
+
+# Replays
+REPLAYS_COMMAND = COMMANDS["Replays"]["command"]
+REPLAYS_DESCRIPTION = COMMANDS["Replays"]["description"]
+REPLAYS_LIST_COMMANDS = COMMANDS["Replays"]["list_commands"]
+REPLAYS_LOG_COMMANDS = COMMANDS["Replays"]["log_commands"]
