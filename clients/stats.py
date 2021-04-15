@@ -40,18 +40,16 @@ def _breakdown_player_snapshots(player_snapshots):
         row_current = processed_snapshots["current"][mode]
         row_previous = processed_snapshots["previous"].get(mode, defaultdict(int))
 
-        # TODO: Revert the key name changes to Fortnite Tracker format
-
         stats[mode] = {
             "KD": {
                 "current": row_current.get("kd", 0),
                 "diff": _pad_symbol(f'{row_current.get("kd", 0) - row_previous.get("kd", 0):,.2f}')
             },
-            "Wins": {
+            "Top1": {
                 "current": row_current.get("wins", 0),
                 "diff": _pad_symbol(f'{row_current.get("wins", 0) - row_previous.get("wins", 0):,}')
             },
-            "Win Percentage": {
+            "WinRatio": {
                 "current": row_current.get("win_rate", 0),
                 "diff": _pad_symbol(f'{row_current.get("win_rate", 0) - row_previous.get("win_rate", 0):,.1f}')
             },
@@ -87,7 +85,7 @@ def _create_stats_diff_message(username, stats_breakdown):
 
 def _create_wins_diff_str(win_stats):
     """ Create stats string for output """
-    wins_str = f"{int(win_stats['Wins']['current'])} ({win_stats['Wins']['diff']})"
+    wins_str = f"{int(win_stats['Top1']['current'])} ({win_stats['Top1']['diff']})"
     matches_str = f"{int(win_stats['Matches']['current']):,} ({win_stats['Matches']['diff']}) played"
     return f"Wins: {wins_str} / {matches_str}"
 
@@ -96,8 +94,8 @@ def _create_stats_diff_str(mode, stats_breakdown):
     """ Create stats string for output """
     mode_stats = stats_breakdown[mode]
     return (f"KD: {mode_stats['KD']['current']} ({mode_stats['KD']['diff']}) • "
-            f"Wins: {int(mode_stats['Wins']['current'])} ({mode_stats['Wins']['diff']}) • "
-            f"Win Percentage: {mode_stats['Win Percentage']['current']:,.1f}% ({mode_stats['Win Percentage']['diff']}%) • "
+            f"Wins: {int(mode_stats['Top1']['current'])} ({mode_stats['Top1']['diff']}) • "
+            f"Win Percentage: {mode_stats['WinRatio']['current']:,.1f}% ({mode_stats['WinRatio']['diff']}%) • "
             f"Matches: {int(mode_stats['Matches']['current'])} ({mode_stats['Matches']['diff']}) • "
             f"TRN: {int(mode_stats['TRNRating']['current'])} ({mode_stats['TRNRating']['diff']})")
 
@@ -127,8 +125,8 @@ def _breakdown_opponent_average_stats(opponent_avg_stats):
 
         stats[mode] = {
             "KD": row["AVG(kd)"],
-            "Wins": row["AVG(wins)"],
-            "Win Percentage": row["AVG(win_rate)"],
+            "Top1": row["AVG(wins)"],
+            "WinRatio": row["AVG(win_rate)"],
             "Matches": row["AVG(games)"],
             "TRNRating": row["AVG(trn)"]
         }
@@ -151,8 +149,8 @@ def _create_opponent_stats_str(mode, opponent_stats_breakdown):
     """ Create stats string for output """
     mode_stats = opponent_stats_breakdown[mode]
     return (f"KD: {mode_stats['KD']:,.2f} • "
-            f"Wins: {int(mode_stats['Wins'])} • "
-            f"Win Percentage: {mode_stats['Win Percentage']:,.1f}% • "
+            f"Wins: {int(mode_stats['Top1'])} • "
+            f"Win Percentage: {mode_stats['WinRatio']:,.1f}% • "
             f"Matches: {int(mode_stats['Matches'])} • "
             f"TRN: {int(mode_stats['TRNRating'])} ")
 

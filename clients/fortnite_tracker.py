@@ -203,8 +203,8 @@ def _create_stats_str(mode, stats_breakdown):
     """ Create stats string for output """
     mode_stats = stats_breakdown[mode]
     return (f"KD: {mode_stats['KD']} • "
-            f"Wins: {int(mode_stats['Wins']):,} • "
-            f"Win Percentage: {mode_stats['Win Percentage']:,.1f}% • "
+            f"Wins: {int(mode_stats['Top1']):,} • "
+            f"Win Percentage: {mode_stats['WinRatio']:,.1f}% • "
             f"Matches: {int(mode_stats['Matches']):,} • "
             f"TRN: {int(mode_stats['TRNRating']):,}")
 
@@ -219,8 +219,8 @@ async def _track_player(username, stats_breakdown):
             "mode": mode,
             "kd": stats["KD"],
             "games": stats["Matches"],
-            "wins": stats["Wins"],
-            "win_rate": stats["Win Percentage"],
+            "wins": stats["Top1"],
+            "win_rate": stats["WinRatio"],
             "trn": stats["TRNRating"],
             "date_added": get_playing_session_date()
         })

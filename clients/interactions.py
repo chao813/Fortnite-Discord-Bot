@@ -21,7 +21,7 @@ async def send_commands_list(ctx):
     )
 
     for name, opt in COMMANDS.items():
-        keywords = ", ".join(opt["command"] + opt["aliases"])
+        keywords = ", ".join([opt["command"]] + opt.get("aliases", []))
         usage_desc = f"{opt['description']}\nUsage: {keywords}"
 
         message.add_field(
@@ -36,9 +36,9 @@ def send_track_question(member, before, after):
     """ Return True if the track question should be sent,
     otherwise False
     """
-    return not discord_utils.in_fortnite_role(member) or \
-           not discord_utils.joined_fortnite_voice_channel(before, after) or \
-           not discord_utils.is_first_joiner_of_channel(after)
+    return discord_utils.in_fortnite_role(member) and \
+           discord_utils.joined_fortnite_voice_channel(before, after) and \
+           discord_utils.is_first_joiner_of_channel(after)
 
 
 async def send_track_question_and_wait(bot, discord_name):
