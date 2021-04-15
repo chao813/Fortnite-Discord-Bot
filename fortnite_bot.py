@@ -206,11 +206,13 @@ async def replays_operations(ctx, *params):
 
 async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent):
     """ Create Discord Message for the stats of the opponents that eliminated us"""
-    for squad_player in eliminated_me_dict:
-        for guid in eliminated_me_dict[squad_player]:
-            if not silent:
-                await ctx.send(f"Eliminated {squad_player}")
-            await fortnite_tracker.get_player_stats(ctx, guid, silent=silent)
+    for player_guid in eliminated_me_dict:
+        squad_players_eliminated_by_player = ""
+        for squad_player in eliminated_me_dict[player_guid]:
+            squad_players_eliminated_by_player += squad_player + ", "    
+        if not silent:
+            await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
+        await fortnite_tracker.get_player_stats(ctx, player_guid, silent=silent)
 
 
 def _should_log_traceback(e):

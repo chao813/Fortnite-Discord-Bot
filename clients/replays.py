@@ -9,9 +9,9 @@ REPLAY_FILE_PATH = os.getenv("REPLAY_FILE_PATH")
 def eliminated_me(elim, eliminated_me_dict):
     if elim.eliminated.guid in SQUAD_PLAYERS_GUID_DICT and not elim.knocked:
         if elim.eliminated.guid in eliminated_me_dict:
-            eliminated_me_dict[SQUAD_PLAYERS_GUID_DICT[elim.eliminated.guid]].append(elim.eliminator.guid)
+            eliminated_me_dict[elim.eliminator.guid].append(SQUAD_PLAYERS_GUID_DICT[elim.eliminated.guid])
         else:
-            eliminated_me_dict[SQUAD_PLAYERS_GUID_DICT[elim.eliminated.guid]] = [elim.eliminator.guid]
+            eliminated_me_dict[elim.eliminator.guid] = [SQUAD_PLAYERS_GUID_DICT[elim.eliminated.guid]]
     return eliminated_me_dict
 
 def eliminated_by_me(elim, eliminated_by_me_dict):
