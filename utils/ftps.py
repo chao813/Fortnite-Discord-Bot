@@ -23,6 +23,7 @@ def download_file_from_ftp(ftps):
     list_of_replay_files = list(ftps.mlsd())
     list_of_replay_files.sort(key = lambda replay: replay[1]['modify'], reverse = True)
     latest_replay_file = list_of_replay_files[0][0]
+    print(latest_replay_file)
 
     saved_replay_file = open(DOWNLOADED_REPLAY_FILE_PATH + latest_replay_file, 'wb')
     ftps.retrbinary('RETR ' + latest_replay_file, saved_replay_file.write, 1024)
