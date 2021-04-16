@@ -34,17 +34,17 @@ def generate_eliminations_dict(eliminations, who_elim_who_func):
                     
 
 def process_replays(): 
-    #try:
-    connected_ftps = ftps.connect_to_ftp()
-    latest_replay_file = ftps.download_file_from_ftp(connected_ftps)
-    with Reader(latest_replay_file.name) as replay:
-        eliminated_me_dict = generate_eliminations_dict(replay.eliminations, eliminated_me)
-        eliminated_by_me_dict = generate_eliminations_dict(replay.eliminations, eliminated_by_me)
-        delete_replay_file(latest_replay_file.name)
-        return eliminated_me_dict, eliminated_by_me_dict
-    #except:
-    #    print("No replay file found")
-    #    return None, None
+    try:
+        connected_ftps = ftps.connect_to_ftp()
+        latest_replay_file = ftps.download_file_from_ftp(connected_ftps)
+        with Reader(latest_replay_file.name) as replay:
+            eliminated_me_dict = generate_eliminations_dict(replay.eliminations, eliminated_me)
+            eliminated_by_me_dict = generate_eliminations_dict(replay.eliminations, eliminated_by_me)
+            delete_replay_file(latest_replay_file.name)
+            return eliminated_me_dict, eliminated_by_me_dict
+    except:
+        print("No replay file found")
+        return None, None
 
 
 def delete_replay_file(replay_file):
