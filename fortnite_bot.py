@@ -65,7 +65,7 @@ async def help(ctx):
 
 @bot.command(name=commands.PLAYER_SEARCH_COMMAND, help=commands.PLAYER_SEARCH_DESCRIPTION,
              aliases=commands.PLAYER_SEARCH_ALIASES)
-async def player_search(ctx, *player_name, silent=False):
+async def player_search(ctx, *player_name, guid=False, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
 
@@ -87,14 +87,14 @@ async def player_search(ctx, *player_name, silent=False):
             return
 
         logger.warning(f"Falling back to Fortnite API for '{player_name}'..")
-        await fortnite_api.get_player_stats(ctx, player_name)
+        await fortnite_api.get_player_stats(ctx, player_name, guid)
 
 
 @bot.command(name=commands.TRACK_COMMAND, help=commands.TRACK_DESCRIPTION,
              aliases=commands.TRACK_ALIASES)
 async def track(ctx, silent=False):
     """ Tracks and logs the current stats of the squad players """
-    tasks = [player_search(ctx, username, silent=silent) for username in SQUAD_PLAYERS_LIST]
+    tasks = [player_search(ctx, username, guid=False, silent=silent) for username in SQUAD_PLAYERS_LIST]
     await asyncio.gather(*tasks)
 
 
@@ -162,7 +162,7 @@ async def _stats_diff_today(ctx, usernames):
     calculate_tasks = []
 
     for username in usernames:
-        update_tasks.append(player_search(ctx, username, silent=True))
+        update_tasks.append(player_search(ctx, username, guid=False ,silent=True))
         calculate_tasks.append(stats.send_stats_diff_today(ctx, username))
 
     await asyncio.gather(*update_tasks)
@@ -212,7 +212,7 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, sil
             squad_players_eliminated_by_player += squad_player + ", "    
         if not silent:
             await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
-        await player_search(ctx, player_guid, silent=silent)#fortnite_tracker.get_player_stats(ctx, player_guid, silent=silent)
+        await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
 def _should_log_traceback(e):
