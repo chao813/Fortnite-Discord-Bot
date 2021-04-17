@@ -1,9 +1,7 @@
-aiohttp~=3.7.4
-beautifulsoup4~=4.9.3
-discord.py~=1.6.0
 aiomysql~=0.0.21
-python-dotenv~=0.15.0
-bitstring==3.1.7
-dataclasses==0.8
-fortnite-replay-reader==0.3.0
-pycryptodome==3.10.1
+beautifulsoup4~=4.9.3
+bitstring~=3.1.7
+discord.py~=1.7.1
+fortnite-replay-reader~=0.3.0
+pycryptodome~=3.10.1
+python-dotenv~=0.17.0
