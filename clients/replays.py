@@ -9,7 +9,7 @@ SQUAD_PLAYERS_GUID_DICT = ast.literal_eval(str(os.getenv("SQUAD_PLAYERS_GUID_DIC
 REPLAY_FILE_PATH = os.getenv("REPLAY_FILE_PATH")
 
 def eliminated_me(elim, eliminated_me_dict):
-    if elim.eliminated.guid in SQUAD_PLAYERS_GUID_DICT and not elim.knocked:
+    if elim.eliminated.guid in SQUAD_PLAYERS_GUID_DICT and elim.eliminator.guid not in SQUAD_PLAYERS_GUID_DICT and not elim.knocked:
         if elim.eliminator.guid in eliminated_me_dict:
             eliminated_me_dict[elim.eliminator.guid].append(SQUAD_PLAYERS_GUID_DICT[elim.eliminated.guid])
         else:
