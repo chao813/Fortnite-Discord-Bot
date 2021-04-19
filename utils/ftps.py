@@ -38,7 +38,8 @@ def upload_file_to_ftp(ftps, file_name):
     try:
         new_file_name = "newest_replay.replay"
         with open(file_name, 'rb') as file:
-            ftps.cwd(FTPS_REPLAY_FILE_PATH)
+            print(FTPS_REPLAY_FILE_PATH)
+            ftps.cwd("/replays/")
             print('Uploading ' + file_name + "...")
             ftps.storbinary(f"STOR {new_file_name}", file)
             ftps.quit()
@@ -47,7 +48,7 @@ def upload_file_to_ftp(ftps, file_name):
             print('Upload finished.')
 
     except:
-        print("Error uploading file: " + file_name)
+       print("Error uploading file: " + file_name)
 
 
 def delete_file_from_ftp(ftps, latest_replay_file):
