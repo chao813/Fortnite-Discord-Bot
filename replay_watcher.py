@@ -10,6 +10,7 @@ from watchdog.events import FileSystemEventHandler
 import utils.ftps as ftps
 
 FORTNITE_REPLAY_FILE_PATH = os.getenv("FORTNITE_REPLAY_FILE_PATH")
+file_list = []
 
 class Watcher:
     DIRECTORY_TO_WATCH = FORTNITE_REPLAY_FILE_PATH
@@ -41,12 +42,18 @@ class Handler(FileSystemEventHandler):
         elif event.event_type == 'created':
             # Take any action here when a file is first created.
             print("Received created event - %s." % event.src_path)
+            file_list.append(event.src_path)
+            if len(file_list) > 2:
+                file_list.pop(0)
+            if len(file_list) == 2:
+                connected_ftps = ftps.connect_to_ftp()
+                ftps.upload_file_to_ftp(connected_ftps, file_list[0])
 
         elif event.event_type == 'modified':
             # Taken any action here when a file is modified.
             print("Received modified event - %s." % event.src_path)
-            connected_ftps = ftps.connect_to_ftp()
-            ftps.upload_file_to_ftp(connected_ftps, event.src_path)
+            #connected_ftps = ftps.connect_to_ftp()
+            #ftps.upload_file_to_ftp(connected_ftps, event.src_path)
             
 
 
