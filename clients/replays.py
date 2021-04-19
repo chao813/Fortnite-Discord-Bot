@@ -35,8 +35,8 @@ def generate_eliminations_dict(eliminations, who_elim_who_func):
 
 def process_replays(): 
     try:
-        connected_ftps = ftps.connect_to_ftp()
-        latest_replay_file = ftps.download_file_from_ftp(connected_ftps)
+        ftp_conn = ftps.connect()
+        latest_replay_file = ftps.download_file(ftp_conn)
         with Reader(latest_replay_file.name) as replay:
             eliminated_me_dict = generate_eliminations_dict(replay.eliminations, eliminated_me)
             eliminated_by_me_dict = generate_eliminations_dict(replay.eliminations, eliminated_by_me)
