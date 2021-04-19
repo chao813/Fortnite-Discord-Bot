@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-import time
+import time 
 import os
 
 from watchdog.observers import Observer
@@ -46,14 +46,13 @@ class Handler(FileSystemEventHandler):
             if len(file_list) > 2:
                 file_list.pop(0)
             if len(file_list) == 2:
-                connected_ftps = ftps.connect_to_ftp()
-                ftps.upload_file_to_ftp(connected_ftps, file_list[0])
+                ftp_conn = ftps.connect()
+                ftps.upload_file(ftp_conn, file_list[0])
 
         elif event.event_type == 'modified':
             # Taken any action here when a file is modified.
             print("Received modified event - %s." % event.src_path)
-            #connected_ftps = ftps.connect_to_ftp()
-            #ftps.upload_file_to_ftp(connected_ftps, event.src_path)
+
             
 
 

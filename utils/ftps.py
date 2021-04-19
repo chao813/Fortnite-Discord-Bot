@@ -10,14 +10,14 @@ FTPS_PASSWORD = os.getenv("FTPS_PASSWORD")
 FTPS_REPLAY_FILE_PATH = os.getenv("FTPS_REPLAY_FILE_PATH")
 DOWNLOADED_REPLAY_FILE_PATH = os.getenv("DOWNLOADED_REPLAY_FILE_PATH")
 
-def connect_to_ftp():
+def connect():
     ftps = FTP_TLS()
     ftps.connect(FTPS_HOST, FTPS_PORT)
     ftps.login(user=FTPS_USER, passwd = FTPS_PASSWORD)
     return ftps
 
 
-def download_file_from_ftp(ftps):
+def download_file(ftps):
     ftps.cwd(FTPS_REPLAY_FILE_PATH)
 
     list_of_replay_files = list(ftps.mlsd())
@@ -27,14 +27,14 @@ def download_file_from_ftp(ftps):
     saved_replay_file = open(DOWNLOADED_REPLAY_FILE_PATH + latest_replay_file, 'wb')
     ftps.retrbinary('RETR ' + latest_replay_file, saved_replay_file.write, 1024)
 
-    delete_file_from_ftp(ftps, latest_replay_file)
+    delete_file(ftps, latest_replay_file)
     ftps.quit()
     saved_replay_file.close()
 
     return saved_replay_file
 
 
-def upload_file_to_ftp(ftps, file_name):     
+def upload_file(ftps, file_name):     
     try:
         new_file_name = "newest_replay.replay"
         with open(file_name, 'rb') as file:
@@ -51,7 +51,7 @@ def upload_file_to_ftp(ftps, file_name):
        print("Error uploading file: " + file_name)
 
 
-def delete_file_from_ftp(ftps, latest_replay_file):
+def delete_file(ftps, latest_replay_file):
     ftps.delete(FTPS_REPLAY_FILE_PATH + latest_replay_file)
 
 
