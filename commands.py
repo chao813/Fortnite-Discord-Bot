@@ -51,6 +51,11 @@ COMMANDS = {
         "list_commands": ["list"],
         "log_commands": ["log, silent"],
     },
+    "Done":{
+        "command": "done",
+        "description": ("Create a empty file when done playing for the day to"
+                        "fix last games replay"),
+    }
 }
 
 # Help
@@ -98,3 +103,7 @@ REPLAYS_COMMAND = COMMANDS["Replays"]["command"]
 REPLAYS_DESCRIPTION = COMMANDS["Replays"]["description"]
 REPLAYS_LIST_COMMANDS = COMMANDS["Replays"]["list_commands"]
 REPLAYS_LOG_COMMANDS = COMMANDS["Replays"]["log_commands"]
+
+# Done
+DONE_COMMAND = COMMANDS["Done"]["command"]
+DONE_DESCRIPTION = COMMANDS["Done"]["description"]
