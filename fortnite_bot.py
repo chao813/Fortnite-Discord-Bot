@@ -15,6 +15,7 @@ import clients.fortnite_tracker as fortnite_tracker
 import clients.stats as stats
 import clients.interactions as interactions
 import clients.replays as replays
+import utils.ftps as ftps
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -111,6 +112,12 @@ async def upgrade(ctx):
     """ Show map of upgrade locations """
     await interactions.send_upgrade_locations(ctx)
 
+
+@bot.command(name=commands.DONE_COMMAND, help=commands.DONE_DESCRIPTION)
+async def done(ctx):
+    """ Upload a empty txt file to local replays folder """
+    message = ftps.create_empty_file()
+    await ctx.send(message)
 
 @bot.command(name=commands.HIRE_COMMAND, help=commands.HIRE_DESCRIPTION)
 async def hire(ctx):

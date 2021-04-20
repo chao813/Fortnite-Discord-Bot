@@ -1,5 +1,6 @@
 import os
 import glob
+from datetime import datetime
 from ftplib import FTP_TLS
 
 FTPS_HOST = os.getenv("FTPS_HOST")
@@ -9,6 +10,7 @@ FTPS_PASSWORD = os.getenv("FTPS_PASSWORD")
 
 FTPS_REPLAY_FILE_PATH = os.getenv("FTPS_REPLAY_FILE_PATH")
 DOWNLOADED_REPLAY_FILE_PATH = os.getenv("DOWNLOADED_REPLAY_FILE_PATH")
+FORTNITE_REPLAY_FILE_PATH = os.getenv("FORTNITE_REPLAY_FILE_PATH")
 
 def connect():
     ftps = FTP_TLS()
@@ -55,4 +57,14 @@ def delete_file(ftps, latest_replay_file):
     ftps.delete(FTPS_REPLAY_FILE_PATH + latest_replay_file)
 
 
-
+def create_empty_file():  
+    path = FORTNITE_REPLAY_FILE_PATH
+    today = datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
+    file_name = today + '_temp.txt'
+    
+    try:
+        with open(os.path.join(path, file_name), 'w') as fp:
+            return f"Successfully created file: {file_name}"
+    except Exception as e:
+        return f"Error creating file: {file_name}" 
+        print(str(e))
