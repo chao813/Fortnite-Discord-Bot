@@ -17,6 +17,10 @@ import clients.interactions as interactions
 import clients.replays as replays
 import utils.ftps as ftps
 
+from flask import Flask, jsonify, request
+from functools import partial
+from threading import Thread
+
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
@@ -26,12 +30,9 @@ SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
 
 bot = Bot(command_prefix="!")
 
-from flask import Flask, jsonify, request
-from functools import partial
-from threading import Thread
-
 eliminated_by_me_dict = None
 eliminated_me_dict = None
+
 app = Flask(__name__)
 
 @app.errorhandler(404)
@@ -41,10 +42,6 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'status': 'Internal Server Error',}), 500
-
-@app.route("/")
-def index():
-    return "This is an example app"
 
 @app.route("/api/healthcheck")
 def healthcheck():
@@ -74,7 +71,6 @@ def post():
     except Exception as e:
         resp = jsonify({"error": e}), 400
         return resp
-
 
 
 @bot.event
