@@ -69,6 +69,7 @@ def post():
                         "eliminated_me": eliminated_me_dict}})
         #replays(ctx, eliminated_me_dict)
         resp.status_code = 200
+        print(eliminated_me_dict)
         return resp
     except Exception as e:
         resp = jsonify({"error": e}), 400
@@ -306,11 +307,6 @@ def _get_logger_with_context(ctx=None, identifier=None):
 
 
 logger = configure_logger()
-#bot.run(DISCORD_BOT_TOKEN)
-
-async def replays(ctx, eliminated_me_dict):
-    await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=False)
-
 
 
 # Make a partial app.run to pass args/kwargs to it

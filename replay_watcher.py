@@ -13,6 +13,7 @@ import tkinter.messagebox as messagebox
 
 import clients.replays as replays
 import requests
+from threading import Thread
 
 FORTNITE_REPLAY_FILE_PATH = os.getenv("FORTNITE_REPLAY_FILE_PATH")
 file_list = []
@@ -34,8 +35,6 @@ def create_empty_file():
 textbox = None
 def insert_watcher_event_message(message):   
     global textbox
-    print(textbox)
-    print(message)
     textbox.insert(END, message)
 
 
@@ -47,8 +46,10 @@ class Watcher():
 
     def run(self):
         event_handler = Handler()
+        window = create_gui()
         self.observer.schedule(event_handler, self.DIRECTORY_TO_WATCH, recursive=True)
         self.observer.start()
+        window.mainloop()
         try:
             while True:
                 time.sleep(1)
@@ -65,27 +66,25 @@ class Handler(FileSystemEventHandler):
     def on_any_event(event):
         if event.is_directory:
             return None
-
+        
         elif event.event_type == 'created':
             # Take any action here when a file is first created.
             print(f"Received created event - {event.src_path}.")
+            insert_watcher_event_message(f"CREATED - {event.src_path}. \n")
             file_list.append(event.src_path)
             if len(file_list) > 2:
                 file_list.pop(0)
             if len(file_list) == 2:
-                # TODO: get rid of ftps, parse replay and generate body for POST
                 eliminated_me_dict, eliminated_by_me_dict = replays.process_replays(file_list[0])
                 body = {
                     "eliminated_me": eliminated_me_dict,
                     "eliminated_by_me": eliminated_by_me_dict
                 }
-                r = requests.post("http://localhost:5000/api/replay/elims", json = body)
- 
-            
+                r = requests.post("http://localhost:5000/api/replay/elims", json = body)           
         elif event.event_type == 'modified':
             # Taken any action here when a file is modified.
             print(f"Received modified event - {event.src_path}.")
-            message = f"Received modified event - {event.src_path}."
+            #insert_watcher_event_message(f"MODIFIED - {event.src_path}. \n")
 
 
 def create_gui():
@@ -99,9 +98,6 @@ def create_gui():
     scrollbar = Scrollbar(window)
     scrollbar.pack(side=RIGHT)
 
-    #for i in range(100):
-    #    textbox.insert(END, f"This is an example line {i}\n")
-
     textbox.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=textbox.yview)
 
@@ -112,21 +108,9 @@ def create_gui():
 
 def done_button_clicked():
     message = create_empty_file()
-    messagebox.showinfo('Done Playing', message)
+    #messagebox.showinfo('Done Playing', message)
 
 
 if __name__ == '__main__':
-    window = create_gui()
-    window.mainloop()
-    
-    w = Watcher() 
+     w = Watcher() 
     w.run()
-
-    #eliminated_me_dict, eliminated_by_me_dict = replays.process_replays("/Users/yuanchao/Documents/Discord-Bot/Fortnite-Tracker-Bot/replays/UnsavedReplay-2021.04.14-01.06.45.replay")
-    #body = {
-    #    "eliminated_me": eliminated_me_dict,
-    #    "eliminated_by_me": eliminated_by_me_dict
-    #}
-    #r = requests.post("http://localhost:5000/api/replay/elims", json = body)
-    #print(r.text)
-    
