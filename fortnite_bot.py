@@ -15,8 +15,11 @@ import clients.fortnite_tracker as fortnite_tracker
 import clients.stats as stats
 import clients.interactions as interactions
 import clients.replays as replays
-import utils.ftps as ftps
 
+from flask import Flask, jsonify, request
+from functools import partial
+from threading import Thread
+from error_handlers import initialize_error_handlers
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
@@ -26,6 +29,39 @@ LOG_FILE_PATH = os.getenv("LOG_FILE_PATH")
 SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
 
 bot = Bot(command_prefix="!")
+
+eliminated_by_me_dict = None
+eliminated_me_dict = None
+
+app = Flask(__name__)
+initialize_error_handlers(app)
+
+@app.route("/api/healthcheck")
+def healthcheck():
+    return jsonify({"status": "ok"}), 200
+
+@app.route("/api/replay/elims", methods=["POST"])
+def post():
+    """
+    POST request Body
+        {
+            "eliminated_by_me": {},
+            "eliminated_me": {}
+        }
+    """
+    try:
+        elim_data = request.get_json()
+        global eliminated_by_me_dict
+        global eliminated_me_dict
+        eliminated_by_me_dict = elim_data["eliminated_by_me"]
+        eliminated_me_dict = elim_data["eliminated_me"]
+        resp = jsonify({"status": "success", "data": {"eliminated_by_me": eliminated_by_me_dict, 
+                        "eliminated_me": eliminated_me_dict}})
+        resp.status_code = 200
+        return resp
+    except Exception as e:
+        resp = jsonify({"error": e}), 400
+        return resp
 
 
 @bot.event
@@ -113,12 +149,6 @@ async def upgrade(ctx):
     await interactions.send_upgrade_locations(ctx)
 
 
-@bot.command(name=commands.DONE_COMMAND, help=commands.DONE_DESCRIPTION)
-async def done(ctx):
-    """ Upload a empty txt file to local replays folder """
-    message = ftps.create_empty_file()
-    await ctx.send(message)
-
 @bot.command(name=commands.HIRE_COMMAND, help=commands.HIRE_DESCRIPTION)
 async def hire(ctx):
     """ Show map of hireable NPC locations """
@@ -193,7 +223,9 @@ async def replays_operations(ctx, *params):
     logger = _get_logger_with_context(ctx)
     params = list(params)
 
-    eliminated_me_dict, eliminated_by_me_dict = replays.process_replays()
+    global eliminated_by_me_dict
+    global eliminated_me_dict
+    #eliminated_me_dict, eliminated_by_me_dict = post() #listener for request.get_json(), should return two dicts
     if not eliminated_me_dict and not eliminated_by_me_dict:
         await ctx.send("No replay file found")
         return 
@@ -262,4 +294,12 @@ def _get_logger_with_context(ctx=None, identifier=None):
 
 
 logger = configure_logger()
+
+
+# Make a partial app.run to pass args/kwargs to it
+partial_run = partial(app.run, host="127.0.0.1", port=5000, debug=True, use_reloader=False)
+t = Thread(target=partial_run)
+t.start()
+
+# Run the bot
 bot.run(DISCORD_BOT_TOKEN)
