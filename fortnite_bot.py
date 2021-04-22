@@ -15,11 +15,11 @@ import clients.fortnite_tracker as fortnite_tracker
 import clients.stats as stats
 import clients.interactions as interactions
 import clients.replays as replays
-import utils.ftps as ftps
 
 from flask import Flask, jsonify, request
 from functools import partial
 from threading import Thread
+from error_handlers import initialize_error_handlers
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
@@ -34,14 +34,7 @@ eliminated_by_me_dict = None
 eliminated_me_dict = None
 
 app = Flask(__name__)
-
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'status': 'Not Found',}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'status': 'Internal Server Error',}), 500
+initialize_error_handlers(app)
 
 @app.route("/api/healthcheck")
 def healthcheck():
@@ -64,9 +57,7 @@ def post():
         eliminated_me_dict = elim_data["eliminated_me"]
         resp = jsonify({"status": "success", "data": {"eliminated_by_me": eliminated_by_me_dict, 
                         "eliminated_me": eliminated_me_dict}})
-        #replays(ctx, eliminated_me_dict)
         resp.status_code = 200
-        print(eliminated_me_dict)
         return resp
     except Exception as e:
         resp = jsonify({"error": e}), 400
