@@ -235,12 +235,14 @@ async def replays_operations(ctx, *params):
     command = params.pop(0) if params else None
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
         logger.info("Outputting players that got eliminated by us")
-        
-        #await _stats_diff_today(ctx, usernames)
+        output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=False))
     elif command in commands.REPLAYS_LOG_COMMANDS:
+        logger.info("Silent logging players that got eliminated by us and eliminated us")
         await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=True)
+        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=True)
     else:
         if not command:
+            logger.info("Outputting players that eliminated us")
             await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=False)
         else:
             await ctx.send(f"Command provided '{command}' is not valid")
@@ -255,6 +257,15 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, sil
         if not silent:
             await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
         await player_search(ctx, player_guid, guid=True, silent=silent)
+
+    
+async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent):
+    """ Create Discord Message for the stats of the opponents that got eliminated by us"""
+    for squad_player in eliminated_by_me_dict:
+        if not silent:
+            await ctx.send(f"{squad_player} eliminated")
+        for player_guid in eliminated_me_dict[squad_player]:
+            await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
 def _should_log_traceback(e):
