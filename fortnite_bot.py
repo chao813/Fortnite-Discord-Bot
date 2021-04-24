@@ -218,8 +218,9 @@ async def _opponent_stats_today(ctx):
 async def replays_operations(ctx, *params):
     """ Outputs replays stats based on the command provided.
     Valid options are:
-        1. list
-        2. log
+        1. killed/elims - show stats of players that we eliminated
+        2. log - log to db 
+        3. show stats of players that eliminated us
     """
     # TODO: add list functionality
 
