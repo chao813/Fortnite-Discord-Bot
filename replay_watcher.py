@@ -17,6 +17,7 @@ from threading import Thread
 
 FORTNITE_REPLAY_FILE_PATH = os.getenv("FORTNITE_REPLAY_FILE_PATH")
 FORTNITE_REPLAY_ELIM_ENDPOINT = os.getenv("FORTNITE_REPLAY_ELIM_ENDPOINT")
+FORTNITE_REPLAY_ELIM_API_TOKEN = os.getenv("FORTNITE_REPLAY_ELIM_API_TOKEN")
 file_list = []
 
 
@@ -83,7 +84,7 @@ class Handler(FileSystemEventHandler):
                     "eliminated_me": eliminated_me_dict,
                     "eliminated_by_me": eliminated_by_me_dict
                 }
-                r = requests.post(FORTNITE_REPLAY_ELIM_ENDPOINT, json = body)
+                r = requests.post(FORTNITE_REPLAY_ELIM_ENDPOINT, json = body, headers={"API-TOKEN":FORTNITE_REPLAY_ELIM_API_TOKEN})
                 if eliminated_me_dict is None and eliminated_by_me_dict is None and r.ok:
                     insert_watcher_event_message(f"POST - Empty dummy file. \n") 
                 else:
