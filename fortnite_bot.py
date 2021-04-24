@@ -222,7 +222,6 @@ async def replays_operations(ctx, *params):
         2. log - log to db 
         3. show stats of players that eliminated us
     """
-    # TODO: add list functionality
 
     logger = _get_logger_with_context(ctx)
     params = list(params)
