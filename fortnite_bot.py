@@ -21,6 +21,8 @@ from functools import partial
 from threading import Thread
 from error_handlers import initialize_error_handlers
 
+from auth import validate
+
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
@@ -36,11 +38,12 @@ eliminated_me_dict = None
 app = Flask(__name__)
 initialize_error_handlers(app)
 
-@app.route("/api/healthcheck")
+@app.route("/fortnite/healthcheck")
 def healthcheck():
     return jsonify({"status": "ok"}), 200
 
-@app.route("/api/replay/elims", methods=["POST"])
+@app.route("/fortnite/replay/elims", methods=["POST"])
+@validate
 def post():
     """
     POST request Body
@@ -215,29 +218,31 @@ async def _opponent_stats_today(ctx):
 async def replays_operations(ctx, *params):
     """ Outputs replays stats based on the command provided.
     Valid options are:
-        1. list
-        2. log
+        1. killed/elims - show stats of players that we eliminated
+        2. log - log to db 
+        3. show stats of players that eliminated us
     """
-    # TODO: add list functionality
 
     logger = _get_logger_with_context(ctx)
     params = list(params)
 
     global eliminated_by_me_dict
     global eliminated_me_dict
-    #eliminated_me_dict, eliminated_by_me_dict = post() #listener for request.get_json(), should return two dicts
     if not eliminated_me_dict and not eliminated_by_me_dict:
         await ctx.send("No replay file found")
         return 
 
     command = params.pop(0) if params else None
-    if command in commands.REPLAYS_LIST_COMMANDS:
-        logger.info("Outputting players that eliminated us and got eliminated by us")
-        #await _stats_diff_today(ctx, usernames)
+    if command in commands.REPLAYS_ELIMINATED_COMMANDS:
+        logger.info("Outputting players that got eliminated by us")
+        output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=False))
     elif command in commands.REPLAYS_LOG_COMMANDS:
+        logger.info("Silent logging players that got eliminated by us and eliminated us")
         await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=True)
+        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=True)
     else:
         if not command:
+            logger.info("Outputting players that eliminated us")
             await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=False)
         else:
             await ctx.send(f"Command provided '{command}' is not valid")
@@ -252,6 +257,15 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, sil
         if not silent:
             await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
         await player_search(ctx, player_guid, guid=True, silent=silent)
+
+    
+async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent):
+    """ Create Discord Message for the stats of the opponents that got eliminated by us"""
+    for squad_player in eliminated_by_me_dict:
+        if not silent:
+            await ctx.send(f"{squad_player} eliminated")
+        for player_guid in eliminated_me_dict[squad_player]:
+            await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
 def _should_log_traceback(e):

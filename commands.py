@@ -48,7 +48,7 @@ COMMANDS = {
         "description": ("Display stats of a player that eliminated squad player"
                         "or `list` all eliminations associated to squad players "
                         "(ex: !replays`, `!replays list`)."),
-        "list_commands": ["list"],
+        "eliminated_commands": ["elim, killed"],
         "log_commands": ["log, silent"],
     },
 }
@@ -96,5 +96,5 @@ HIRE_DESCRIPTION = COMMANDS["Hireable NPC Locations"]["description"]
 # Replays
 REPLAYS_COMMAND = COMMANDS["Replays"]["command"]
 REPLAYS_DESCRIPTION = COMMANDS["Replays"]["description"]
-REPLAYS_LIST_COMMANDS = COMMANDS["Replays"]["list_commands"]
+REPLAYS_ELIMINATED_COMMANDS = COMMANDS["Replays"]["eliminated_commands"]
 REPLAYS_LOG_COMMANDS = COMMANDS["Replays"]["log_commands"]

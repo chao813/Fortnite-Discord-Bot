@@ -17,7 +17,7 @@ def eliminated_me(elim, eliminated_me_dict):
 
 def eliminated_by_me(elim, eliminated_by_me_dict):
     if elim.eliminator.guid in SQUAD_PLAYERS_GUID_DICT and not elim.knocked:
-        if elim.eliminated.guid in eliminated_by_me_dict:
+        if SQUAD_PLAYERS_GUID_DICT[elim.eliminator.guid] in eliminated_by_me_dict:
             eliminated_by_me_dict[SQUAD_PLAYERS_GUID_DICT[elim.eliminator.guid]].append(elim.eliminated.guid)
         else:
             eliminated_by_me_dict[SQUAD_PLAYERS_GUID_DICT[elim.eliminator.guid]] = [elim.eliminated.guid]
