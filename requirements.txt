@@ -5,4 +5,5 @@ discord.py==1.7.1
 fortnite-replay-reader==0.3.0
 pycryptodome==3.10.1
 python-dotenv==0.17.0
-
+Flask
+requests
