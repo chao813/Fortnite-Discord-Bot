@@ -21,6 +21,8 @@ from functools import partial
 from threading import Thread
 from error_handlers import initialize_error_handlers
 
+from auth import validate
+
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
@@ -36,11 +38,12 @@ eliminated_me_dict = None
 app = Flask(__name__)
 initialize_error_handlers(app)
 
-@app.route("/api/healthcheck")
+@app.route("/fortnite/healthcheck")
 def healthcheck():
     return jsonify({"status": "ok"}), 200
 
-@app.route("/api/replay/elims", methods=["POST"])
+@app.route("/fortnite/replay/elims", methods=["POST"])
+@validate
 def post():
     """
     POST request Body
@@ -225,13 +228,12 @@ async def replays_operations(ctx, *params):
 
     global eliminated_by_me_dict
     global eliminated_me_dict
-    #eliminated_me_dict, eliminated_by_me_dict = post() #listener for request.get_json(), should return two dicts
     if not eliminated_me_dict and not eliminated_by_me_dict:
         await ctx.send("No replay file found")
         return 
 
     command = params.pop(0) if params else None
-    if command in commands.REPLAYS_LIST_COMMANDS:
+    if command in commands.REPLAYS_ELIMINATED_COMMANDS:
         logger.info("Outputting players that eliminated us and got eliminated by us")
         #await _stats_diff_today(ctx, usernames)
     elif command in commands.REPLAYS_LOG_COMMANDS:
