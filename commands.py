@@ -48,8 +48,8 @@ COMMANDS = {
         "description": ("Display stats of a player that eliminated squad player"
                         "or `list` all eliminations associated to squad players "
                         "(ex: !replays`, `!replays list`)."),
-        "eliminated_commands": ["elim, killed"],
-        "log_commands": ["log, silent"],
+        "eliminated_commands": ["elim", "elims", "kills", "killed"],
+        "log_commands": ["log", "silent"],
     },
 }
 
