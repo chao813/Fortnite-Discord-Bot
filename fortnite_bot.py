@@ -1,24 +1,24 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+
 import asyncio
 import os
-
-from discord.ext.commands import Bot
-
-import commands
-import clients.fortnite_api as fortnite_api
-import clients.fortnite_tracker as fortnite_tracker
-import clients.stats as stats
-import clients.interactions as interactions
-from auth import validate
-from logger import configure_logger, get_logger_with_context, log_command
-
-from flask import Flask, jsonify, request
-from werkzeug.exceptions import BadRequest
 from functools import partial
 from threading import Thread
+
+from discord.ext.commands import Bot
+from flask import Flask, jsonify, request
+from werkzeug.exceptions import BadRequest
+
+import clients.fortnite_api as fortnite_api
+import clients.fortnite_tracker as fortnite_tracker
+import clients.interactions as interactions
+import clients.stats as stats
+import commands
+from auth import validate
 from error_handlers import initialize_error_handlers
+from logger import initialize_request_logger, configure_logger, get_logger_with_context, log_command
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -30,6 +30,7 @@ bot = Bot(command_prefix="!")
 
 app = Flask(__name__)
 initialize_error_handlers(app)
+initialize_request_logger(app)
 
 eliminated_by_me_dict = None
 eliminated_me_dict = None
@@ -150,7 +151,7 @@ async def track(ctx, silent=False):
 @bot.command(name=commands.RATE_COMMAND, help=commands.RATE_DESCRIPTION,
              aliases=commands.RATE_ALIASES)
 @log_command
-async def rate(ctx, silent=False):
+async def rate(ctx):
     """ Rate how good opponents are today """
     await stats.rate_opponent_stats_today(ctx)
 
