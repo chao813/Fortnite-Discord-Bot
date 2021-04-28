@@ -103,7 +103,8 @@ async def on_voice_state_update(member, before, after):
     await track(ctx, silent)
 
 
-@bot.command(name=commands.HELP_COMMAND, help=commands.HELP_DESCRIPTION,
+@bot.command(name=commands.HELP_COMMAND,
+             help=commands.HELP_DESCRIPTION,
              aliases=commands.HELP_ALIASES)
 @log_command
 async def help(ctx):
@@ -111,7 +112,8 @@ async def help(ctx):
     await interactions.send_commands_list(ctx)
 
 
-@bot.command(name=commands.PLAYER_SEARCH_COMMAND, help=commands.PLAYER_SEARCH_DESCRIPTION,
+@bot.command(name=commands.PLAYER_SEARCH_COMMAND,
+             help=commands.PLAYER_SEARCH_DESCRIPTION,
              aliases=commands.PLAYER_SEARCH_ALIASES)
 @log_command
 async def player_search(ctx, *player_name, guid=False, silent=False):
@@ -139,7 +141,8 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
         await fortnite_api.get_player_stats(ctx, player_name, guid)
 
 
-@bot.command(name=commands.TRACK_COMMAND, help=commands.TRACK_DESCRIPTION,
+@bot.command(name=commands.TRACK_COMMAND,
+             help=commands.TRACK_DESCRIPTION,
              aliases=commands.TRACK_ALIASES)
 @log_command
 async def track(ctx, silent=False):
@@ -148,7 +151,8 @@ async def track(ctx, silent=False):
     await asyncio.gather(*tasks)
 
 
-@bot.command(name=commands.RATE_COMMAND, help=commands.RATE_DESCRIPTION,
+@bot.command(name=commands.RATE_COMMAND,
+             help=commands.RATE_DESCRIPTION,
              aliases=commands.RATE_ALIASES)
 @log_command
 async def rate(ctx):
@@ -156,7 +160,8 @@ async def rate(ctx):
     await stats.rate_opponent_stats_today(ctx)
 
 
-@bot.command(name=commands.UPGRADE_COMMAND, help=commands.UPGRADE_DESCRIPTION,
+@bot.command(name=commands.UPGRADE_COMMAND,
+             help=commands.UPGRADE_DESCRIPTION,
              aliases=commands.UPGRADE_ALIASES)
 @log_command
 async def upgrade(ctx):
@@ -164,14 +169,16 @@ async def upgrade(ctx):
     await interactions.send_upgrade_locations(ctx)
 
 
-@bot.command(name=commands.HIRE_COMMAND, help=commands.HIRE_DESCRIPTION)
+@bot.command(name=commands.HIRE_COMMAND,
+             help=commands.HIRE_DESCRIPTION)
 @log_command
 async def hire(ctx):
     """ Show map of hireable NPC locations """
     await interactions.send_hirable_npc_locations(ctx)
 
 
-@bot.command(name=commands.CHESTS_COMMAND, help=commands.CHESTS_DESCRIPTION,
+@bot.command(name=commands.CHESTS_COMMAND,
+             help=commands.CHESTS_DESCRIPTION,
              aliases=commands.CHESTS_ALIASES)
 @log_command
 async def chests(ctx):
@@ -179,7 +186,8 @@ async def chests(ctx):
     await interactions.send_chest_locations(ctx)
 
 
-@bot.command(name=commands.STATS_COMMAND, help=commands.STATS_DESCRIPTION)
+@bot.command(name=commands.STATS_COMMAND,
+             help=commands.STATS_DESCRIPTION)
 @log_command
 async def stats_operations(ctx, *params):
     """ Outputs stats based on the parameters provided.
@@ -229,7 +237,8 @@ async def _opponent_stats_today(ctx):
     await stats.send_opponent_stats_today(ctx)
 
 
-@bot.command(name=commands.REPLAYS_COMMAND, help=commands.REPLAYS_DESCRIPTION)
+@bot.command(name=commands.REPLAYS_COMMAND,
+             help=commands.REPLAYS_DESCRIPTION)
 @log_command
 async def replays_operations(ctx, *params):
     """ Outputs replays stats based on the command provided.

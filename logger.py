@@ -1,6 +1,7 @@
 import os
 import logging
 import uuid
+from functools import wraps
 from logging.handlers import TimedRotatingFileHandler
 
 from flask import request, g
@@ -41,12 +42,13 @@ def get_logger_with_context(ctx=None, identifier=None):
     return logging.LoggerAdapter(logging.getLogger(__name__), extra)
 
 
-def log_command(func):
-    def log_wrapper(*args, **kwargs):
+def log_command(coro):
+    @wraps(coro)
+    async def log_wrapper(*args, **kwargs):
         ctx = args[0]
         logger = get_logger_with_context(ctx)
-        logger.info(f"Command '!{ctx.invoked_with}' called")
-        return func(*args, **kwargs)
+        logger.info(f"Discord command called: '!{ctx.invoked_with}'")
+        return await coro(*args, **kwargs)
     return log_wrapper
 
 
