@@ -260,7 +260,7 @@ async def replays_operations(ctx, *params):
     command = params.pop(0) if params else None
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
         logger.info("Outputting players that got eliminated by us")
-        output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=False)
+        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=False)
     elif command in commands.REPLAYS_LOG_COMMANDS:
         logger.info("Silent logging players that got eliminated by us and eliminated us")
         await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=True)
@@ -289,7 +289,7 @@ async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dic
     for squad_player in eliminated_by_me_dict:
         if not silent:
             await ctx.send(f"{squad_player} eliminated")
-        for player_guid in eliminated_me_dict[squad_player]:
+        for player_guid in eliminated_by_me_dict[squad_player]:
             await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
