@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-import time 
+import time
 import os
 from datetime import datetime
 
@@ -9,33 +9,33 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from tkinter import *
-import tkinter.messagebox as messagebox
 
 import clients.replays as replays
 import requests
-from threading import Thread
+
 
 FORTNITE_REPLAY_FILE_PATH = os.getenv("FORTNITE_REPLAY_FILE_PATH")
 FORTNITE_REPLAY_ELIM_ENDPOINT = os.getenv("FORTNITE_REPLAY_ELIM_ENDPOINT")
 FORTNITE_REPLAY_ELIM_API_TOKEN = os.getenv("FORTNITE_REPLAY_ELIM_API_TOKEN")
+
 file_list = []
 
 
-def create_empty_file():  
+def create_empty_file():
     path = FORTNITE_REPLAY_FILE_PATH
     today = datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
     file_name = today + '_temp.txt'
-    
+
     try:
         with open(os.path.join(path, file_name), 'w') as fp:
             return f"Successfully created file: {file_name}"
     except Exception as e:
-        return f"Error creating file: {file_name}" 
+        return f"Error creating file: {file_name}"
         print(str(e))
 
 
 textbox = None
-def insert_watcher_event_message(message):   
+def insert_watcher_event_message(message):
     global textbox
     textbox.configure(state='normal')
     textbox.insert(END, message)
@@ -70,7 +70,7 @@ class Handler(FileSystemEventHandler):
         textbox.configure(state='disabled')
         if event.is_directory:
             return None
-        
+
         elif event.event_type == 'created':
             # Take any action here when a file is first created.
             print(f"Received created event - {event.src_path}.")
@@ -86,9 +86,9 @@ class Handler(FileSystemEventHandler):
                 }
                 r = requests.post(FORTNITE_REPLAY_ELIM_ENDPOINT, json = body, headers={"API-TOKEN":FORTNITE_REPLAY_ELIM_API_TOKEN})
                 if eliminated_me_dict is None and eliminated_by_me_dict is None and r.ok:
-                    insert_watcher_event_message(f"POST - Empty dummy file. \n") 
+                    insert_watcher_event_message(f"POST - Empty dummy file. \n")
                 else:
-                    insert_watcher_event_message(f"POST - {r.json()}. \n")      
+                    insert_watcher_event_message(f"POST - {r.json()}. \n")
         elif event.event_type == 'modified':
             # Taken any action here when a file is modified.
             print(f"Received modified event - {event.src_path}.")
@@ -99,7 +99,7 @@ def create_gui():
     window = Tk()
     window.title("Fortnite Replay Watcher")
     window.geometry('400x400')
-    
+
     label = Label(window, text="Log:", font=("TkDefaultFont", 16))
     label.place(anchor=NW, x=0,y=18)
 
@@ -130,5 +130,5 @@ def clear_button_clicked():
     textbox.configure(state='disabled')
 
 if __name__ == '__main__':
-    w = Watcher() 
+    w = Watcher()
     w.run()
