@@ -90,7 +90,9 @@ def _create_stats_message_params(title, desc, color_metric, username):
 
 def _calculate_skill_color_indicator(overall_kd):
     """ Return the skill color indicator """
-    if overall_kd >= 3:
+    if overall_kd >= 5:
+        return 0x000000
+    elif overall_kd >= 3:
         return 0xa600ff
     elif overall_kd < 3 and overall_kd >= 2:
         return 0xff0000
