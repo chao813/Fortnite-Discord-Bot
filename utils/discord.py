@@ -22,7 +22,6 @@ def in_fortnite_role(member):
     """ Return True if the member is part of the "fortnite"
     Discord role, otherwise False
     """
-    print("Ret: " + str(any(x.name == FORTNITE_DISCORD_ROLE for x in member.roles)))
     return any(x.name == FORTNITE_DISCORD_ROLE for x in member.roles)
 
 
@@ -36,8 +35,6 @@ def joined_fortnite_voice_channel(before_voice_state, after_voice_state):
     switched_channel = channel_before != channel_after
     joined_fortnite_channel = channel_after == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
 
-    print(f"Ret: {switched_channel and joined_fortnite_channel} ({switched_channel}) ({joined_fortnite_channel})")
-
     return switched_channel and joined_fortnite_channel
 
 
@@ -45,7 +42,6 @@ def is_first_joiner_of_channel(voice_state):
     """ Return True if the member is the only person in the
     voice channel, otherwise False
     """
-    print("Ret: " + str(len(voice_state.channel.members) == 1))
     return len(voice_state.channel.members) == 1
 
 
