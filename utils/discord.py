@@ -97,7 +97,7 @@ def _calculate_skill_color_indicator(overall_kd):
     elif overall_kd >= 1:
         return 0xffff00
     else:
-        return 0xffffff
+        return 0xfffffe
 
 
 def calculate_skill_rate_indicator(overall_kd):
