@@ -1,6 +1,8 @@
 # Fortnite Player Stats Discord Bot
 Retrieve player statistics in Fortnite Battle Royale
 
+> :warning: **Note: This project is a personal project and for research**
+
 ## Table of Content
 
 * [Features](#features)
