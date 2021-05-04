@@ -3,13 +3,12 @@ import json
 import os
 import re
 from collections import defaultdict
-from urllib.parse import quote
 from urllib.parse import unquote
 
 import aiohttp
-import discord
 from bs4 import BeautifulSoup
 
+import utils.discord as discord_utils
 from database.mysql import MySQL
 from exceptions import UserDoesNotExist, NoSeasonDataError
 from utils.dates import get_playing_session_date
@@ -189,37 +188,15 @@ def _find_mode_stat(stat_name, mode_stats):
 
 
 def _create_message(username, stats_breakdown):
-    """ Create Discord message """
-    embed=discord.Embed(
+    """ Create player stats Discord message """
+    return discord_utils.create_stats_message(
         title=f"Username: {username}",
-        url=ACCOUNT_PROFILE_URL.format(username=quote(username), season=_get_season_id()),
-        description=f"Wins: {int(stats_breakdown['all']['Top1'])} / {int(stats_breakdown['all']['Matches']):,} played",
-        color=_calculate_skill_color_indicator(stats_breakdown["all"]["KD"]))
-
-    for mode in MODES:
-        if mode not in stats_breakdown:
-            continue
-
-        if mode == "all":
-            name = "Overall"
-        else:
-            name = mode.capitalize()
-
-        embed.add_field(name=f"[{name}]", value=_create_stats_str(mode, stats_breakdown), inline=False)
-
-    return embed
-
-
-def _calculate_skill_color_indicator(overall_kd):
-    """ Return the skill color indicator """
-    if overall_kd >= 3:
-        return 0xa600ff
-    elif overall_kd < 3 and overall_kd >= 2:
-        return 0xff0000
-    elif overall_kd < 2 and overall_kd >= 1:
-        return 0xff8800
-    else:
-        return 0x17b532
+        desc=discord_utils.create_wins_str(stats_breakdown["all"]),
+        color_metric=stats_breakdown["all"]["KD"],
+        create_stats_func=_create_stats_str,
+        stats_breakdown=stats_breakdown,
+        username=username,
+    )
 
 
 def _create_stats_str(mode, stats_breakdown):

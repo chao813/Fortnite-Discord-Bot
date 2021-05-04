@@ -3,29 +3,75 @@ load_dotenv()
 
 
 import asyncio
-import logging
 import os
-from logging.handlers import TimedRotatingFileHandler
+from functools import partial
+from threading import Thread
 
 from discord.ext.commands import Bot
+from flask import Flask, jsonify, request
+from werkzeug.exceptions import BadRequest
 
-import commands
 import clients.fortnite_api as fortnite_api
 import clients.fortnite_tracker as fortnite_tracker
-import clients.stats as stats
 import clients.interactions as interactions
+import clients.stats as stats
+import commands
+from auth import validate
+from error_handlers import initialize_error_handlers
+from logger import initialize_request_logger, configure_logger, get_logger_with_context, log_command
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-FORTNITE_DISCORD_ROLE = os.getenv("FORTNITE_DISCORD_ROLE")
-FORTNITE_DISCORD_VOICE_CHANNEL_NAME = os.getenv("FORTNITE_DISCORD_VOICE_CHANNEL_NAME")
-
-LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
-LOG_FILE_PATH = os.getenv("LOG_FILE_PATH")
-
 SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
 
+logger = configure_logger()
+
 bot = Bot(command_prefix="!")
+
+app = Flask(__name__)
+initialize_error_handlers(app)
+initialize_request_logger(app)
+
+eliminated_by_me_dict = None
+eliminated_me_dict = None
+
+
+@app.route("/fortnite/healthcheck")
+def healthcheck():
+    """ API Healthcheck """
+    return jsonify({"status": "ok"}), 200
+
+
+@app.route("/fortnite/replay/elims", methods=["POST"])
+@validate
+def post():
+    """
+    POST request Body
+        {
+            "eliminated_by_me": {},
+            "eliminated_me": {}
+        }
+    """
+    try:
+        elim_data = request.get_json()
+    except BadRequest as e:
+        return jsonify({
+            "message": "Invalid JSON payload",
+            "error": e
+        }), 400
+
+    global eliminated_by_me_dict
+    global eliminated_me_dict
+    eliminated_by_me_dict = elim_data["eliminated_by_me"]
+    eliminated_me_dict = elim_data["eliminated_me"]
+
+    return jsonify({
+        "status": "success",
+        "data": {
+            "eliminated_by_me": eliminated_by_me_dict,
+            "eliminated_me": eliminated_me_dict
+        }
+    }), 200
 
 
 @bot.event
@@ -47,9 +93,7 @@ async def on_guild_join(guild):
 @bot.event
 async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
-    if not in_fortnite_role(member) or \
-       not has_joined_fortnite_voice_channel(before, after) or \
-       not is_first_joiner_of_channel(after):
+    if not interactions.send_track_question(member, before, after):
         return
 
     ctx, silent = await interactions.send_track_question_and_wait(
@@ -58,43 +102,21 @@ async def on_voice_state_update(member, before, after):
 
     await track(ctx, silent)
 
-def in_fortnite_role(member):
-    """ Return True if the member is part of the "fortnite"
-    Discord role, otherwise False
-    """
-    return any(x.name == FORTNITE_DISCORD_ROLE for x in member.roles)
 
-
-def has_joined_fortnite_voice_channel(before_voice_state, after_voice_state):
-    """ Return True if the channel joined is the Fortnite
-    voice chat
-    """
-    channel_before = before_voice_state.channel.name if before_voice_state.channel else None
-    channel_after = after_voice_state.channel.name if after_voice_state.channel else None
-
-    switched_channel = channel_before != channel_after
-    joined_fortnite_channel = channel_after == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
-
-    return switched_channel and joined_fortnite_channel
-
-
-def is_first_joiner_of_channel(voice_state):
-    """ Return True if the member is the only person in the
-    voice channel, otherwise False
-    """
-    return len(voice_state.channel.members) == 1
-
-
-@bot.command(name=commands.HELP_COMMAND, help=commands.HELP_DESCRIPTION,
+@bot.command(name=commands.HELP_COMMAND,
+             help=commands.HELP_DESCRIPTION,
              aliases=commands.HELP_ALIASES)
+@log_command
 async def help(ctx):
     """ Lists available commands """
-    interactions.send_commands_list(ctx)
+    await interactions.send_commands_list(ctx)
 
 
-@bot.command(name=commands.PLAYER_SEARCH_COMMAND, help=commands.PLAYER_SEARCH_DESCRIPTION,
+@bot.command(name=commands.PLAYER_SEARCH_COMMAND,
+             help=commands.PLAYER_SEARCH_DESCRIPTION,
              aliases=commands.PLAYER_SEARCH_ALIASES)
-async def player_search(ctx, *player_name, silent=False):
+@log_command
+async def player_search(ctx, *player_name, guid=False, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
 
@@ -109,32 +131,69 @@ async def player_search(ctx, *player_name, silent=False):
     try:
         await fortnite_tracker.get_player_stats(ctx, player_name, silent)
     except Exception as e:
-        logger.warning(e, exc_info=should_log_traceback(e))
+        logger.warning(e, exc_info=_should_log_traceback(e))
 
         # Fortnite API stats are unnecessary in silent mode
         if silent:
             return
 
         logger.warning(f"Falling back to Fortnite API for '{player_name}'..")
-        await fortnite_api.get_player_stats(ctx, player_name)
+        await fortnite_api.get_player_stats(ctx, player_name, guid)
 
 
-@bot.command(name=commands.TRACK_COMMAND, help=commands.TRACK_DESCRIPTION,
+@bot.command(name=commands.TRACK_COMMAND,
+             help=commands.TRACK_DESCRIPTION,
              aliases=commands.TRACK_ALIASES)
+@log_command
 async def track(ctx, silent=False):
     """ Tracks and logs the current stats of the squad players """
-    tasks = [player_search(ctx, username, silent=silent) for username in SQUAD_PLAYERS_LIST]
+    tasks = [player_search(ctx, username, guid=False, silent=silent) for username in SQUAD_PLAYERS_LIST]
     await asyncio.gather(*tasks)
 
 
-@bot.command(name=commands.STATS_COMMAND, help="returns the stats based on parameters provided")
+@bot.command(name=commands.RATE_COMMAND,
+             help=commands.RATE_DESCRIPTION,
+             aliases=commands.RATE_ALIASES)
+@log_command
+async def rate(ctx):
+    """ Rate how good opponents are today """
+    await stats.rate_opponent_stats_today(ctx)
+
+
+@bot.command(name=commands.UPGRADE_COMMAND,
+             help=commands.UPGRADE_DESCRIPTION,
+             aliases=commands.UPGRADE_ALIASES)
+@log_command
+async def upgrade(ctx):
+    """ Show map of upgrade locations """
+    await interactions.send_upgrade_locations(ctx)
+
+
+@bot.command(name=commands.HIRE_COMMAND,
+             help=commands.HIRE_DESCRIPTION)
+@log_command
+async def hire(ctx):
+    """ Show map of hireable NPC locations """
+    await interactions.send_hirable_npc_locations(ctx)
+
+
+@bot.command(name=commands.CHESTS_COMMAND,
+             help=commands.CHESTS_DESCRIPTION,
+             aliases=commands.CHESTS_ALIASES)
+@log_command
+async def chests(ctx):
+    """ Show map of bunker and regular chest locations """
+    await interactions.send_chest_locations(ctx)
+
+
+@bot.command(name=commands.STATS_COMMAND,
+             help=commands.STATS_DESCRIPTION)
+@log_command
 async def stats_operations(ctx, *params):
     """ Outputs stats based on the parameters provided.
-    Valid parameters are:
-        1. today
-            - Stats diff of the squad players today
-        2. played, opponents, noobs, enemy
-            - Stats of the players faced today
+    Valid options are:
+        1. Stats diff of the squad players today
+        2. Average stats of the players faced today
     """
     logger = get_logger_with_context(ctx)
     params = list(params)
@@ -150,15 +209,15 @@ async def stats_operations(ctx, *params):
 
     if command in commands.STATS_DIFF_COMMANDS:
         logger.info(f"Querying stats diff today for {', '.join(usernames)}")
-        await stats_diff_today(ctx, usernames)
+        await _stats_diff_today(ctx, usernames)
     elif command in commands.STATS_OPPONENTS_COMMANDS:
         logger.info("Querying opponent stats today")
-        await opponent_stats_today(ctx)
+        await _opponent_stats_today(ctx)
     else:
         await ctx.send(f"Command provided '{command}' is not valid")
 
 
-async def stats_diff_today(ctx, usernames):
+async def _stats_diff_today(ctx, usernames):
     """ Outputs the stats diff of the squad players today.
     Perform a silent update of the player stats in the database first
     """
@@ -166,21 +225,75 @@ async def stats_diff_today(ctx, usernames):
     calculate_tasks = []
 
     for username in usernames:
-        update_tasks.append(player_search(ctx, username, silent=True))
-        calculate_tasks.append(stats.get_stats_diff_today(ctx, username))
+        update_tasks.append(player_search(ctx, username, guid=False ,silent=True))
+        calculate_tasks.append(stats.send_stats_diff_today(ctx, username))
 
     await asyncio.gather(*update_tasks)
     await asyncio.gather(*calculate_tasks)
 
 
-async def opponent_stats_today(ctx):
+async def _opponent_stats_today(ctx):
     """ Outputs the stats of the players faced today """
-    # TODO: Wrap this up
-    res = await stats.get_opponent_stats_today()
-    print(res)
+    await stats.send_opponent_stats_today(ctx)
 
 
-def should_log_traceback(e):
+@bot.command(name=commands.REPLAYS_COMMAND,
+             help=commands.REPLAYS_DESCRIPTION)
+@log_command
+async def replays_operations(ctx, *params):
+    """ Outputs replays stats based on the command provided.
+    Valid options are:
+        1. killed/elims - show stats of players that we eliminated
+        2. log - log to db
+        3. show stats of players that eliminated us
+    """
+
+    logger = get_logger_with_context(ctx)
+    params = list(params)
+
+    global eliminated_by_me_dict
+    global eliminated_me_dict
+    if not eliminated_me_dict and not eliminated_by_me_dict:
+        await ctx.send("No replay file found")
+        return
+
+    command = params.pop(0) if params else None
+    if command in commands.REPLAYS_ELIMINATED_COMMANDS:
+        logger.info("Outputting players that got eliminated by us")
+        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=False)
+    elif command in commands.REPLAYS_LOG_COMMANDS:
+        logger.info("Silent logging players that got eliminated by us and eliminated us")
+        await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=True)
+        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=True)
+    else:
+        if not command:
+            logger.info("Outputting players that eliminated us")
+            await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=False)
+        else:
+            await ctx.send(f"Command provided '{command}' is not valid")
+
+
+async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent):
+    """ Create Discord Message for the stats of the opponents that eliminated us"""
+    for player_guid in eliminated_me_dict:
+        squad_players_eliminated_by_player = ""
+        for squad_player in eliminated_me_dict[player_guid]:
+            squad_players_eliminated_by_player += squad_player + ", "
+        if not silent:
+            await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
+        await player_search(ctx, player_guid, guid=True, silent=silent)
+
+
+async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent):
+    """ Create Discord Message for the stats of the opponents that got eliminated by us"""
+    for squad_player in eliminated_by_me_dict:
+        if not silent:
+            await ctx.send(f"{squad_player} eliminated")
+        for player_guid in eliminated_by_me_dict[squad_player]:
+            await player_search(ctx, player_guid, guid=True, silent=silent)
+
+
+def _should_log_traceback(e):
     """ Returns True if a traceback should be logged,
     otherwise False
     """
@@ -188,36 +301,10 @@ def should_log_traceback(e):
     return e.__class__.__name__ not in ("UserDoesNotExist", "NoSeasonDataError")
 
 
-def configure_logger():
-    """ Abstract logger setup """
-    logging.root.setLevel(LOGGER_LEVEL)
+# Make a partial app.run to pass args/kwargs to it
+partial_run = partial(app.run, host="127.0.0.1", port=5000, debug=True, use_reloader=False)
+t = Thread(target=partial_run)
+t.start()
 
-    file_handler = TimedRotatingFileHandler(LOG_FILE_PATH, when="W0", interval=7, backupCount=4)
-    stream_handler = logging.StreamHandler()
-
-    formatter = logging.Formatter("[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] [%(identifier)s] %(message)s")
-    file_handler.setFormatter(formatter)
-    stream_handler.setFormatter(formatter)
-
-    logger = logging.getLogger(__name__)
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-
-    return logger
-
-
-def get_logger_with_context(ctx=None, identifier=None):
-    """ Returns a LoggerAdapter with context """
-    if not identifier:
-        server = ctx.guild.name
-        author = ctx.author
-        identifier = server + ":" + str(author)
-
-    extra = {
-        "identifier" : identifier
-    }
-    return logging.LoggerAdapter(logging.getLogger(__name__), extra)
-
-
-logger = configure_logger()
+# Run the bot
 bot.run(DISCORD_BOT_TOKEN)

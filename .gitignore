@@ -138,3 +138,6 @@ dmypy.json
 
 # OLD test files
 test 
+
+# Replay files
+replays

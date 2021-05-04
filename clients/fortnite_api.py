@@ -17,21 +17,25 @@ TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first
 TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
 
 
-async def get_player_stats(ctx, player_name):
+async def get_player_stats(ctx, player_name, guid):
     async with aiohttp.ClientSession() as session:
-        result = await _get_player_account_id(session, player_name, "")
+        account_id = player_name
+        if not guid:
+            result = await _get_player_account_id(session, player_name, "")
 
-        if not result["result"]:
-            await ctx.send("No Epic username found")
-            return
+            if not result["result"]:
+                await ctx.send("No Epic username found")
+                return
 
-        stats = await _get_player_stats(session, result["account_id"])
+            account_id = result["account_id"]
+
+        stats = await _get_player_stats(session, account_id)
         if stats["global_stats"] is None:
             # Try psn/xbl as player's platform
             result = await _get_player_account_id(session, player_name, "psn")
-            stats = await _get_player_stats(session, result["account_id"])
+            stats = await _get_player_stats(session, account_id)
             if stats["global_stats"] is None:
-                await ctx.send("{player_name}'s statistics are hidden".format(player_name=player_name))
+                await ctx.send("{player_name}'s statistics are hidden".format(player_name=stats["name"]))
                 return
 
         username = stats["name"]
