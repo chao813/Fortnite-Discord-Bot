@@ -21,8 +21,36 @@ COMMANDS = {
                         "of the opponents `played` today (ex: `!stats diff`, `!stats diff "
                         "LigmaBalls12`, `!stats played`)."),
         "diff_commands": ["today", "diff"],
-        "opponent_commands": ["played", "opponents", "noobs", "enemy"]
-    }
+        "opponent_commands": ["played", "opp", "opponents", "noobs", "enemy"]
+    },
+    "Rate Difficulty": {
+        "command": "rate",
+        "aliases": ["gg"],
+        "description": "Rate how good opponents are today"
+    },
+    "Upgrade Locations": {
+        "command": "upgrade",
+        "aliases": ["up", "gold"],
+        "description": "Show map of upgrade locations"
+    },
+    "Hireable NPC Locations": {
+        "command": "hire",
+        "description": "Show map of hireable NPC locations"
+    },
+    "Chest Locations": {
+        "command": "chest",
+        "aliases": ["chests", "loot"],
+        "description": "Show map of bunker and regular chest locations"
+    },
+    "Replays": {
+        "command": "replays",
+        "aliases": ["r"],
+        "description": ("Display stats of a player that eliminated squad player"
+                        "or `list` all eliminations associated to squad players "
+                        "(ex: !replays`, `!replays list`)."),
+        "eliminated_commands": ["elim", "elims", "kills", "killed"],
+        "log_commands": ["log", "silent"],
+    },
 }
 
 # Help
@@ -45,3 +73,28 @@ STATS_COMMAND = COMMANDS["Stats"]["command"]
 STATS_DESCRIPTION = COMMANDS["Stats"]["description"]
 STATS_DIFF_COMMANDS = COMMANDS["Stats"]["diff_commands"]
 STATS_OPPONENTS_COMMANDS = COMMANDS["Stats"]["opponent_commands"]
+
+# Rate Difficulty
+RATE_COMMAND = COMMANDS["Rate Difficulty"]["command"]
+RATE_DESCRIPTION = COMMANDS["Rate Difficulty"]["description"]
+RATE_ALIASES = COMMANDS["Rate Difficulty"]["aliases"]
+
+# Upgrade Locations
+UPGRADE_COMMAND = COMMANDS["Upgrade Locations"]["command"]
+UPGRADE_DESCRIPTION = COMMANDS["Upgrade Locations"]["description"]
+UPGRADE_ALIASES = COMMANDS["Upgrade Locations"]["aliases"]
+
+# Chest Locations
+CHESTS_COMMAND = COMMANDS["Chest Locations"]["command"]
+CHESTS_DESCRIPTION = COMMANDS["Chest Locations"]["description"]
+CHESTS_ALIASES = COMMANDS["Chest Locations"]["aliases"]
+
+# Hireable NPC Locations
+HIRE_COMMAND = COMMANDS["Hireable NPC Locations"]["command"]
+HIRE_DESCRIPTION = COMMANDS["Hireable NPC Locations"]["description"]
+
+# Replays
+REPLAYS_COMMAND = COMMANDS["Replays"]["command"]
+REPLAYS_DESCRIPTION = COMMANDS["Replays"]["description"]
+REPLAYS_ELIMINATED_COMMANDS = COMMANDS["Replays"]["eliminated_commands"]
+REPLAYS_LOG_COMMANDS = COMMANDS["Replays"]["log_commands"]
