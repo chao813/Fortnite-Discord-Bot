@@ -257,40 +257,68 @@ async def replays_operations(ctx, *params):
         await ctx.send("No replay file found")
         return
 
-    command = params.pop(0) if params else None
+    command = None
+    username = None
+    if len(params) == 2:
+        username = params.pop(1)
+        command = params.pop(0) 
+        if username not in SQUAD_PLAYERS_LIST:
+            await ctx.send(f"{username} provided is not a valid squad player")
+    elif len(params) == 1:
+        if params[0] in SQUAD_PLAYERS_LIST:
+            username = params.pop(0)
+        else:
+            command = params.pop(0)
+    else:
+        await ctx.send(f"Command provided '{command}' is not valid")
+
+
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
         logger.info("Outputting players that got eliminated by us")
-        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=False)
+        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=False)
     elif command in commands.REPLAYS_LOG_COMMANDS:
         logger.info("Silent logging players that got eliminated by us and eliminated us")
-        await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=True)
-        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent=True)
+        await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=True)
+        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=True)
     else:
         if not command:
             logger.info("Outputting players that eliminated us")
-            await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent=False)
+            await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=False)
         else:
             await ctx.send(f"Command provided '{command}' is not valid")
 
 
-async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, silent):
+async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent):
     """ Create Discord Message for the stats of the opponents that eliminated us"""
-    for player_guid in eliminated_me_dict:
-        squad_players_eliminated_by_player = ""
-        for squad_player in eliminated_me_dict[player_guid]:
-            squad_players_eliminated_by_player += squad_player + ", "
-        if not silent:
-            await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
-        await player_search(ctx, player_guid, guid=True, silent=silent)
-
-
-async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, silent):
-    """ Create Discord Message for the stats of the opponents that got eliminated by us"""
-    for squad_player in eliminated_by_me_dict:
-        if not silent:
-            await ctx.send(f"{squad_player} eliminated")
-        for player_guid in eliminated_by_me_dict[squad_player]:
+    if username:
+        for player_guid in eliminated_me_dict:
+            if username in eliminated_me_dict[player_guid]:
+                if not silent:
+                    await ctx.send(f"Eliminated {username}")
+                await player_search(ctx, player_guid, guid=True, silent=silent)
+    else:
+        for player_guid in eliminated_me_dict:
+            squad_players_eliminated_by_player = ""
+            for squad_player in eliminated_me_dict[player_guid]:
+                squad_players_eliminated_by_player += squad_player + ", "
+            if not silent:
+                await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
             await player_search(ctx, player_guid, guid=True, silent=silent)
+
+
+async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent):
+    """ Create Discord Message for the stats of the opponents that got eliminated by us"""
+    if username:
+        if not silent:
+            await ctx.send(f"{username} eliminated")
+        for player_guid in eliminated_by_me_dict[username]:
+            await player_search(ctx, player_guid, guid=True, silent=silent)
+    else:
+        for squad_player in eliminated_by_me_dict:
+            if not silent:
+                await ctx.send(f"{squad_player} eliminated")
+            for player_guid in eliminated_by_me_dict[squad_player]:
+                await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
 def _should_log_traceback(e):
