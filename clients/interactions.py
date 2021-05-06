@@ -32,6 +32,14 @@ async def send_commands_list(ctx):
     await ctx.send(embed=message)
 
 
+def update_current_squad_player_list(member, before, after):
+    """ Return True if the track question should be sent,
+    otherwise False
+    """
+    return discord_utils.in_fortnite_role(member) and \
+           discord_utils.joined_fortnite_voice_channel(before, after) 
+
+
 def send_track_question(member, before, after):
     """ Return True if the track question should be sent,
     otherwise False
