@@ -271,14 +271,11 @@ async def replays_operations(ctx, *params):
         if username not in SQUAD_PLAYERS_LIST:
             await ctx.send(f"{username} provided is not a valid squad player")
             return
-    elif len(params) == 1:
+    if len(params) == 1:
         if params[0] in SQUAD_PLAYERS_LIST:
             username = params.pop(0)
         else:
             command = params.pop(0)
-    else:
-        await ctx.send(f"Command provided '{command}' is not valid")
-        return
 
 
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
