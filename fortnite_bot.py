@@ -264,6 +264,7 @@ async def replays_operations(ctx, *params):
         command = params.pop(0) 
         if username not in SQUAD_PLAYERS_LIST:
             await ctx.send(f"{username} provided is not a valid squad player")
+            return
     elif len(params) == 1:
         if params[0] in SQUAD_PLAYERS_LIST:
             username = params.pop(0)
@@ -271,6 +272,7 @@ async def replays_operations(ctx, *params):
             command = params.pop(0)
     else:
         await ctx.send(f"Command provided '{command}' is not valid")
+        return
 
 
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
@@ -290,17 +292,18 @@ async def replays_operations(ctx, *params):
 
 async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent):
     """ Create Discord Message for the stats of the opponents that eliminated us"""
-    if username:
-        for player_guid in eliminated_me_dict:
-            if username in eliminated_me_dict[player_guid]:
-                if not silent:
-                    await ctx.send(f"Eliminated {username}")
-                await player_search(ctx, player_guid, guid=True, silent=silent)
-    else:
-        for player_guid in eliminated_me_dict:
-            squad_players_eliminated_by_player = ""
+    for player_guid in eliminated_me_dict:
+        squad_players_eliminated_by_player = ""
+        send_output = False
+        if username == None:
             for squad_player in eliminated_me_dict[player_guid]:
                 squad_players_eliminated_by_player += squad_player + ", "
+            send_output = True
+        if username in eliminated_me_dict[player_guid]:
+            squad_players_eliminated_by_player = username + ", "
+            send_output = True
+
+        if send_output:
             if not silent:
                 await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
             await player_search(ctx, player_guid, guid=True, silent=silent)
@@ -309,16 +312,13 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, use
 async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent):
     """ Create Discord Message for the stats of the opponents that got eliminated by us"""
     if username:
+        eliminated_by_me_dict = {username: eliminated_by_me_dict[username]}
+    for squad_player in eliminated_by_me_dict:
         if not silent:
-            await ctx.send(f"{username} eliminated")
-        for player_guid in eliminated_by_me_dict[username]:
+            await ctx.send(f"{squad_player} eliminated")
+        for player_guid in eliminated_by_me_dict[squad_player]:
             await player_search(ctx, player_guid, guid=True, silent=silent)
-    else:
-        for squad_player in eliminated_by_me_dict:
-            if not silent:
-                await ctx.send(f"{squad_player} eliminated")
-            for player_guid in eliminated_by_me_dict[squad_player]:
-                await player_search(ctx, player_guid, guid=True, silent=silent)
+
 
 
 def _should_log_traceback(e):
