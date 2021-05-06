@@ -35,7 +35,8 @@ async def get_player_stats(ctx, player_name, guid):
             result = await _get_player_account_id(session, player_name, "psn")
             stats = await _get_player_stats(session, account_id)
             if stats["global_stats"] is None:
-                await ctx.send("{player_name}'s statistics are hidden".format(player_name=stats["name"]))
+                stats_hidden_embed=discord.Embed(title="{player_name}'s statistics are hidden".format(player_name=stats["name"]))
+                await ctx.send(embed=stats_hidden_embed)
                 return
 
         username = stats["name"]
