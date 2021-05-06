@@ -140,4 +140,4 @@ dmypy.json
 test 
 
 # Replay files
-replays
+replays/
