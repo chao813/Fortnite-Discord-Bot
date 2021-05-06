@@ -22,7 +22,7 @@ from logger import initialize_request_logger, configure_logger, get_logger_with_
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
+SQUAD_PLAYERS_LIST = [] #os.getenv("SQUAD_PLAYERS_LIST").split(",")
 
 logger = configure_logger()
 
@@ -93,6 +93,12 @@ async def on_guild_join(guild):
 @bot.event
 async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
+    if interactions.update_current_squad_player_list(member, before, after):
+        fortnite_role_users_dict = {"Dez": "stoobish", "K-lin": "kwklin", "nshoes":"chunchunmaru-_", "langyeye":"wolfgrandpa"}
+        if member.display_name in fortnite_role_users_dict:
+            if fortnite_role_users_dict[member.display_name] not in SQUAD_PLAYERS_LIST:
+                SQUAD_PLAYERS_LIST.append(fortnite_role_users_dict[member.display_name])
+
     if not interactions.send_track_question(member, before, after):
         return
 
