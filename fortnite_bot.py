@@ -23,7 +23,7 @@ from logger import initialize_request_logger, configure_logger, get_logger_with_
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-SQUAD_PLAYERS_LIST = [] #os.getenv("SQUAD_PLAYERS_LIST").split(",")
+SQUAD_PLAYERS_LIST = [] 
 FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
 
 logger = configure_logger()
@@ -95,7 +95,7 @@ async def on_guild_join(guild):
 @bot.event
 async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
-    if interactions.update_current_squad_player_list(member, before, after):
+    if interactions.send_player_to_squad_player_list(member, before, after):
         if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
             if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in SQUAD_PLAYERS_LIST:
                 SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
@@ -294,8 +294,12 @@ async def replays_operations(ctx, *params):
         if not command:
             logger.info("Outputting players that eliminated us")
             await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=False)
-        else:
+        elif command != commands.REPLAYS_COMMAND and \
+                command not in commands.REPLAYS_ELIMINATED_COMMANDS and \
+                command not in commands.REPLAYS_LOG_COMMANDS:
             await ctx.send(f"Command provided '{command}' is not valid")
+        else:
+            await ctx.send(f"{command} left the channel")
 
 
 async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent):

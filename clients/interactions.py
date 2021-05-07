@@ -22,7 +22,8 @@ async def send_commands_list(ctx):
 
     for name, opt in COMMANDS.items():
         keywords = ", ".join([opt["command"]] + opt.get("aliases", []))
-        usage_desc = f"{opt['description']}\nUsage: {keywords}"
+        examples = opt.get("examples", "")
+        usage_desc = f"{opt['description']}\nUsage: {keywords}\nExample: {examples}"
 
         message.add_field(
             name=name,
@@ -32,8 +33,8 @@ async def send_commands_list(ctx):
     await ctx.send(embed=message)
 
 
-def update_current_squad_player_list(member, before, after):
-    """ Return True if the track question should be sent,
+def send_player_to_squad_player_list(member, before, after):
+    """ Return True if player should be added to squad player list,
     otherwise False
     """
     return discord_utils.in_fortnite_role(member) and \
