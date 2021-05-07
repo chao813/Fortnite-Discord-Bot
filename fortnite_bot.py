@@ -23,7 +23,7 @@ from logger import initialize_request_logger, configure_logger, get_logger_with_
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-SQUAD_PLAYERS_LIST = [] #os.getenv("SQUAD_PLAYERS_LIST").split(",")
+SQUAD_PLAYERS_LIST = [] 
 FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
 
 logger = configure_logger()
