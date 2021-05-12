@@ -33,7 +33,7 @@ async def send_commands_list(ctx):
     await ctx.send(embed=message)
 
 
-def send_player_to_squad_player_list(member, before, after):
+def should_add_player_to_squad_player_session_list(member, before, after):
     """ Return True if player should be added to squad player list,
     otherwise False
     """

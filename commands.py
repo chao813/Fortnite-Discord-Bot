@@ -57,7 +57,7 @@ COMMANDS = {
                         "or list all eliminations associated to squad players"),
         "eliminated_commands": ["elim", "elims", "kills", "killed"],
         "log_commands": ["log", "silent"],
-        "examples": "`!replays`, `!replays stoobish`, `!replays kills`, `!replays kills stoobish`"
+        "examples": "`!replays`, `!replays LigmaBalls12`, `!replays kills`, `!replays kills LigmaBalls12`"
     },
 }
 
@@ -77,14 +77,14 @@ PLAYER_SEARCH_EXAMPLES = COMMANDS["Player Search"]["examples"]
 TRACK_COMMAND = COMMANDS["Track Squad"]["command"]
 TRACK_ALIASES = COMMANDS["Track Squad"]["aliases"]
 TRACK_DESCRIPTION = COMMANDS["Track Squad"]["description"]
-TRACK__EXAMPLES = COMMANDS["Track Squad"]["examples"]
+TRACK_EXAMPLES = COMMANDS["Track Squad"]["examples"]
 
 # Stats
 STATS_COMMAND = COMMANDS["Stats"]["command"]
 STATS_DESCRIPTION = COMMANDS["Stats"]["description"]
 STATS_DIFF_COMMANDS = COMMANDS["Stats"]["diff_commands"]
 STATS_OPPONENTS_COMMANDS = COMMANDS["Stats"]["opponent_commands"]
-STATS__EXAMPLES = COMMANDS["Stats"]["examples"]
+STATS_EXAMPLES = COMMANDS["Stats"]["examples"]
 
 # Rate Difficulty
 RATE_COMMAND = COMMANDS["Rate Difficulty"]["command"]
