@@ -99,10 +99,11 @@ async def on_voice_state_update(member, before, after):
         if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
             if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in SQUAD_PLAYERS_LIST:
                 SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
-    """ else:
+    
+    if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
         if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
             if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in SQUAD_PLAYERS_LIST:
-                SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name]) """
+                SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name]) 
 
     if not interactions.send_track_question(member, before, after):
         return
