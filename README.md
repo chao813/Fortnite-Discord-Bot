@@ -8,6 +8,7 @@ Retrieve player statistics in Fortnite Battle Royale
 * [Features](#features)
 * [Usage](#usage)
 * [Examples](#examples)
+* [Setup] (#setup)
 
 ## Features
 - Asks if you want to see current squad stats when joining Fortnite discord channel 
@@ -125,3 +126,5 @@ Average Stats of all Opponent Faced Today:
 ```
 ![Alt text](/images/stats_noobs_example.png?raw=true)
 
+## Setup
+Use ```pyinstaller.py --onefile replay_watcher.py```to generate exe
