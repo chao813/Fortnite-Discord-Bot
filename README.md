@@ -1,14 +1,14 @@
 # Fortnite Player Stats Discord Bot
 Retrieve player statistics in Fortnite Battle Royale
 
-> :warning: **Note: This project is a personal project and for research**
+> :warning: **Note: This project is a personal project and was created for research and educational purposes only.**
 
 ## Table of Content
 
 * [Features](#features)
 * [Usage](#usage)
 * [Examples](#examples)
-* [Setup] (#setup)
+* [Setup](#setup)
 
 ## Features
 - Asks if you want to see current squad stats when joining Fortnite discord channel 
@@ -127,4 +127,18 @@ Average Stats of all Opponent Faced Today:
 ![Alt text](/images/stats_noobs_example.png?raw=true)
 
 ## Setup
-Use ```pyinstaller.py --onefile replay_watcher.py```to generate exe
+### Install Fortnite Replay Reader
+To install the Fortnite Replay Reader pip package, you need to install the package's dependencies first otherwise the requirements.txt install will fail.
+
+To do so, run:
+```
+pip install bitstring pycryptodome
+```
+
+Then:
+```
+pip install -r requirements.txt
+```
+
+### Generate Windows executable
+Use ```pyinstaller.py --onefile replay_watcher.py```to generate the exe.
