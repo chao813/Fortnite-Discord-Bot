@@ -141,7 +141,7 @@ pip install -r requirements.txt
 ```
 
 ### Generate Windows executable
-In Windows, run:
+In Windows, run the following:
 ```
 venv/Scripts/pyinstaller.exe --onefile --windowed --paths venv/Lib/site-packages replay_watcher.py
 ```
@@ -150,6 +150,3 @@ This assumes you are using a virtual environment such as `venv`. If you are not,
 ```
 --paths venv/Lib/site-packages
 ```
-
-// TODO: Remove below if not needed
-Use ```pyinstaller.py --onefile replay_watcher.py```to generate the exe.
