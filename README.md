@@ -132,7 +132,7 @@ To install the Fortnite Replay Reader pip package, you need to install the packa
 
 To do so, run:
 ```
-pip install bitstring pycryptodome
+pip install bitstring
 ```
 
 Then:
@@ -141,4 +141,12 @@ pip install -r requirements.txt
 ```
 
 ### Generate Windows executable
-Use ```pyinstaller.py --onefile replay_watcher.py```to generate the exe.
+In Windows, run the following:
+```
+venv/Scripts/pyinstaller.exe --onefile --windowed --paths venv/Lib/site-packages replay_watcher.py
+```
+
+This assumes you are using a virtual environment such as `venv`. If you are not, you do not need to include the path for the dependencies. The following can be removed:
+```
+--paths venv/Lib/site-packages
+```
