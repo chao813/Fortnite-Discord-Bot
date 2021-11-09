@@ -23,7 +23,7 @@ from logger import initialize_request_logger, configure_logger, get_logger_with_
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-SQUAD_PLAYERS_LIST = [] 
+SQUAD_PLAYERS_LIST = []
 FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
 
 logger = configure_logger()
@@ -47,7 +47,7 @@ def healthcheck():
 @app.route("/fortnite/replay/elims", methods=["POST"])
 @validate
 def post():
-    """
+    """ Updates Discord bot with latest elimination dict
     POST request Body
         {
             "eliminated_by_me": {},
@@ -95,15 +95,17 @@ async def on_guild_join(guild):
 @bot.event
 async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
+    discord_username = member.display_name
+
     if interactions.should_add_player_to_squad_player_session_list(member, before, after):
-        if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-            if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in SQUAD_PLAYERS_LIST:
-                SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
-    
+        if discord_username in FORTNITE_DISCORD_ROLE_USERS_DICT:
+            if FORTNITE_DISCORD_ROLE_USERS_DICT[discord_username] not in SQUAD_PLAYERS_LIST:
+                SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[discord_username])
+
     if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
-        if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-            if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in SQUAD_PLAYERS_LIST:
-                SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name]) 
+        if discord_username in FORTNITE_DISCORD_ROLE_USERS_DICT:
+            if FORTNITE_DISCORD_ROLE_USERS_DICT[discord_username] in SQUAD_PLAYERS_LIST:
+                SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[discord_username])
 
     if not interactions.send_track_question(member, before, after):
         return
@@ -273,7 +275,7 @@ async def replays_operations(ctx, *params):
     username = None
     if len(params) == 2:
         username = params.pop(1)
-        command = params.pop(0) 
+        command = params.pop(0)
         if username not in SQUAD_PLAYERS_LIST:
             await ctx.send(f"{username} provided is not a valid squad player")
             return
@@ -308,7 +310,7 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, use
     for player_guid in eliminated_me_dict:
         squad_players_eliminated_by_player = ""
         send_output = False
-        if username == None:
+        if username is None:
             for squad_player in eliminated_me_dict[player_guid]:
                 squad_players_eliminated_by_player += squad_player + ", "
             send_output = True

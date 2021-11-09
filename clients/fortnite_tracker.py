@@ -123,7 +123,7 @@ def _find_stats_segment(soup):
 
 def _find_latest_season_id(segments):
     """ Returns the latest season ID with available data """
-    return max([seg['season'] for seg in segments if seg['season'] is not None])
+    return max([seg["season"] for seg in segments if seg["season"] is not None])
 
 
 def _newer_season_available(latest_season_id):
