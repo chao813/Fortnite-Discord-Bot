@@ -24,20 +24,19 @@ file_list = []
 def create_empty_file():
     path = FORTNITE_REPLAY_FILE_PATH
     today = datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
-    file_name = today + '_temp.txt'
+    file_name = f"{today}_fortnite_tracker_dummy.txt"
 
     try:
-        with open(os.path.join(path, file_name), 'w') as fp:
+        with open(os.path.join(path, file_name), "w") as _:
             return f"Successfully created file: {file_name}"
     except Exception as e:
         return f"Error creating file: {file_name}"
-        print(str(e))
 
 
 textbox = None
 def insert_watcher_event_message(message):
     global textbox
-    textbox.configure(state='normal')
+    textbox.configure(state="normal")
     textbox.insert(END, message)
 
 
@@ -56,9 +55,9 @@ class Watcher():
         try:
             while True:
                 time.sleep(1)
-        except:
+        except Exception as e:
             self.observer.stop()
-            print("Error")
+            print(f"Watcher error: {e}")
 
         self.observer.join()
 
@@ -67,11 +66,11 @@ class Handler(FileSystemEventHandler):
 
     @staticmethod
     def on_any_event(event):
-        textbox.configure(state='disabled')
+        textbox.configure(state="disabled")
         if event.is_directory:
             return None
 
-        elif event.event_type == 'created':
+        elif event.event_type == "created":
             # Take any action here when a file is first created.
             print(f"Received created event - {event.src_path}.")
             insert_watcher_event_message(f"CREATED - {event.src_path}. \n")
@@ -79,26 +78,41 @@ class Handler(FileSystemEventHandler):
             if len(file_list) > 2:
                 file_list.pop(0)
             if len(file_list) == 2:
-                eliminated_me_dict, eliminated_by_me_dict = replays.process_replays(file_list[0])
-                body = {
-                    "eliminated_me": eliminated_me_dict,
-                    "eliminated_by_me": eliminated_by_me_dict
-                }
-                r = requests.post(FORTNITE_REPLAY_ELIM_ENDPOINT, json = body, headers={"API-TOKEN":FORTNITE_REPLAY_ELIM_API_TOKEN})
-                if eliminated_me_dict is None and eliminated_by_me_dict is None and r.ok:
-                    insert_watcher_event_message(f"POST - Empty dummy file. \n")
+                latest_replay_file = file_list[0]
+                eliminated_me_dict, eliminated_by_me_dict = replays.process_replays(
+                    latest_replay_file)
+
+                r = Handler.update_discord_bot(eliminated_me_dict, eliminated_by_me_dict)
+
+                if not eliminated_me_dict and not eliminated_by_me_dict and r.ok:
+                    insert_watcher_event_message("POST - Empty dummy file.\n")
                 else:
-                    insert_watcher_event_message(f"POST - {r.json()}. \n")
+                    insert_watcher_event_message("POST - {r.json()}.\n")
         elif event.event_type == 'modified':
             # Taken any action here when a file is modified.
             print(f"Received modified event - {event.src_path}.")
-            #insert_watcher_event_message(f"MODIFIED - {event.src_path}. \n")
+
+    @staticmethod
+    def update_discord_bot(eliminated_me_dict, eliminated_by_me_dict):
+        body = {
+            "eliminated_me": eliminated_me_dict,
+            "eliminated_by_me": eliminated_by_me_dict
+        }
+
+        headers = {
+            "API-TOKEN": FORTNITE_REPLAY_ELIM_API_TOKEN
+        }
+
+        return requests.post(
+            FORTNITE_REPLAY_ELIM_ENDPOINT,
+            json=body,
+            headers=headers)
 
 
 def create_gui():
     window = Tk()
     window.title("Fortnite Replay Watcher")
-    window.geometry('400x400')
+    window.geometry("400x400")
 
     label = Label(window, text="Log:", font=("TkDefaultFont", 16))
     label.place(anchor=NW, x=0,y=18)
@@ -120,15 +134,16 @@ def create_gui():
 
     return window
 
+
 def done_button_clicked():
     message = create_empty_file()
-    #messagebox.showinfo('Done Playing', message)
+
 
 def clear_button_clicked():
-    textbox.configure(state='normal')
-    textbox.delete('1.0', END)
-    textbox.configure(state='disabled')
+    textbox.configure(state="normal")
+    textbox.delete("1.0", END)
+    textbox.configure(state="disabled")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     w = Watcher()
     w.run()
