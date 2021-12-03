@@ -165,3 +165,13 @@ async def rate_opponent_stats_today(ctx):
     skill_rate = discord_utils.calculate_skill_rate_indicator(
         opponent_stats_breakdown["all"]["KD"])
     await ctx.send(skill_rate)
+
+
+async def get_game_stats(discord_chat_id):
+    """ """
+    game_identifier = {
+        "discord_chat_id": discord_chat_id
+    }
+
+    mysql = await MySQL.create()
+    return await mysql.fetch_game_record(game_identifier)

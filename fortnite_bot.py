@@ -9,15 +9,15 @@ from functools import partial
 from threading import Thread
 
 from discord.ext.commands import Bot
-from flask import Flask, jsonify, request
-from werkzeug.exceptions import BadRequest
+from flask import Flask
 
 import clients.fortnite_api as fortnite_api
 import clients.fortnite_tracker as fortnite_tracker
 import clients.interactions as interactions
 import clients.stats as stats
 import commands
-from auth import validate
+from blueprints.healthcheck import healthcheck_bp
+from blueprints.replays import replays_bp
 from error_handlers import initialize_error_handlers
 from logger import initialize_request_logger, configure_logger, get_logger_with_context, log_command
 
@@ -31,49 +31,10 @@ logger = configure_logger()
 bot = Bot(command_prefix="!")
 
 app = Flask(__name__)
+app.register_blueprint(healthcheck_bp, url_prefix="/fortnite")
+app.register_blueprint(replays_bp, url_prefix="/fortnite")
 initialize_error_handlers(app)
 initialize_request_logger(app)
-
-eliminated_by_me_dict = None
-eliminated_me_dict = None
-
-
-@app.route("/fortnite/healthcheck")
-def healthcheck():
-    """ API Healthcheck """
-    return jsonify({"status": "ok"}), 200
-
-
-@app.route("/fortnite/replay/elims", methods=["POST"])
-@validate
-def post():
-    """ Updates Discord bot with latest elimination dict
-    POST request Body
-        {
-            "eliminated_by_me": {},
-            "eliminated_me": {}
-        }
-    """
-    try:
-        elim_data = request.get_json()
-    except BadRequest as e:
-        return jsonify({
-            "message": "Invalid JSON payload",
-            "error": e
-        }), 400
-
-    global eliminated_by_me_dict
-    global eliminated_me_dict
-    eliminated_by_me_dict = elim_data["eliminated_by_me"]
-    eliminated_me_dict = elim_data["eliminated_me"]
-
-    return jsonify({
-        "status": "success",
-        "data": {
-            "eliminated_by_me": eliminated_by_me_dict,
-            "eliminated_me": eliminated_me_dict
-        }
-    }), 200
 
 
 @bot.event
@@ -265,9 +226,13 @@ async def replays_operations(ctx, *params):
     logger = get_logger_with_context(ctx)
     params = list(params)
 
-    global eliminated_by_me_dict
-    global eliminated_me_dict
-    if not eliminated_me_dict and not eliminated_by_me_dict:
+    # TODO: Send in current text channel Discord id
+    game_record = stats.get_game_stats(ctx)
+
+    eliminated_dict = game_record["eliminated"]
+    eliminated_by_dict = game_record["eliminated_by"]
+
+    if not eliminated_by_dict and not eliminated_dict:
         await ctx.send("No replay file found")
         return
 
@@ -288,15 +253,15 @@ async def replays_operations(ctx, *params):
 
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
         logger.info("Outputting players that got eliminated by us")
-        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=False)
+        await output_replay_eliminated_stats_message(ctx, eliminated_dict, username, silent=False)
     elif command in commands.REPLAYS_LOG_COMMANDS:
         logger.info("Silent logging players that got eliminated by us and eliminated us")
-        await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=True)
-        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=True)
+        await output_replay_eliminated_by_stats_message(ctx, eliminated_by_dict, username, silent=True)
+        await output_replay_eliminated_stats_message(ctx, eliminated_dict, username, silent=True)
     else:
         if not command:
             logger.info("Outputting players that eliminated us")
-            await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=False)
+            await output_replay_eliminated_by_stats_message(ctx, eliminated_by_dict, username, silent=False)
         elif command != commands.REPLAYS_COMMAND and \
                 command not in commands.REPLAYS_ELIMINATED_COMMANDS and \
                 command not in commands.REPLAYS_LOG_COMMANDS:
@@ -305,16 +270,16 @@ async def replays_operations(ctx, *params):
             await ctx.send(f"{command} left the channel")
 
 
-async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent):
+async def output_replay_eliminated_by_stats_message(ctx, eliminated_by_dict, username, silent):
     """ Create Discord Message for the stats of the opponents that eliminated us"""
-    for player_guid in eliminated_me_dict:
+    for player_guid in eliminated_by_dict:
         squad_players_eliminated_by_player = ""
         send_output = False
         if username is None:
-            for squad_player in eliminated_me_dict[player_guid]:
+            for squad_player in eliminated_by_dict[player_guid]:
                 squad_players_eliminated_by_player += squad_player + ", "
             send_output = True
-        if username in eliminated_me_dict[player_guid]:
+        if username in eliminated_by_dict[player_guid]:
             squad_players_eliminated_by_player = username + ", "
             send_output = True
 
@@ -324,14 +289,14 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, use
             await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
-async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent):
+async def output_replay_eliminated_stats_message(ctx, eliminated_dict, username, silent):
     """ Create Discord Message for the stats of the opponents that got eliminated by us"""
     if username:
-        eliminated_by_me_dict = {username: eliminated_by_me_dict[username]}
-    for squad_player in eliminated_by_me_dict:
+        eliminated_dict = {username: eliminated_dict[username]}
+    for squad_player in eliminated_dict:
         if not silent:
             await ctx.send(f"{squad_player} eliminated")
-        for player_guid in eliminated_by_me_dict[squad_player]:
+        for player_guid in eliminated_dict[squad_player]:
             await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
