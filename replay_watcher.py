@@ -79,12 +79,12 @@ class Handler(FileSystemEventHandler):
                 file_list.pop(0)
             if len(file_list) == 2:
                 latest_replay_file = file_list[0]
-                eliminated_me_dict, eliminated_by_me_dict = replays.process_replays(
+                eliminated_by_dict, eliminated_dict = replays.process_replays(
                     latest_replay_file)
 
-                r = Handler.update_discord_bot(eliminated_me_dict, eliminated_by_me_dict)
+                r = Handler.update_discord_bot(eliminated_by_dict, eliminated_dict)
 
-                if not eliminated_me_dict and not eliminated_by_me_dict and r.ok:
+                if not eliminated_by_dict and not eliminated_dict and r.ok:
                     insert_watcher_event_message("POST - Empty dummy file.\n")
                 else:
                     insert_watcher_event_message("POST - {r.json()}.\n")
@@ -93,10 +93,10 @@ class Handler(FileSystemEventHandler):
             print(f"Received modified event - {event.src_path}.")
 
     @staticmethod
-    def update_discord_bot(eliminated_me_dict, eliminated_by_me_dict):
+    def update_discord_bot(eliminated_by_dict, eliminated_dict):
         body = {
-            "eliminated_me": eliminated_me_dict,
-            "eliminated_by_me": eliminated_by_me_dict
+            "eliminated_by": eliminated_by_dict,
+            "eliminated": eliminated_dict
         }
 
         headers = {
