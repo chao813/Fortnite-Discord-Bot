@@ -13,7 +13,7 @@ class Method(Enum):
 
 async def cloudscrape(method, url, headers, allow_redirects=True):
     """ Cloudscraper is used to bypass Cloudflare's bot detection.
-    However, Cloudscraper does not support async so event loops used used.
+    However, Cloudscraper does not support async so event loops are used.
     """
     def _method():
         scraper = cloudscraper.create_scraper()
