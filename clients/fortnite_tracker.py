@@ -5,18 +5,20 @@ import re
 from collections import defaultdict
 from urllib.parse import unquote
 
-import aiohttp
 from bs4 import BeautifulSoup
 
 import utils.discord as discord_utils
 from database.mysql import MySQL
 from exceptions import UserDoesNotExist, NoSeasonDataError
+from utils.cloudscraper import cloudscrape, Method
 from utils.dates import get_playing_session_date
 
 
 ACCOUNT_SEARCH_URL = "https://fortnitetracker.com/profile/search?q={username}"
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
-STATS_REGEX = "var imp_data = (.[\s\S]*);"
+STATS_PATTERN = "const profile = "
+STATS_REGEX = f"\s*{STATS_PATTERN}(.*);"
+
 
 MODES = [
     "solo",
@@ -61,16 +63,11 @@ async def _search_username(player_name):
     """ Returns the player's username """
     url = ACCOUNT_SEARCH_URL.format(username=player_name)
 
-    async with aiohttp.ClientSession() as client:
-        async with client.get(url, headers=HEADERS, allow_redirects=False) as r:
-            if r.status == 302:
-                r = r.headers
-            else:
-                raise UserDoesNotExist("Username not found in FN Tracker")
+    resp = await cloudscrape(Method.GET, url, headers=HEADERS, allow_redirects=False)
+    if resp.status_code == 302:
+        return unquote(resp.headers["Location"].split("/")[-1])
 
-    name = unquote(r["Location"].split("/")[-1])
-
-    return name
+    raise UserDoesNotExist(f"Username not found in FN Tracker: {player_name}")
 
 
 async def _get_player_season_dataset(username):
@@ -98,32 +95,38 @@ async def _get_player_profile_html(username):
     """ Get the player stats page in HTML """
     url = ACCOUNT_PROFILE_URL.format(username=username, season=_get_season_id())
 
-    async with aiohttp.ClientSession() as client:
-        async with client.get(url, headers=HEADERS) as r:
-            assert r.status == 200
-            return await r.text()
+    resp = await cloudscrape(Method.GET, url, headers=HEADERS)
+    resp.raise_for_status()
+    return resp.text
 
 
 def _find_stats_segment(soup):
     """ Find the stats dataset from within the script's scripts JS """
-    pattern = re.compile(STATS_REGEX)
-    scripts = soup.find_all("script", type="text/javascript")
-    stats = None
+    re_pattern = re.compile(STATS_REGEX)
+    script_tags = soup.find_all("script")
+    retrieved_stats = None
 
-    for script in scripts:
-        if pattern.match(str(script.string)):
-            data = pattern.match(script.string)
-            stats = json.loads(data.groups()[0])
+    for script in script_tags:
+        script_text = script.text
 
-    if stats is None:
-        raise ValueError("Site changed, bot broke :/")
+        if STATS_PATTERN not in script_text:
+            continue
 
-    return stats
+        re_match = re_pattern.match(script_text)
+
+        if re_match is not None:
+            retrieved_stats = json.loads(re_match.groups()[0])
+            break
+
+    if retrieved_stats is None:
+        raise ValueError("Site changed and stats JSON is no longer there, bot broke :/")
+
+    return retrieved_stats
 
 
 def _find_latest_season_id(segments):
     """ Returns the latest season ID with available data """
-    return max([seg['season'] for seg in segments if seg['season'] is not None])
+    return max([seg["season"] for seg in segments if seg["season"] is not None])
 
 
 def _newer_season_available(latest_season_id):

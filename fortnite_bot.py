@@ -8,6 +8,7 @@ import ast
 from functools import partial
 from threading import Thread
 
+import discord
 from discord.ext.commands import Bot
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import BadRequest
@@ -23,12 +24,15 @@ from logger import initialize_request_logger, configure_logger, get_logger_with_
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-SQUAD_PLAYERS_LIST = [] 
+SQUAD_PLAYERS_LIST = []
 FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
 
 logger = configure_logger()
 
-bot = Bot(command_prefix="!")
+# TODO: Explicitly enable the required privileged intents
+#       then change: intents = discord.Intents.all()
+intents = discord.Intents.default()
+bot = Bot(command_prefix="!", intents=intents)
 
 app = Flask(__name__)
 initialize_error_handlers(app)
@@ -99,11 +103,11 @@ async def on_voice_state_update(member, before, after):
         if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
             if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in SQUAD_PLAYERS_LIST:
                 SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
-    
+
     if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
         if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
             if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in SQUAD_PLAYERS_LIST:
-                SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name]) 
+                SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
     if not interactions.send_track_question(member, before, after):
         return
@@ -133,7 +137,7 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
     player_name = " ".join(player_name)
 
     logger = get_logger_with_context(ctx)
-    logger.info("Looking up stats for '%s' ", player_name)
+    logger.info("Searching for player stats: %s", player_name)
 
     if not player_name:
         await ctx.send("Please specify an Epic username after the command, "
@@ -142,15 +146,19 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
 
     try:
         await fortnite_tracker.get_player_stats(ctx, player_name, silent)
-    except Exception as e:
-        logger.warning(e, exc_info=_should_log_traceback(e))
+    except Exception as ft_exc:
+        logger.warning(ft_exc, exc_info=_should_log_traceback(ft_exc))
 
         # Fortnite API stats are unnecessary in silent mode
         if silent:
             return
 
-        logger.warning(f"Falling back to Fortnite API for '{player_name}'..")
-        await fortnite_api.get_player_stats(ctx, player_name, guid)
+        logger.warning("Falling back to Fortnite API: %s", player_name)
+        try:
+            await fortnite_api.get_player_stats(ctx, player_name, guid)
+        except Exception as fa_exc:
+            logger.warning(fa_exc, exc_info=_should_log_traceback(fa_exc))
+            await ctx.send(f"Player not found: {player_name}")
 
 
 @bot.command(name=commands.TRACK_COMMAND,
@@ -273,7 +281,7 @@ async def replays_operations(ctx, *params):
     username = None
     if len(params) == 2:
         username = params.pop(1)
-        command = params.pop(0) 
+        command = params.pop(0)
         if username not in SQUAD_PLAYERS_LIST:
             await ctx.send(f"{username} provided is not a valid squad player")
             return
