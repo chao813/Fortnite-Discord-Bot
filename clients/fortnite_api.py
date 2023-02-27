@@ -3,6 +3,8 @@ import os
 import aiohttp
 import discord
 
+from exceptions import UserDoesNotExist
+
 
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
@@ -62,20 +64,22 @@ async def _get_player_account_id(session, player_name, platform):
     """
     Get account id given player name and platform
     """
-    raw_response = await session.get(
+    resp = await session.get(
         FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform=platform), headers={"Authorization": FORTNITE_API_TOKEN}
     )
-    return await raw_response.json()
+    if resp.status == 404:
+        raise UserDoesNotExist(f"Username not found in FN API: {player_name}")
+    return await resp.json()
 
 
 async def _get_player_stats(session, account_id):
     """
     Get player stats given account id
     """
-    raw_response = await session.get(
+    resp = await session.get(
         FORTNITE_PLAYER_STATS_URL.format(accountid=account_id), headers={"Authorization": FORTNITE_API_TOKEN}
     )
-    return await raw_response.json()
+    return await resp.json()
 
 
 def _calculate_stats(game_mode):
