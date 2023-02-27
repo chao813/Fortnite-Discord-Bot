@@ -11,17 +11,17 @@ Retrieve player statistics in Fortnite Battle Royale
 * [Setup](#setup)
 
 ## Features
-- Asks if you want to see current squad stats when joining Fortnite discord channel 
+- Asks if you want to see current squad stats when joining Fortnite discord channel
 
-Fortnite Tracker search (Default): 
+Fortnite Tracker search (Default):
 - Calculates player current season statistics in different Game Modes (Solo, Duos, Trios, Squads)
 - Calculates player's overall statistics
     > Statistics include:
-    >    - KD 
+    >    - KD
     >    - Wins
     >    - Win Percentage
     >    - Matches Played
-    >    - TRN 
+    >    - TRN
 ----------------------------------------------------------------------------------
 Fortnite API search (Fall back):
 If player profile is not found in fortnitetracker.com, fall back to using Fortnite API
@@ -29,12 +29,12 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
 - Calculates player overall season statistics in different Game Modes (Solo, Duos, Squads)
 - Calculates player's overall statistics
     > Statistics include:
-    >    - KD 
+    >    - KD
     >    - Wins
     >    - Win Percentage
-    >    - Kills 
+    >    - Kills
     >    - Matches Played
-- Link to player's Twitch stream if currently streaming    
+- Link to player's Twitch stream if currently streaming
 ----------------------------------------------------------------------------------
 
 - Link to Fortnite Tracker player profile (click on username to navigate)
@@ -72,7 +72,7 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
 !stats enemy
 
 !upgrade
-!gold 
+!gold
 
 !chests
 !loot
@@ -132,7 +132,7 @@ To install the Fortnite Replay Reader pip package, you need to install the packa
 
 To do so, run:
 ```
-pip install bitstring
+pip install wheel bitstring pycryptodome
 ```
 
 Then:
