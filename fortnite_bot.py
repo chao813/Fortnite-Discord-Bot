@@ -16,6 +16,7 @@ from werkzeug.exceptions import BadRequest
 import clients.fortnite_api as fortnite_api
 import clients.fortnite_tracker as fortnite_tracker
 import clients.interactions as interactions
+import clients.openai as openai
 import clients.stats as stats
 import commands
 from auth import validate
@@ -37,6 +38,8 @@ bot = Bot(command_prefix="!", intents=intents)
 app = Flask(__name__)
 initialize_error_handlers(app)
 initialize_request_logger(app)
+
+openai.initialize()
 
 eliminated_by_me_dict = None
 eliminated_me_dict = None
@@ -60,10 +63,10 @@ def post():
     """
     try:
         elim_data = request.get_json()
-    except BadRequest as e:
+    except BadRequest as exc:
         return jsonify({
             "message": "Invalid JSON payload",
-            "error": e
+            "error": exc
         }), 400
 
     global eliminated_by_me_dict
@@ -98,19 +101,24 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
+    logger = get_logger_with_context(identifier="Main")
+
     """ Event handler to track squad stats on voice channel join """
-    if interactions.should_add_player_to_squad_player_session_list(member, before, after):
-        if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-            if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in SQUAD_PLAYERS_LIST:
-                SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
+    try:
+        if interactions.should_add_player_to_squad_player_session_list(member, before, after):
+            if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
+                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in SQUAD_PLAYERS_LIST:
+                    SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
-    if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
-        if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-            if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in SQUAD_PLAYERS_LIST:
-                SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
+        if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
+            if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
+                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in SQUAD_PLAYERS_LIST:
+                    SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
-    if not interactions.send_track_question(member, before, after):
-        return
+        if not interactions.send_track_question(member, before, after):
+            return
+    except Exception as e:
+        logger.warning("Failed to run on_voice_state_update: %s", repr(e), exc_info=True)
 
     ctx, silent = await interactions.send_track_question_and_wait(
         bot,
@@ -294,15 +302,15 @@ async def replays_operations(ctx, *params):
 
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
         logger.info("Outputting players that got eliminated by us")
-        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=False)
+        await _output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=False)
     elif command in commands.REPLAYS_LOG_COMMANDS:
         logger.info("Silent logging players that got eliminated by us and eliminated us")
-        await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=True)
-        await output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=True)
+        await _output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=True)
+        await _output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=True)
     else:
         if not command:
             logger.info("Outputting players that eliminated us")
-            await output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=False)
+            await _output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=False)
         elif command != commands.REPLAYS_COMMAND and \
                 command not in commands.REPLAYS_ELIMINATED_COMMANDS and \
                 command not in commands.REPLAYS_LOG_COMMANDS:
@@ -311,7 +319,7 @@ async def replays_operations(ctx, *params):
             await ctx.send(f"{command} left the channel")
 
 
-async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent):
+async def _output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent):
     """ Create Discord Message for the stats of the opponents that eliminated us"""
     for player_guid in eliminated_me_dict:
         squad_players_eliminated_by_player = ""
@@ -330,7 +338,7 @@ async def output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, use
             await player_search(ctx, player_guid, guid=True, silent=silent)
 
 
-async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent):
+async def _output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent):
     """ Create Discord Message for the stats of the opponents that got eliminated by us"""
     if username:
         eliminated_by_me_dict = {username: eliminated_by_me_dict[username]}
@@ -340,6 +348,24 @@ async def output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dic
         for player_guid in eliminated_by_me_dict[squad_player]:
             await player_search(ctx, player_guid, guid=True, silent=silent)
 
+
+@bot.command(name=commands.ASK_COMMAND,
+             help=commands.ASK_DESCRIPTION,
+             aliases=commands.ASK_ALIASES)
+@log_command
+async def ask_chatgpt(ctx, *params):
+    """ Ask OpenAI ChatGPT a question """
+    # TODO: Allow each file to invoke it's own logger with the correct context
+    logger = get_logger_with_context(ctx)
+
+    prompt = " ".join(params)
+
+    try:
+        resp = await openai.ask_chatgpt(prompt, logger)
+    except Exception as exc:
+        logger.warning(exc, exc_info=_should_log_traceback(exc))
+
+    await ctx.send(resp)
 
 
 def _should_log_traceback(e):
