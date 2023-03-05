@@ -9,14 +9,14 @@ COMMANDS = {
         "command": "hunted",
         "aliases": ["h", "player", "findnoob", "wreckedby"],
         "description": "Display player stats",
-        "examples": "`!h LigmaBalls12`, `!hunted LigmaBalls12`"    
+        "examples": "`!h LigmaBalls12`, `!hunted LigmaBalls12`"
     },
     "Track Squad": {
         "command": "track",
         "aliases": ["squad"],
         "description": ("Display current stats for the squad. If a username is provided, "
                         "display only stats for that player (ex: `!track LigmaBalls12`)."),
-        "examples": "`!track`, `!squad`"       
+        "examples": "`!track`, `!squad`"
     },
     "Stats": {
         "command": "stats",
@@ -25,7 +25,7 @@ COMMANDS = {
                         "LigmaBalls12`, `!stats played`)."),
         "diff_commands": ["today", "diff"],
         "opponent_commands": ["played", "opp", "opponents", "noobs", "enemy"],
-        "examples": "`!stats diff`, `!stats today`, `!stats diff stoobish`, `!stats opponents`"       
+        "examples": "`!stats diff`, `!stats today`, `!stats diff stoobish`, `!stats opponents`"
     },
     "Rate Difficulty": {
         "command": "rate",
@@ -59,6 +59,12 @@ COMMANDS = {
         "log_commands": ["log", "silent"],
         "examples": "`!replays`, `!replays LigmaBalls12`, `!replays kills`, `!replays kills LigmaBalls12`"
     },
+    "Ask": {
+        "command": "ask",
+        "aliases": ["a", "chatgpt"],
+        "description": "Ask OpenAI ChatGPT a question",
+        "examples": "``!ask`, `!chatgpt`"
+    }
 }
 
 # Help
@@ -115,3 +121,9 @@ REPLAYS_DESCRIPTION = COMMANDS["Replays"]["description"]
 REPLAYS_ELIMINATED_COMMANDS = COMMANDS["Replays"]["eliminated_commands"]
 REPLAYS_LOG_COMMANDS = COMMANDS["Replays"]["log_commands"]
 REPLAYS_EXAMPLES = COMMANDS["Replays"]["examples"]
+
+# Ask OpenAI ChatGPT
+ASK_COMMAND = COMMANDS["Ask"]["command"]
+ASK_DESCRIPTION = COMMANDS["Ask"]["description"]
+ASK_ALIASES = COMMANDS["Ask"]["aliases"]
+ASK_EXAMPLES = COMMANDS["Ask"]["examples"]
