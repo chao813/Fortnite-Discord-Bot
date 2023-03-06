@@ -155,7 +155,10 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
         await fortnite_api.get_player_stats(ctx, player_name, silent)
     except Exception as exc:
         logger.warning(repr(exc), exc_info=_should_log_traceback(exc))
-        await ctx.send(f"Player not found: {player_name}")
+        if _is_known_error(exc):
+            await ctx.send(f"Player not found: {player_name}")
+        else:
+            await ctx.send(f"Failed to retrieve player statistics: {repr(exc)}")
 
 
 @bot.command(name=commands.TRACK_COMMAND,
@@ -357,12 +360,20 @@ async def ask_chatgpt(ctx, *params):
     await ctx.send(resp)
 
 
-def _should_log_traceback(e):
+def _should_log_traceback(exc):
     """ Returns True if a traceback should be logged,
     otherwise False
     """
+    return not _is_known_error(exc)
+
+
+def _is_known_error(exc):
+    """ Returns True if the error is known, otherwise False """
     # TODO: Change to subclass and check instance variable flag
-    return e.__class__.__name__ not in ("UserDoesNotExist", "NoSeasonDataError")
+    return exc.__class__.__name__ in (
+        "UserDoesNotExist",
+        "NoSeasonDataError"
+    )
 
 
 # Make a partial app.run to pass args/kwargs to it

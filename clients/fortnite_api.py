@@ -11,27 +11,22 @@ from utils.dates import get_playing_session_date
 
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 
-# OLD
-FORTNITE_ACCOUNT_ID_URL = "https://fortniteapi.io/lookup?username={username}&platform={platform}"
-FORTNITE_PLAYER_STATS_URL = "https://fortniteapi.io/stats?account={accountid}"
-FORTNITE_RECENT_MATCHES_URL = "https://fortniteapi.io/matches?account={}"
-FORTNITE_TRACKER_URL = "https://fortnitetracker.com/profile/all/{username}"
-
 ACCOUNT_ID_ADVANCED_LOOKUP_URL = "https://fortniteapi.io/v2/lookup/advanced"
 PLAYER_STATS_BY_SEASON_URL = "https://fortniteapi.io/v1/stats"
 
+# FILL THIS IN
+# FIX LOGGER
+WINS_KEY = "placetop1"
 
 async def get_player_stats(ctx, player_name, silent):
     """Get player statistics from fortniteapi.io."""
     account_info = await _get_player_account_info(player_name)
 
-    player_id = f"{player_name} ({account_info['platform']}: {account_info['username']})"
+    player_stats = await _get_player_latest_season_stats(account_info)
 
-    player_stats = await _get_player_latest_season_stats(player_id, account_info)
+    message = _create_message(account_info, player_stats)
 
-    message = _create_message(player_id, player_stats)
-
-    tasks = [_track_player(account_info['username'], player_stats)]
+    tasks = [_track_player(player_name, player_stats)]
     if not silent:
         tasks.append(ctx.send(embed=message))
 
@@ -48,49 +43,60 @@ async def _get_player_account_info(player_name):
     }
 
     async with aiohttp.ClientSession() as session:
-        resp = await session.get(
+        async with session.get(
             url=ACCOUNT_ID_ADVANCED_LOOKUP_URL,
             params=params,
             headers=_get_headers()
-        )
+        ) as resp:
+            if resp.status == 404:
+                raise UserDoesNotExist(f"Username not found: {player_name}")
 
-    if resp.status == 404:
-        raise UserDoesNotExist(f"Username not found: {player_name}")
+            resp_json = await resp.json()
 
-    resp_json = resp.json()
+            print(resp_json)  # TODO: Convert to logger
 
-    print(resp_json)  # TODO: Convert to logger
+            best_match = resp_json["matches"][0]
+            matched_username = best_match["matches"][0]["value"]
+            matched_platform = best_match["matches"][0]["platform"].capitalize()
 
-    best_match = resp_json["matches"][0]
+            if player_name == matched_username:
+                name = player_name
+            else:
+                name = f"{player_name} ({matched_platform}: {matched_username})"
 
-    return {
-        "account_id": best_match["accountId"],
-        "username": best_match["matches"][0]["value"],
-        "platform": best_match["matches"][0]["platform"]
-    }
+            return {
+                "account_id": best_match["accountId"],
+                "epic_username": matched_username,
+                "readable_name": name
+            }
 
 
-async def _get_player_latest_season_stats(player_id, account_info):
+async def _get_player_latest_season_stats(account_info):
     """"Get player stats for the latest season that the player has played in.
     The API will retry another time if the season queried with originally is
     not the most recent season that the player has played in.
     """
     season_id = _get_season_id()
-    player_stats = await _get_player_season_stats(player_id, account_info)
+    player_stats = await _get_player_season_stats(account_info)
 
     if not _is_latest_season(season_id, player_stats):
         latest_season_id = _get_latest_season_id(player_stats)
         _set_fortnite_season_id(latest_season_id)
+        # TODO: Convert to logger
         print(f"Found new season ID, setting latest season ID to: {latest_season_id}")
 
-        player_stats = await _get_player_season_stats(player_id, account_info, season=latest_season_id)
+        player_stats = await _get_player_season_stats(account_info, season=latest_season_id)
 
-    player_stats = _append_all_mode_stats(player_stats)
+    mode_breakdown = player_stats["global_stats"]
+    mode_breakdown = _append_all_mode_stats(mode_breakdown)
+    mode_breakdown["duos"] = mode_breakdown.pop("duo")
+    mode_breakdown["trios"] = mode_breakdown.pop("trio")
+    mode_breakdown["squads"] = mode_breakdown.pop("squad")
 
-    return player_stats
+    return mode_breakdown
 
 
-async def _get_player_season_stats(player_id, account_info, season=None):
+async def _get_player_season_stats(account_info, season=None):
     """Get player stats for the specified season."""
     account_id = account_info["account_id"]
 
@@ -99,21 +105,20 @@ async def _get_player_season_stats(player_id, account_info, season=None):
     }
 
     if season is not None:
-        params["season"]: season
+        params["season"] = season
 
     async with aiohttp.ClientSession() as session:
-        resp = await session.get(
+        async with session.get(
             url=PLAYER_STATS_BY_SEASON_URL,
             params=params,
-            headers=_get_headers()
-        )
-        resp.raise_for_status()
+            headers=_get_headers(),
+            raise_for_status=True
+        ) as resp:
+            resp_json = await resp.json()
+            if resp_json["result"] is False:
+                raise UserStatisticsNotFound(f"User statistics not found: {account_info['readable_name']}")
 
-    resp_json = resp.json()
-    if resp_json["result"] is False:
-        raise UserStatisticsNotFound(f"User statistics not found: {player_id}")
-
-    return resp_json
+            return resp_json
 
 
 def _get_season_id():
@@ -135,7 +140,7 @@ def _is_latest_season(season_id, player_stats):
 
 def _get_latest_season_id(player_stats):
     """Retrieves the latest season ID from the player stats history."""
-    return max(player_stats["accountLevelHistory"], key=lambda x:x["season"])
+    return max(player_stats["accountLevelHistory"], key=lambda x:x["season"])["season"]
 
 
 def _get_headers():
@@ -145,7 +150,7 @@ def _get_headers():
     }
 
 
-def _append_all_mode_stats(player_stats):
+def _append_all_mode_stats(mode_breakdown):
     """Append aggregated stats into the dataset as part of the "all" game mode."""
     all_stats = {
         "placetop1": 0,
@@ -156,7 +161,7 @@ def _append_all_mode_stats(player_stats):
         "score": 0
     }
 
-    for _, stats in player_stats["global_stats"].items():
+    for _, stats in mode_breakdown.items():
         all_stats["placetop1"] += stats["placetop1"]
         all_stats["matchesplayed"] += stats["matchesplayed"]
         all_stats["kills"] += stats["kills"]
@@ -164,29 +169,31 @@ def _append_all_mode_stats(player_stats):
     all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"]
     all_stats["kd"] = all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"])
 
-    return all_stats
+    mode_breakdown["all"] = all_stats
+
+    return mode_breakdown
 
 
-def _create_message(username, stats_breakdown):
+def _create_message(account_info, stats_breakdown):
     """ Create player stats Discord message """
     wins_count = stats_breakdown["all"]["placetop1"]
     matches_played = stats_breakdown["all"]["matchesplayed"]
     kd_ratio = stats_breakdown["all"]["kd"]
 
     return discord_utils.create_stats_message(
-        title=f"Username: {username}",
+        title=f"Username: {account_info['readable_name']}",
         desc=discord_utils.create_wins_str(wins_count, matches_played),
         color_metric=kd_ratio,
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
-        username=username,
+        username=account_info["epic_username"],
     )
 
 
 def _create_stats_str(mode, stats_breakdown):
     """ Create stats string for output """
     mode_stats = stats_breakdown[mode]
-    return (f"KD: {mode_stats['kd']} • "
+    return (f"KD: {mode_stats['kd']:.2f} • "
             f"Wins: {int(mode_stats['placetop1']):,} • "
             f"Win Percentage: {mode_stats['winrate']:,.1f}% • "
             f"Matches: {int(mode_stats['matchesplayed']):,}")
