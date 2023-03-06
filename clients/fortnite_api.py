@@ -78,7 +78,7 @@ async def _get_player_latest_season_stats(account_info):
     not the most recent season that the player has played in.
     """
     season_id = _get_season_id()
-    player_stats = await _get_player_season_stats(account_info)
+    player_stats = await _get_player_season_stats(account_info, season_id)
 
     if not _is_latest_season(season_id, player_stats):
         latest_season_id = _get_latest_season_id(player_stats)
@@ -86,7 +86,7 @@ async def _get_player_latest_season_stats(account_info):
         # TODO: Convert to logger
         print(f"Found new season ID, setting latest season ID to: {latest_season_id}")
 
-        player_stats = await _get_player_season_stats(account_info, season=latest_season_id)
+        player_stats = await _get_player_season_stats(account_info, latest_season_id)
 
     mode_breakdown = player_stats["global_stats"]
     mode_breakdown = _append_all_mode_stats(mode_breakdown)
@@ -97,16 +97,14 @@ async def _get_player_latest_season_stats(account_info):
     return mode_breakdown
 
 
-async def _get_player_season_stats(account_info, season=None):
+async def _get_player_season_stats(account_info, season_id):
     """Get player stats for the specified season."""
     account_id = account_info["account_id"]
 
     params = {
-        "account": account_id
+        "account": account_id,
+        "season": season_id
     }
-
-    if season is not None:
-        params["season"] = season
 
     async with aiohttp.ClientSession() as session:
         async with session.get(
