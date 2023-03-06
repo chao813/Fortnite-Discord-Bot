@@ -136,7 +136,7 @@ def _is_latest_season(season_id, player_stats):
     """Returns True if the season ID requested is for the latest season
     that the player has data on.
     """
-    return season_id < player_stats["account"]["season"]
+    return season_id == player_stats["account"]["season"]
 
 
 def _get_latest_season_id(player_stats):
