@@ -58,7 +58,7 @@ def get_season_id():
     return int(os.getenv("FORTNITE_SEASON_ID"))
 
 
-def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, username=None):
+def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, username=None, twitch_stream=None):
     """ Create Discord message """
     message_params = _create_stats_message_params(title, desc, color_metric, username)
 
@@ -74,6 +74,9 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
             name = mode.capitalize()
 
         message.add_field(name=f"[{name}]", value=create_stats_func(mode, stats_breakdown), inline=False)
+
+    if twitch_stream:
+         message.add_field(name="[Twitch]", value=twitch_stream, inline=False)
 
     return message
 

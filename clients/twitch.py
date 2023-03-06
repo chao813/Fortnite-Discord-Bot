@@ -8,10 +8,15 @@ TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first
 TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
 
 
-async def get_twitch_stream(session, username):
-    """
-    Get Twitch stream if player is streaming
-    """
+async def get_twitch_stream(username):
+    """Get Twitch stream if player is streaming."""
+    # TODO: Fix this, this was moved from fortnite_api.py
+    # Wrap aiohttp around this and remove session = None
+    # Return data in format: "[Streaming here]({twitch_stream})".format(stream_url=twitch_stream)
+    return
+
+    session = None
+
     user_login = username
     if "TTV" in username:
         user_login = username.strip("TTV")

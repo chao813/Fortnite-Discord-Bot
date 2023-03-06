@@ -4,6 +4,7 @@ import asyncio
 import aiohttp
 
 import utils.discord as discord_utils
+import clients.twitch as twitch
 from database.mysql import MySQL
 from exceptions import UserDoesNotExist, UserStatisticsNotFound
 from utils.dates import get_playing_session_date
@@ -14,9 +15,6 @@ FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 ACCOUNT_ID_ADVANCED_LOOKUP_URL = "https://fortniteapi.io/v2/lookup/advanced"
 PLAYER_STATS_BY_SEASON_URL = "https://fortniteapi.io/v1/stats"
 
-# FILL THIS IN
-# FIX LOGGER
-WINS_KEY = "placetop1"
 
 async def get_player_stats(ctx, player_name, silent):
     """Get player statistics from fortniteapi.io."""
@@ -24,7 +22,9 @@ async def get_player_stats(ctx, player_name, silent):
 
     player_stats = await _get_player_latest_season_stats(account_info)
 
-    message = _create_message(account_info, player_stats)
+    twitch_stream = await twitch.get_twitch_stream(player_name)
+
+    message = _create_message(account_info, player_stats, twitch_stream)
 
     tasks = [_track_player(player_name, player_stats)]
     if not silent:
@@ -53,7 +53,8 @@ async def _get_player_account_info(player_name):
 
             resp_json = await resp.json()
 
-            print(resp_json)  # TODO: Convert to logger
+            # TODO: Convert to logger
+            print(f"Closest username matches: {resp_json['matches']}")
 
             best_match = resp_json["matches"][0]
             matched_username = best_match["matches"][0]["value"]
@@ -174,7 +175,7 @@ def _append_all_mode_stats(mode_breakdown):
     return mode_breakdown
 
 
-def _create_message(account_info, stats_breakdown):
+def _create_message(account_info, stats_breakdown, twitch_stream):
     """ Create player stats Discord message """
     wins_count = stats_breakdown["all"]["placetop1"]
     matches_played = stats_breakdown["all"]["matchesplayed"]
@@ -187,6 +188,7 @@ def _create_message(account_info, stats_breakdown):
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
         username=account_info["epic_username"],
+        twitch_stream=twitch_stream
     )
 
 
