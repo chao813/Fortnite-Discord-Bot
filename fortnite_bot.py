@@ -160,6 +160,8 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
         else:
             await ctx.send(f"Failed to retrieve player statistics: {repr(exc)}")
 
+    logger.info("Stats returned for: %s", player_name)
+
 
 @bot.command(name=commands.TRACK_COMMAND,
              help=commands.TRACK_DESCRIPTION,

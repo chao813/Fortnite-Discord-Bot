@@ -134,7 +134,6 @@ def _is_latest_season(season_id, player_stats):
     """Returns True if the season ID requested is for the latest season
     that the player has data on.
     """
-    print(f"Comparing {season_id} with {player_stats['account']['season']}")
     return season_id == player_stats["account"]["season"]
 
 
