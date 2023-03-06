@@ -1,3 +1,8 @@
+"""
+NOTE: 3/5/2023
+Fortnite Tracker has been deprecated due to Cloudflare restrictions.
+"""
+
 import asyncio
 import json
 import os
@@ -192,10 +197,14 @@ def _find_mode_stat(stat_name, mode_stats):
 
 def _create_message(username, stats_breakdown):
     """ Create player stats Discord message """
+    wins_count = stats_breakdown["all"]["Top1"]
+    matches_played = stats_breakdown["all"]["Matches"]
+    kd_ratio = stats_breakdown["all"]["KD"]
+
     return discord_utils.create_stats_message(
         title=f"Username: {username}",
-        desc=discord_utils.create_wins_str(stats_breakdown["all"]),
-        color_metric=stats_breakdown["all"]["KD"],
+        desc=discord_utils.create_wins_str(wins_count, matches_played),
+        color_metric=kd_ratio,
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
         username=username,

@@ -1,160 +1,221 @@
 import os
+import asyncio
 
 import aiohttp
-import discord
 
-from exceptions import UserDoesNotExist
+import utils.discord as discord_utils
+import clients.twitch as twitch
+from database.mysql import MySQL
+from exceptions import UserDoesNotExist, UserStatisticsNotFound
+from utils.dates import get_playing_session_date
 
 
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
-TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
-TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
 
-FORTNITE_ACCOUNT_ID_URL = "https://fortniteapi.io/lookup?username={username}&platform={platform}"
-FORTNITE_PLAYER_STATS_URL = "https://fortniteapi.io/stats?account={accountid}"
-FORTNITE_RECENT_MATCHES_URL = "https://fortniteapi.io/matches?account={}"
-FORTNITE_TRACKER_URL = "https://fortnitetracker.com/profile/all/{username}"
-TWITCH_AUTHENTICATION_URL = "https://id.twitch.tv/oauth2/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials"
-TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first=100&user_login={user_login}"
-TWITCH_GAME_URL = "https://api.twitch.tv/helix/games?name=Fortnite"
+ACCOUNT_ID_ADVANCED_LOOKUP_URL = "https://fortniteapi.io/v2/lookup/advanced"
+PLAYER_STATS_BY_SEASON_URL = "https://fortniteapi.io/v1/stats"
 
 
-async def get_player_stats(ctx, player_name, guid):
+async def get_player_stats(ctx, player_name, silent):
+    """Get player statistics from fortniteapi.io."""
+    account_info = await _get_player_account_info(player_name)
+
+    player_stats = await _get_player_latest_season_stats(account_info)
+
+    twitch_stream = await twitch.get_twitch_stream(player_name)
+
+    message = _create_message(account_info, player_stats, twitch_stream)
+
+    tasks = [_track_player(player_name, player_stats)]
+    if not silent:
+        tasks.append(ctx.send(embed=message))
+
+    await asyncio.gather(*tasks)
+
+
+async def _get_player_account_info(player_name):
+    """Get player account ID using advanced lookup. Advanced lookup
+    returns a list of players with similar names, ranked in order of
+    match confidence.
+    """
+    params = {
+        "username": player_name
+    }
+
     async with aiohttp.ClientSession() as session:
-        account_id = player_name
-        if not guid:
-            result = await _get_player_account_id(session, player_name, "")
+        async with session.get(
+            url=ACCOUNT_ID_ADVANCED_LOOKUP_URL,
+            params=params,
+            headers=_get_headers()
+        ) as resp:
+            if resp.status == 404:
+                raise UserDoesNotExist(f"Username not found: {player_name}")
 
-            if not result["result"]:
-                await ctx.send("No Epic username found")
-                return
+            resp_json = await resp.json()
 
-            account_id = result["account_id"]
+            # TODO: Convert to logger
+            print(f"Closest username matches: {resp_json['matches']}")
 
-        stats = await _get_player_stats(session, account_id)
-        if stats["global_stats"] is None:
-            # Try psn/xbl as player's platform
-            result = await _get_player_account_id(session, player_name, "psn")
-            stats = await _get_player_stats(session, account_id)
-            if stats["global_stats"] is None:
-                hidden_player_name = stats["name"]
-                stats_hidden_embed=discord.Embed(title=f"{hidden_player_name}'s statistics are hidden")
-                await ctx.send(embed=stats_hidden_embed)
-                return
+            best_match = resp_json["matches"][0]
+            matched_username = best_match["matches"][0]["value"]
+            matched_platform = best_match["matches"][0]["platform"].capitalize()
 
-        username = stats["name"]
-        level = stats["account"].get("level", 0)
+            if player_name == matched_username:
+                name = player_name
+            else:
+                name = f"{player_name} ({matched_platform}: {matched_username})"
 
-        solo = stats["global_stats"].get("solo", {})
-        duo = stats["global_stats"].get("duo", {})
-        squad = stats["global_stats"].get("squad", {})
-
-        solo_stats = _calculate_stats(solo)
-        duo_stats = _calculate_stats(duo)
-        squad_stats = _calculate_stats(squad)
-        overall_stats, ranking_color = _calculate_overall_stats(solo, duo, squad)
-
-        twitch_stream = await _get_twitch_stream(session, username)
-
-        output = _construct_output(username, ranking_color, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream)
-        await ctx.send(embed=output)
+            return {
+                "account_id": best_match["accountId"],
+                "epic_username": matched_username,
+                "readable_name": name
+            }
 
 
-async def _get_player_account_id(session, player_name, platform):
+async def _get_player_latest_season_stats(account_info):
+    """"Get player stats for the latest season that the player has played in.
+    The API will retry another time if the season queried with originally is
+    not the most recent season that the player has played in.
     """
-    Get account id given player name and platform
+    season_id = _get_season_id()
+    player_stats = await _get_player_season_stats(account_info)
+
+    if not _is_latest_season(season_id, player_stats):
+        latest_season_id = _get_latest_season_id(player_stats)
+        _set_fortnite_season_id(latest_season_id)
+        # TODO: Convert to logger
+        print(f"Found new season ID, setting latest season ID to: {latest_season_id}")
+
+        player_stats = await _get_player_season_stats(account_info, season=latest_season_id)
+
+    mode_breakdown = player_stats["global_stats"]
+    mode_breakdown = _append_all_mode_stats(mode_breakdown)
+    mode_breakdown["duos"] = mode_breakdown.pop("duo")
+    mode_breakdown["trios"] = mode_breakdown.pop("trio")
+    mode_breakdown["squads"] = mode_breakdown.pop("squad")
+
+    return mode_breakdown
+
+
+async def _get_player_season_stats(account_info, season=None):
+    """Get player stats for the specified season."""
+    account_id = account_info["account_id"]
+
+    params = {
+        "account": account_id
+    }
+
+    if season is not None:
+        params["season"] = season
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url=PLAYER_STATS_BY_SEASON_URL,
+            params=params,
+            headers=_get_headers(),
+            raise_for_status=True
+        ) as resp:
+            resp_json = await resp.json()
+            if resp_json["result"] is False:
+                raise UserStatisticsNotFound(f"User statistics not found: {account_info['readable_name']}")
+
+            return resp_json
+
+
+def _get_season_id():
+    """Returns the latest season ID that was stored."""
+    return int(os.getenv("FORTNITE_SEASON_ID"))
+
+
+def _set_fortnite_season_id(season_id):
+    """ Set the Fortnite season ID to the latest season ID."""
+    os.environ["FORTNITE_SEASON_ID"] = str(season_id)
+
+
+def _is_latest_season(season_id, player_stats):
+    """Returns True if the season ID requested is for the latest season
+    that the player has data on.
     """
-    resp = await session.get(
-        FORTNITE_ACCOUNT_ID_URL.format(username=player_name, platform=platform), headers={"Authorization": FORTNITE_API_TOKEN}
+    return season_id < player_stats["account"]["season"]
+
+
+def _get_latest_season_id(player_stats):
+    """Retrieves the latest season ID from the player stats history."""
+    return max(player_stats["accountLevelHistory"], key=lambda x:x["season"])["season"]
+
+
+def _get_headers():
+    """Return the API headers as a dict."""
+    return {
+        "Authorization": FORTNITE_API_TOKEN
+    }
+
+
+def _append_all_mode_stats(mode_breakdown):
+    """Append aggregated stats into the dataset as part of the "all" game mode."""
+    all_stats = {
+        "placetop1": 0,
+        "matchesplayed": 0,
+        "winrate": 0,
+        "kills": 0,
+        "kd": 0,
+        "score": 0
+    }
+
+    for _, stats in mode_breakdown.items():
+        all_stats["placetop1"] += stats["placetop1"]
+        all_stats["matchesplayed"] += stats["matchesplayed"]
+        all_stats["kills"] += stats["kills"]
+
+    all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"]
+    all_stats["kd"] = all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"])
+
+    mode_breakdown["all"] = all_stats
+
+    return mode_breakdown
+
+
+def _create_message(account_info, stats_breakdown, twitch_stream):
+    """ Create player stats Discord message """
+    wins_count = stats_breakdown["all"]["placetop1"]
+    matches_played = stats_breakdown["all"]["matchesplayed"]
+    kd_ratio = stats_breakdown["all"]["kd"]
+
+    return discord_utils.create_stats_message(
+        title=f"Username: {account_info['readable_name']}",
+        desc=discord_utils.create_wins_str(wins_count, matches_played),
+        color_metric=kd_ratio,
+        create_stats_func=_create_stats_str,
+        stats_breakdown=stats_breakdown,
+        username=account_info["epic_username"],
+        twitch_stream=twitch_stream
     )
-    if resp.status == 404:
-        raise UserDoesNotExist(f"Username not found in FN API: {player_name}")
-    return await resp.json()
 
 
-async def _get_player_stats(session, account_id):
-    """
-    Get player stats given account id
-    """
-    resp = await session.get(
-        FORTNITE_PLAYER_STATS_URL.format(accountid=account_id), headers={"Authorization": FORTNITE_API_TOKEN}
-    )
-    return await resp.json()
+def _create_stats_str(mode, stats_breakdown):
+    """ Create stats string for output """
+    mode_stats = stats_breakdown[mode]
+    return (f"KD: {mode_stats['kd']:.2f} • "
+            f"Wins: {int(mode_stats['placetop1']):,} • "
+            f"Win Percentage: {mode_stats['winrate']:,.1f}% • "
+            f"Matches: {int(mode_stats['matchesplayed']):,}")
 
 
-def _calculate_stats(game_mode):
-    """
-    Calculate player stats in specific game mode
-    """
-    return "KD: {KD}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
-        KD=game_mode.get("kd", 0), wins=game_mode.get("placetop1", 0), win_percentage=round(game_mode.get("winrate", 0)*100,2),
-        kills=game_mode.get("kills", 0), matches_played=game_mode.get("matchesplayed", 0)
-    )
+async def _track_player(username, stats_breakdown):
+    """ Insert player stats into database """
+    params = []
+    for mode, stats in stats_breakdown.items():
+        params.append({
+            "username": username,
+            "season": _get_season_id(),
+            "mode": mode,
+            "kd": stats["kd"],
+            "games": stats["matchesplayed"],
+            "wins": stats["placetop1"],
+            "win_rate": stats["winrate"],
+            "trn": stats["score"],
+            "date_added": get_playing_session_date()
+        })
 
-
-def _calculate_overall_stats(solo, duo, squad):
-    """
-    Calculate player's overall stats using solo, duo, squad stats
-    """
-    overall_kd = (solo.get("kd", 0) + duo.get("kd", 0) + squad.get("kd", 0))/3
-    overall_wins = solo.get("placetop1", 0) + duo.get("placetop1", 0) + squad.get("placetop1", 0)
-    overall_winp = ((solo.get("winrate", 0)*100) + (duo.get("winrate", 0)*100) + (squad.get("winrate", 0)*100))/3
-    overall_kills = solo.get("kills", 0) + duo.get("kills", 0) + squad.get("kills", 0)
-    overall_matchplayed = solo.get("matchesplayed", 0) + duo.get("matchesplayed", 0) + squad.get("matchesplayed", 0)
-
-    if overall_kd >= 3:
-        ranking_color = 0xa600ff
-    elif overall_kd < 3 and overall_kd >= 2:
-        ranking_color = 0xff0000
-    elif overall_kd < 2 and overall_kd >= 1:
-        ranking_color = 0xff8800
-    else:
-        ranking_color = 0x17b532
-
-    overall_stats = "KD: {KD:0.2f}, Wins: {wins}, Win %: {win_percentage:0.2f}%, Kills: {kills}, Matches Played: {matches_played} \n".format(
-        KD=overall_kd, wins=overall_wins, win_percentage=overall_winp, kills=overall_kills, matches_played=overall_matchplayed
-    )
-    return overall_stats, ranking_color
-
-
-async def _get_twitch_stream(session, username):
-    """
-    Get Twitch stream if player is streaming
-    """
-    user_login = username
-    if "TTV" in username:
-        user_login = username.strip("TTV")
-    if "ttv" in username:
-        user_login = username.strip("ttv")
-
-    twitch_auth_response = await session.post(TWITCH_AUTHENTICATION_URL.format(client_id=TWITCH_CLIENT_ID, client_secret=TWITCH_CLIENT_SECRET))
-    twitch_bearer_token = await twitch_auth_response.json()
-
-    twitch_game_reponse = await session.get(TWITCH_GAME_URL, headers={"Authorization": "Bearer " + twitch_bearer_token["access_token"], "Client-ID": TWITCH_CLIENT_ID})
-    twitch_game = await twitch_game_reponse.json()
-
-    twitch_stream_response = await session.get(TWITCH_STREAM_URL.format(game_id=twitch_game["data"][0]["id"], user_login=user_login), headers={"Authorization": "Bearer " + twitch_bearer_token["access_token"], "Client-ID": TWITCH_CLIENT_ID})
-    twitch_fortnite_streams = await twitch_stream_response.json()
-
-    twitch_stream = ""
-    if twitch_stream_response.status == 200 and twitch_fortnite_streams["data"]:
-        twitch_stream = "https://www.twitch.tv/{username}".format(username=username)
-    return twitch_stream
-
-
-def _construct_output(username, ranking_color, level, solo_stats, duo_stats, squad_stats, overall_stats, twitch_stream):
-    """
-    Format output
-    """
-    embed=discord.Embed(title="Username: " + username,
-                    url=FORTNITE_TRACKER_URL.format(username=username.replace(" ", "%20")),
-                    description="Level: " + str(level),
-                    color=ranking_color)
-    embed.add_field(name="[Solo]" , value=solo_stats, inline=False)
-    embed.add_field(name="[Duo]", value=duo_stats, inline=False)
-    embed.add_field(name="[Squad]", value=squad_stats, inline=False)
-    embed.add_field(name= "[Overall]", value=overall_stats, inline=False)
-    if twitch_stream != "":
-        embed.add_field(name="[Twitch]", value="[Streaming here]({stream_url})".format(stream_url=twitch_stream), inline=False)
-    embed.add_field(name= "[Source]", value="Fortnite API", inline=False)
-    return embed
+    mysql = await MySQL.create()
+    await mysql.insert_player(params)
