@@ -14,7 +14,6 @@ from flask import Flask, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 import clients.fortnite_api as fortnite_api
-import clients.fortnite_tracker as fortnite_tracker
 import clients.interactions as interactions
 import clients.openai as openai
 import clients.stats as stats
@@ -153,20 +152,13 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
         return
 
     try:
-        await fortnite_tracker.get_player_stats(ctx, player_name, silent)
-    except Exception as ft_exc:
-        logger.warning(ft_exc, exc_info=_should_log_traceback(ft_exc))
-
-        # Fortnite API stats are unnecessary in silent mode
-        if silent:
-            return
-
-        logger.warning("Falling back to Fortnite API: %s", player_name)
-        try:
-            await fortnite_api.get_player_stats(ctx, player_name, guid)
-        except Exception as fa_exc:
-            logger.warning(fa_exc, exc_info=_should_log_traceback(fa_exc))
+        await fortnite_api.get_player_stats(ctx, player_name, silent)
+    except Exception as exc:
+        logger.warning(repr(exc), exc_info=_should_log_traceback(exc))
+        if _is_known_error(exc):
             await ctx.send(f"Player not found: {player_name}")
+        else:
+            await ctx.send(f"Failed to retrieve player statistics: {repr(exc)}")
 
 
 @bot.command(name=commands.TRACK_COMMAND,
@@ -368,12 +360,20 @@ async def ask_chatgpt(ctx, *params):
     await ctx.send(resp)
 
 
-def _should_log_traceback(e):
+def _should_log_traceback(exc):
     """ Returns True if a traceback should be logged,
     otherwise False
     """
+    return not _is_known_error(exc)
+
+
+def _is_known_error(exc):
+    """ Returns True if the error is known, otherwise False """
     # TODO: Change to subclass and check instance variable flag
-    return e.__class__.__name__ not in ("UserDoesNotExist", "NoSeasonDataError")
+    return exc.__class__.__name__ in (
+        "UserDoesNotExist",
+        "NoSeasonDataError"
+    )
 
 
 # Make a partial app.run to pass args/kwargs to it
