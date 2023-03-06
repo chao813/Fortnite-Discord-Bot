@@ -124,10 +124,10 @@ def calculate_skill_rate_indicator(overall_kd):
         return "Bots"
 
 
-def create_wins_str(stats):
+def create_wins_str(wins, matches):
     """ Create opponent stats string for output """
-    wins_str = int(stats["Top1"])
-    matches_str = int(stats["Matches"])
+    wins_str = int(wins)
+    matches_str = int(matches)
     return f"Wins: {wins_str} / {matches_str} played"
 
 
