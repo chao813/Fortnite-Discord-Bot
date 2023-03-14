@@ -22,6 +22,7 @@ async def get_player_stats(ctx, player_name, silent):
 
     player_stats = await _get_player_latest_season_stats(account_info)
 
+    # TODO: Asyncio with above
     twitch_stream = await twitch.get_twitch_stream(player_name)
 
     message = _create_message(account_info, player_stats, twitch_stream)
@@ -49,7 +50,7 @@ async def _get_player_account_info(player_name):
             headers=_get_headers()
         ) as resp:
             if resp.status == 404:
-                raise UserDoesNotExist(f"Username not found: {player_name}")
+                raise UserDoesNotExist(f"Player not found: {player_name}")
 
             resp_json = await resp.json()
 
@@ -67,7 +68,7 @@ async def _get_player_account_info(player_name):
 
             return {
                 "account_id": best_match["accountId"],
-                "epic_username": matched_username,
+                "platform_username": matched_username,
                 "readable_name": name
             }
 
@@ -90,10 +91,7 @@ async def _get_player_latest_season_stats(account_info):
 
     mode_breakdown = player_stats["global_stats"]
     mode_breakdown = _append_all_mode_stats(mode_breakdown)
-    mode_breakdown["duos"] = mode_breakdown.pop("duo")
-    mode_breakdown["trios"] = mode_breakdown.pop("trio")
-    mode_breakdown["squads"] = mode_breakdown.pop("squad")
-
+    mode_breakdown = _rename_game_modes(mode_breakdown)
     return mode_breakdown
 
 
@@ -114,8 +112,16 @@ async def _get_player_season_stats(account_info, season_id):
             raise_for_status=True
         ) as resp:
             resp_json = await resp.json()
+
+            if resp_json["result"] is True:
+                if not resp_json["result"]["global_stats"] or "season" not in resp_json["result"]["account"]:
+                    raise UserStatisticsNotFound(f"Player does not have sufficient data: {account_info['readable_name']}")
+
             if resp_json["result"] is False:
-                raise UserStatisticsNotFound(f"User statistics not found: {account_info['readable_name']}")
+                if "name" is None:
+                    raise UserStatisticsNotFound(f"Player has a private account: {account_info['readable_name']}")
+                else:
+                    raise UserStatisticsNotFound(f"Player statistics not found: {account_info['readable_name']}")
 
             return resp_json
 
@@ -173,6 +179,17 @@ def _append_all_mode_stats(mode_breakdown):
     return mode_breakdown
 
 
+def _rename_game_modes(mode_breakdown):
+    """Rename game modes to synchronize with what Discord utils expects."""
+    if "duo" in mode_breakdown:
+        mode_breakdown["duos"] = mode_breakdown.pop("duo")
+    if "trio" in mode_breakdown:
+        mode_breakdown["trios"] = mode_breakdown.pop("trio")
+    if "squad" in mode_breakdown:
+        mode_breakdown["squads"] = mode_breakdown.pop("squad")
+    return mode_breakdown
+
+
 def _create_message(account_info, stats_breakdown, twitch_stream):
     """ Create player stats Discord message """
     wins_count = stats_breakdown["all"]["placetop1"]
@@ -185,7 +202,7 @@ def _create_message(account_info, stats_breakdown, twitch_stream):
         color_metric=kd_ratio,
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
-        username=account_info["epic_username"],
+        username=account_info["platform_username"],
         twitch_stream=twitch_stream
     )
 

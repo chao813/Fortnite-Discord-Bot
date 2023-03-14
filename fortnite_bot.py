@@ -20,6 +20,7 @@ import clients.stats as stats
 import commands
 from auth import validate
 from error_handlers import initialize_error_handlers
+from exceptions import NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound
 from logger import initialize_request_logger, configure_logger, get_logger_with_context, log_command
 
 
@@ -100,9 +101,13 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
+    """ Event handler to track squad stats on voice channel join """
     logger = get_logger_with_context(identifier="Main")
 
-    """ Event handler to track squad stats on voice channel join """
+    # TODO: Debug
+    print(f"Member info: {member}")
+    print(f"Squad players list: {SQUAD_PLAYERS_LIST}")
+
     try:
         if interactions.should_add_player_to_squad_player_session_list(member, before, after):
             if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
@@ -116,8 +121,8 @@ async def on_voice_state_update(member, before, after):
 
         if not interactions.send_track_question(member, before, after):
             return
-    except Exception as e:
-        logger.warning("Failed to run on_voice_state_update: %s", repr(e), exc_info=True)
+    except Exception as exc:
+        logger.warning("Failed to run on_voice_state_update: %s", repr(exc), exc_info=True)
 
     ctx, silent = await interactions.send_track_question_and_wait(
         bot,
@@ -138,10 +143,13 @@ async def help(ctx):
 @bot.command(name=commands.PLAYER_SEARCH_COMMAND,
              help=commands.PLAYER_SEARCH_DESCRIPTION,
              aliases=commands.PLAYER_SEARCH_ALIASES)
-@log_command
+
 async def player_search(ctx, *player_name, guid=False, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
+
+    # TODO: Parse guid for replays
+    # TODO: Change guid to is_guid
 
     logger = get_logger_with_context(ctx)
     logger.info("Searching for player stats: %s", player_name)
@@ -153,14 +161,14 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
 
     try:
         await fortnite_api.get_player_stats(ctx, player_name, silent)
+        logger.info("Returned player statistics for: %s", player_name)
+    except (NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound) as exc:
+        logger.info("Unable to retrieve statistics for '%s': %s", player_name, exc)
+        await ctx.send(exc)
     except Exception as exc:
-        logger.warning(repr(exc), exc_info=_should_log_traceback(exc))
-        if _is_known_error(exc):
-            await ctx.send(f"Player not found: {player_name}")
-        else:
-            await ctx.send(f"Failed to retrieve player statistics: {repr(exc)}")
-
-    logger.info("Stats returned for: %s", player_name)
+        error_msg = f"Failed to retrieve player statistics: {repr(exc)}"
+        logger.warning(error_msg, exc_info=_should_log_traceback(exc))
+        await ctx.send(error_msg)
 
 
 @bot.command(name=commands.TRACK_COMMAND,
@@ -366,15 +374,11 @@ def _should_log_traceback(exc):
     """ Returns True if a traceback should be logged,
     otherwise False
     """
-    return not _is_known_error(exc)
-
-
-def _is_known_error(exc):
-    """ Returns True if the error is known, otherwise False """
     # TODO: Change to subclass and check instance variable flag
-    return exc.__class__.__name__ in (
-        "UserDoesNotExist",
+    return exc.__class__.__name__ not in (
         "NoSeasonDataError"
+        "UserDoesNotExist",
+        "UserStatisticsNotFound",
     )
 
 
