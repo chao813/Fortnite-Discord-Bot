@@ -105,8 +105,8 @@ async def on_voice_state_update(member, before, after):
     logger = get_logger_with_context(identifier="Main")
 
     # TODO: Debug
-    print(f"Member info: {member}")
-    print(f"Squad players list: {SQUAD_PLAYERS_LIST}")
+    logger.info("Member info: %s", member)
+    logger.info("Squad players list: %s", SQUAD_PLAYERS_LIST)
 
     try:
         if interactions.should_add_player_to_squad_player_session_list(member, before, after):
