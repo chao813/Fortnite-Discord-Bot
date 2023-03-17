@@ -52,14 +52,19 @@ async def _get_player_account_info(player_name):
             if resp.status == 404:
                 raise UserDoesNotExist(f"Player not found: {player_name}")
 
-            resp_json = await resp.json()
+            try:
+                resp_json = await resp.json()
 
-            # TODO: Convert to logger
-            print(f"Closest username matches: {resp_json['matches']}")
+                # TODO: Convert to logger
+                print(f"Closest username matches: {resp_json['matches']}")
 
-            best_match = resp_json["matches"][0]
-            matched_username = best_match["matches"][0]["value"]
-            matched_platform = best_match["matches"][0]["platform"].capitalize()
+                best_match = resp_json["matches"][0]
+                matched_username = best_match["matches"][0]["value"]
+                matched_platform = best_match["matches"][0]["platform"].capitalize()
+            except Exception as exc:
+                print(f"Invalid response received from the API: {resp_json}")
+                print(repr(exc))
+                raise UserDoesNotExist("API broke and returned bad data..")
 
             if player_name == matched_username:
                 name = player_name
