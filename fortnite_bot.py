@@ -119,7 +119,7 @@ async def on_voice_state_update(member, before, after):
             return
     except Exception as exc:
         logger.warning("Failed to run on_voice_state_update: %s", repr(exc), exc_info=True)
-        SQUAD_PLAYERS_LIST = []
+        SQUAD_PLAYERS_LIST.clear()
 
     ctx, silent = await interactions.send_track_question_and_wait(
         bot,
