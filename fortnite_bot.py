@@ -104,10 +104,6 @@ async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
     logger = get_logger_with_context(identifier="Main")
 
-    # TODO: Debug
-    logger.info("Member info: %s", member)
-    logger.info("Squad players list: %s", SQUAD_PLAYERS_LIST)
-
     try:
         if interactions.should_add_player_to_squad_player_session_list(member, before, after):
             if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
@@ -117,12 +113,13 @@ async def on_voice_state_update(member, before, after):
         if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
             if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
                 if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in SQUAD_PLAYERS_LIST:
-                    SQUAD_PLAYERS_LIST.pop(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
+                    SQUAD_PLAYERS_LIST.remove(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
         if not interactions.send_track_question(member, before, after):
             return
     except Exception as exc:
         logger.warning("Failed to run on_voice_state_update: %s", repr(exc), exc_info=True)
+        SQUAD_PLAYERS_LIST = []
 
     ctx, silent = await interactions.send_track_question_and_wait(
         bot,

@@ -54,7 +54,7 @@ async def _get_player_account_info(player_name):
                 raise UserDoesNotExist(f"Player not found: {player_name}")
 
             # TODO: Move this elsewhere
-            logger = get_logger_with_context(player_name)
+            logger = get_logger_with_context(identifier=player_name)
 
             try:
                 resp_json = await resp.json()
@@ -93,7 +93,7 @@ async def _get_player_latest_season_stats(account_info):
         latest_season_id = _get_latest_season_id(player_stats)
         _set_fortnite_season_id(latest_season_id)
         # TODO: Move this elsewhere
-        logger = get_logger_with_context(account_info["readable_name"])
+        logger = get_logger_with_context(identifier=account_info["readable_name"])
         logger.info("Found new season ID, setting latest season ID to: %s", latest_season_id)
 
         player_stats = await _get_player_season_stats(account_info, latest_season_id)
