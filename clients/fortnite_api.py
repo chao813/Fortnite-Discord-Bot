@@ -123,11 +123,11 @@ async def _get_player_season_stats(account_info, season_id):
             resp_json = await resp.json()
 
             if resp_json["result"] is True:
-                if not resp_json["result"]["global_stats"] or "season" not in resp_json["result"]["account"]:
+                if not resp_json["global_stats"] or "season" not in resp_json["account"]:
                     raise UserStatisticsNotFound(f"Player does not have sufficient data: {account_info['readable_name']}")
 
             if resp_json["result"] is False:
-                if "name" is None:
+                if resp_json["name"] is None:
                     raise UserStatisticsNotFound(f"Player has a private account: {account_info['readable_name']}")
                 else:
                     raise UserStatisticsNotFound(f"Player statistics not found: {account_info['readable_name']}")
