@@ -69,7 +69,7 @@ async def _get_player_account_info(player_name):
                 logger.error(repr(exc))
                 raise UserDoesNotExist("API broke and returned bad data..")
 
-            if player_name == matched_username:
+            if player_name.lower() == matched_username.lower():
                 name = player_name
             else:
                 name = f"{player_name} ({matched_platform}: {matched_username})"
@@ -128,9 +128,9 @@ async def _get_player_season_stats(account_info, season_id):
 
             if resp_json["result"] is False:
                 if resp_json["name"] is None:
-                    raise UserStatisticsNotFound(f"Player has a private account: {account_info['readable_name']}")
-                else:
                     raise UserStatisticsNotFound(f"Player statistics not found: {account_info['readable_name']}")
+                else:
+                    raise UserStatisticsNotFound(f"Player has a private account: {account_info['readable_name']}")
 
             return resp_json
 
