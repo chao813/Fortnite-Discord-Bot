@@ -70,7 +70,7 @@ async def _get_player_account_info(player_name):
                 raise UserDoesNotExist("API broke and returned bad data..")
 
             if player_name.lower() == matched_username.lower():
-                name = player_name
+                name = matched_username
             else:
                 name = f"{player_name} ({matched_platform}: {matched_username})"
 
