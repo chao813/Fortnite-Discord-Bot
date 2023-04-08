@@ -3,7 +3,7 @@ import os
 import openai
 
 OPENAI_MODEL = "gpt-3.5-turbo"
-PROMPT_PREFIX = "Use young slangs and speak like you're super chill."
+PROMPT_PREFIX = "Use young slangs and speak like you're chill. Be sarcastic."
 
 
 def initialize():

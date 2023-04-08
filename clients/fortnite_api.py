@@ -180,7 +180,7 @@ def _append_all_mode_stats(mode_breakdown):
         all_stats["matchesplayed"] += stats["matchesplayed"]
         all_stats["kills"] += stats["kills"]
 
-    all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"]
+    all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"] * 100
     all_stats["kd"] = all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"])
 
     mode_breakdown["all"] = all_stats
