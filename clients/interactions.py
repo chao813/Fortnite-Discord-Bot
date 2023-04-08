@@ -38,15 +38,15 @@ def should_add_player_to_squad_player_session_list(member, before, after):
     otherwise False
     """
     return discord_utils.in_fortnite_role(member) and \
-           discord_utils.joined_fortnite_voice_channel(before, after) 
+           discord_utils.joined_fortnite_voice_channel(before, after)
 
 
 def should_remove_player_from_squad_player_session_list(member, before, after):
-    """ Return True if player should be removed from current session 
+    """ Return True if player should be removed from current session
     squad player list, otherwise False """
     return discord_utils.in_fortnite_role(member) and \
            discord_utils.left_fortnite_voice_channel(before, after)
-           
+
 
 def send_track_question(member, before, after):
     """ Return True if the track question should be sent,

@@ -8,6 +8,7 @@ import clients.twitch as twitch
 from database.mysql import MySQL
 from exceptions import UserDoesNotExist, UserStatisticsNotFound
 from utils.dates import get_playing_session_date
+from logger import get_logger_with_context
 
 
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
@@ -22,6 +23,7 @@ async def get_player_stats(ctx, player_name, silent):
 
     player_stats = await _get_player_latest_season_stats(account_info)
 
+    # TODO: Asyncio with above
     twitch_stream = await twitch.get_twitch_stream(player_name)
 
     message = _create_message(account_info, player_stats, twitch_stream)
@@ -49,25 +51,32 @@ async def _get_player_account_info(player_name):
             headers=_get_headers()
         ) as resp:
             if resp.status == 404:
-                raise UserDoesNotExist(f"Username not found: {player_name}")
+                raise UserDoesNotExist(f"Player not found: {player_name}")
 
-            resp_json = await resp.json()
+            # TODO: Move this elsewhere
+            logger = get_logger_with_context(identifier=player_name)
 
-            # TODO: Convert to logger
-            print(f"Closest username matches: {resp_json['matches']}")
+            try:
+                resp_json = await resp.json()
 
-            best_match = resp_json["matches"][0]
-            matched_username = best_match["matches"][0]["value"]
-            matched_platform = best_match["matches"][0]["platform"].capitalize()
+                logger.info("Closest username matches: %s", resp_json['matches'])
 
-            if player_name == matched_username:
-                name = player_name
+                best_match = resp_json["matches"][0]
+                matched_username = best_match["matches"][0]["value"]
+                matched_platform = best_match["matches"][0]["platform"].capitalize()
+            except Exception as exc:
+                logger.error("Invalid response received from the API: %s", resp_json)
+                logger.error(repr(exc))
+                raise UserDoesNotExist("API broke and returned bad data..")
+
+            if player_name.lower() == matched_username.lower():
+                name = matched_username
             else:
                 name = f"{player_name} ({matched_platform}: {matched_username})"
 
             return {
                 "account_id": best_match["accountId"],
-                "epic_username": matched_username,
+                "platform_username": matched_username,
                 "readable_name": name
             }
 
@@ -83,17 +92,15 @@ async def _get_player_latest_season_stats(account_info):
     if not _is_latest_season(season_id, player_stats):
         latest_season_id = _get_latest_season_id(player_stats)
         _set_fortnite_season_id(latest_season_id)
-        # TODO: Convert to logger
-        print(f"Found new season ID, setting latest season ID to: {latest_season_id}")
+        # TODO: Move this elsewhere
+        logger = get_logger_with_context(identifier=account_info["readable_name"])
+        logger.info("Found new season ID, setting latest season ID to: %s", latest_season_id)
 
         player_stats = await _get_player_season_stats(account_info, latest_season_id)
 
     mode_breakdown = player_stats["global_stats"]
     mode_breakdown = _append_all_mode_stats(mode_breakdown)
-    mode_breakdown["duos"] = mode_breakdown.pop("duo")
-    mode_breakdown["trios"] = mode_breakdown.pop("trio")
-    mode_breakdown["squads"] = mode_breakdown.pop("squad")
-
+    mode_breakdown = _rename_game_modes(mode_breakdown)
     return mode_breakdown
 
 
@@ -114,8 +121,16 @@ async def _get_player_season_stats(account_info, season_id):
             raise_for_status=True
         ) as resp:
             resp_json = await resp.json()
+
+            if resp_json["result"] is True:
+                if not resp_json["global_stats"] or "season" not in resp_json["account"]:
+                    raise UserStatisticsNotFound(f"Player does not have sufficient data: {account_info['readable_name']}")
+
             if resp_json["result"] is False:
-                raise UserStatisticsNotFound(f"User statistics not found: {account_info['readable_name']}")
+                if resp_json["name"] is None:
+                    raise UserStatisticsNotFound(f"Player statistics not found: {account_info['readable_name']}")
+                else:
+                    raise UserStatisticsNotFound(f"Player has a private account: {account_info['readable_name']}")
 
             return resp_json
 
@@ -165,11 +180,22 @@ def _append_all_mode_stats(mode_breakdown):
         all_stats["matchesplayed"] += stats["matchesplayed"]
         all_stats["kills"] += stats["kills"]
 
-    all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"]
+    all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"] * 100
     all_stats["kd"] = all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"])
 
     mode_breakdown["all"] = all_stats
 
+    return mode_breakdown
+
+
+def _rename_game_modes(mode_breakdown):
+    """Rename game modes to synchronize with what Discord utils expects."""
+    if "duo" in mode_breakdown:
+        mode_breakdown["duos"] = mode_breakdown.pop("duo")
+    if "trio" in mode_breakdown:
+        mode_breakdown["trios"] = mode_breakdown.pop("trio")
+    if "squad" in mode_breakdown:
+        mode_breakdown["squads"] = mode_breakdown.pop("squad")
     return mode_breakdown
 
 
@@ -185,7 +211,7 @@ def _create_message(account_info, stats_breakdown, twitch_stream):
         color_metric=kd_ratio,
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
-        username=account_info["epic_username"],
+        username=account_info["platform_username"],
         twitch_stream=twitch_stream
     )
 
