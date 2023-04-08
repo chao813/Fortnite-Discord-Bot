@@ -3,6 +3,7 @@ import os
 import openai
 
 OPENAI_MODEL = "gpt-3.5-turbo"
+PROMPT_PREFIX = "Use young slangs and speak like you're chill. Be sarcastic."
 
 
 def initialize():
@@ -17,14 +18,14 @@ async def ask_chatgpt(prompt, logger):
         messages=[
             {
                 "role": "user",
-                "content": prompt
+                "content": f"{PROMPT_PREFIX} {prompt}"
             }
         ]
     )
 
     logger.info({
         "name": "Ask ChatGPT interaction",
-        "prompt": "prompt",
+        "prompt": prompt,
         "response": completion.to_dict_recursive()
     })
 
