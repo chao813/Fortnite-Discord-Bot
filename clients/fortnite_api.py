@@ -175,10 +175,11 @@ def _append_all_mode_stats(mode_breakdown):
         "score": 0
     }
 
-    for _, stats in mode_breakdown.items():
+    for mode, stats in mode_breakdown.items():
         all_stats["placetop1"] += stats["placetop1"]
         all_stats["matchesplayed"] += stats["matchesplayed"]
         all_stats["kills"] += stats["kills"]
+        mode_breakdown[mode]["winrate"] = stats["winrate"] * 100
 
     all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"] * 100
     all_stats["kd"] = all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"])
