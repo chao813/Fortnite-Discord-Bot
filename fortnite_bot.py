@@ -15,6 +15,7 @@ from werkzeug.exceptions import BadRequest
 
 import clients.fortnite_api as fortnite_api
 import clients.interactions as interactions
+import clients.ocr as ocr
 import clients.openai as openai
 import clients.stats as stats
 import commands
@@ -143,7 +144,11 @@ async def help(ctx):
 
 async def player_search(ctx, *player_name, guid=False, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
-    player_name = " ".join(player_name)
+    if ctx.message.attachments:
+        player_name = await ocr.convert_screenshot(ctx.message.attachments[0].url)
+    else:
+        player_name = " ".join(player_name)
+
 
     # TODO: Parse guid for replays
     # TODO: Change guid to is_guid
