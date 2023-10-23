@@ -97,12 +97,6 @@ Player Not Found:
 ```
 ![Alt text](/images/fail_example.png?raw=true)
 
-Player Found (Fortnite Tracker search):
-```
-!hunted SypherPK
-```
-![Alt text](/images/fortnite_tracker_example.png?raw=true)
-
 Player Found (Fortnite API search):
 ```
 !hunted SypherPK
