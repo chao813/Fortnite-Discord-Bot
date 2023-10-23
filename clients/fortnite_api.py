@@ -15,24 +15,51 @@ FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 
 ACCOUNT_ID_ADVANCED_LOOKUP_URL = "https://fortniteapi.io/v2/lookup/advanced"
 PLAYER_STATS_BY_SEASON_URL = "https://fortniteapi.io/v1/stats"
-
+RANKED_INFO_LOOKUP_URL = "https://fortniteapi.io/v2/ranked/user"
 
 async def get_player_stats(ctx, player_name, silent):
     """Get player statistics from fortniteapi.io."""
     account_info = await _get_player_account_info(player_name)
 
     player_stats = await _get_player_latest_season_stats(account_info)
+    player_rank = await _get_player_rank(account_info)
 
     # TODO: Asyncio with above
     twitch_stream = await twitch.get_twitch_stream(player_name)
 
-    message = _create_message(account_info, player_stats, twitch_stream)
+    message = _create_message(account_info, player_stats, player_rank, twitch_stream)
 
     tasks = [_track_player(player_name, player_stats)]
     if not silent:
         tasks.append(ctx.send(embed=message))
 
     await asyncio.gather(*tasks)
+
+
+async def _get_player_rank(account_info):
+    """Get player rank, latest season? not sure what how fortniteapi handles"""
+    player_name = account_info["readable_name"]
+
+    params = {
+        "username": player_name,
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url=RANKED_INFO_LOOKUP_URL,
+            params=params,
+            headers=_get_headers(),
+            raise_for_status=True
+        ) as resp:
+            resp_json = await resp.json()
+
+            if resp_json["result"] is True:
+                if not resp_json["rankedData"] and resp_json["gameId"] != "fortnite":
+                    raise UserStatisticsNotFound(f"Player does not have ranked data: {account_info['readable_name']}")               
+                else:
+                    return [_ranked_data for _ranked_data in resp_json["rankedData"] if _ranked_data["rankingType"] == "ranked-br"][0]
+
+            return None 
 
 
 async def _get_player_account_info(player_name):
@@ -199,11 +226,14 @@ def _rename_game_modes(mode_breakdown):
     return mode_breakdown
 
 
-def _create_message(account_info, stats_breakdown, twitch_stream):
+def _create_message(account_info, stats_breakdown, player_rank, twitch_stream):
     """ Create player stats Discord message """
     wins_count = stats_breakdown["all"]["placetop1"]
     matches_played = stats_breakdown["all"]["matchesplayed"]
     kd_ratio = stats_breakdown["all"]["kd"]
+    if player_rank:
+        rank_name = player_rank["currentDivision"]["name"]
+        rank_progress = round(player_rank["promotionProgress"] * 100)
 
     return discord_utils.create_stats_message(
         title=f"Username: {account_info['readable_name']}",
@@ -212,7 +242,9 @@ def _create_message(account_info, stats_breakdown, twitch_stream):
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
         username=account_info["platform_username"],
-        twitch_stream=twitch_stream
+        twitch_stream=twitch_stream,
+        rank_name=rank_name,
+        rank_progress=rank_progress
     )
 
 

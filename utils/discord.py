@@ -1,5 +1,6 @@
 import os
 from urllib.parse import quote
+from pathlib import Path
 
 import discord
 
@@ -16,6 +17,28 @@ MODES = [
     "squads",
     "all"
 ]
+
+RANK_ICONS = {
+    "unranked": "https://static.wikia.nocookie.net/fortnite/images/0/0d/Unknown_Rank_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531202915",
+    "bronze i": "https://static.wikia.nocookie.net/fortnite/images/4/44/Bronze_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201220",
+    "bronze ii": "https://static.wikia.nocookie.net/fortnite/images/9/92/Bronze_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201221",
+    "bronze iii": "https://static.wikia.nocookie.net/fortnite/images/7/74/Bronze_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201222",
+    "silver i": "https://static.wikia.nocookie.net/fortnite/images/c/c3/Silver_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201235",
+    "silver ii": "https://static.wikia.nocookie.net/fortnite/images/1/1d/Silver_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201236",
+    "silver iii": "https://static.wikia.nocookie.net/fortnite/images/0/0a/Silver_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201237",
+    "gold i": "https://static.wikia.nocookie.net/fortnite/images/3/37/Gold_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201229",
+    "gold ii": "https://static.wikia.nocookie.net/fortnite/images/f/fb/Gold_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201230",
+    "gold iii": "https://static.wikia.nocookie.net/fortnite/images/c/cf/Gold_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201231",
+    "platinum i": "https://static.wikia.nocookie.net/fortnite/images/2/2a/Platinum_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201232",
+    "platinum ii": "https://static.wikia.nocookie.net/fortnite/images/3/3e/Platinum_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201233",
+    "platinum iii": "https://static.wikia.nocookie.net/fortnite/images/3/30/Platinum_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201234",
+    "diamond i": "https://static.wikia.nocookie.net/fortnite/images/9/98/Diamond_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201224",
+    "diamond ii": "https://static.wikia.nocookie.net/fortnite/images/d/db/Diamond_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201226",
+    "diamond iii": "https://static.wikia.nocookie.net/fortnite/images/e/e1/Diamond_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201227",
+    "elite": "https://static.wikia.nocookie.net/fortnite/images/2/2e/Elite_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201228",
+    "champion": "https://static.wikia.nocookie.net/fortnite/images/2/2a/Champion_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201223",
+    "unreal": "https://static.wikia.nocookie.net/fortnite/images/6/6c/Unreal_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201239",
+}
 
 
 def in_fortnite_role(member):
@@ -58,7 +81,7 @@ def get_season_id():
     return int(os.getenv("FORTNITE_SEASON_ID"))
 
 
-def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, username=None, twitch_stream=None):
+def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, rank_name, rank_progress, username=None, twitch_stream=None):
     """ Create Discord message """
     message_params = _create_stats_message_params(title, desc, color_metric, username)
 
@@ -76,7 +99,12 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
         message.add_field(name=f"[{name}]", value=create_stats_func(mode, stats_breakdown), inline=False)
 
     if twitch_stream:
-         message.add_field(name="[Twitch]", value=twitch_stream, inline=False)
+        message.add_field(name="[Twitch]", value=twitch_stream, inline=False)
+
+    if rank_name:
+        message.add_field(name="[Rank]", value=rank_name + f" - {rank_progress}%", inline=False)
+        message.set_thumbnail(url=RANK_ICONS[rank_name.lower()])
+
 
     return message
 
