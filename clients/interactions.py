@@ -124,12 +124,12 @@ async def _get_message_context(bot, message):
 
 async def send_upgrade_locations(ctx):
     """ Send map of upgrade locations """
-    await ctx.send("https://img.fortniteintel.com/wp-content/uploads/2021/03/17151906/Fortnite-Season-6-upgrade-locations.jpg.webp")
+    await ctx.send("https://prod.assets.earlygamecdn.com/images/fortnite-upgrade-bench-locations-chapter-4-season-4.JPG?transform=article3x_webp")
 
 
 async def send_hirable_npc_locations(ctx):
     """ Send map of hireable NPC locations """
-    await ctx.send("https://img.fortniteintel.com/wp-content/uploads/2021/03/29172627/Fortnite-hire-NPCs-768x748.jpg.webp")
+    await ctx.send("https://www.charlieintel.com/cdn-cgi/image/width=1080,quality=75,format=auto/https://editors.charlieintel.com/wp-content/uploads/2023/07/07/Fortnite-Chapter-4-Season-4-NPC-locations-hireable-characters-1024x576.jpg")
 
 
 async def send_chest_locations(ctx):
