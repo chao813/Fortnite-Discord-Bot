@@ -13,17 +13,7 @@ Retrieve player statistics in Fortnite Battle Royale
 ## Features
 - Asks if you want to see current squad stats when joining Fortnite discord channel
 
-Fortnite Tracker search (Default):
-- Calculates player current season statistics in different Game Modes (Solo, Duos, Trios, Squads)
-- Calculates player's overall statistics
-    > Statistics include:
-    >    - KD
-    >    - Wins
-    >    - Win Percentage
-    >    - Matches Played
-    >    - TRN
-----------------------------------------------------------------------------------
-Fortnite API search (Fall back):
+Fortnite API search (Default):
 If player profile is not found in fortnitetracker.com, fall back to using Fortnite API
 - Show player's level
 - Calculates player overall season statistics in different Game Modes (Solo, Duos, Squads)
@@ -36,6 +26,16 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
     >    - Matches Played
 - Link to player's Twitch stream if currently streaming
 ----------------------------------------------------------------------------------
+Fortnite Tracker search (:x: Deprecated, API no longer supported):
+- Calculates player current season statistics in different Game Modes (Solo, Duos, Trios, Squads)
+- Calculates player's overall statistics
+    > Statistics include:
+    >    - KD
+    >    - Wins
+    >    - Win Percentage
+    >    - Matches Played
+    >    - TRN
+----------------------------------------------------------------------------------
 
 - Link to Fortnite Tracker player profile (click on username to navigate)
 - Quick view of player's KD (color of embed content)
@@ -43,6 +43,7 @@ If player profile is not found in fortnitetracker.com, fall back to using Fortni
     - Orange : 1 < KD <= 2
     - Red : 2 < KD <= 3
     - Purple : KD > 3
+- Quick view of player's current ranking and progress
 - Display current stats for the squad. If a username is provided, display only stats for that player (ex: `!track LigmaBalls12`).")
 - Display stats difference of a player or the squad, or average stats of the opponents played today (ex: `!stats diff`, `!stats diff LigmaBalls12`, `!stats played`)."
 - Display average stats of all opponents faced today
