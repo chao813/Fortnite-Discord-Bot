@@ -17,26 +17,28 @@ MODES = [
     "all"
 ]
 
-RANK_ICONS = {
-    "unranked": "https://static.wikia.nocookie.net/fortnite/images/0/0d/Unknown_Rank_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531202915",
-    "bronze i": "https://static.wikia.nocookie.net/fortnite/images/4/44/Bronze_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201220",
-    "bronze ii": "https://static.wikia.nocookie.net/fortnite/images/9/92/Bronze_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201221",
-    "bronze iii": "https://static.wikia.nocookie.net/fortnite/images/7/74/Bronze_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201222",
-    "silver i": "https://static.wikia.nocookie.net/fortnite/images/c/c3/Silver_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201235",
-    "silver ii": "https://static.wikia.nocookie.net/fortnite/images/1/1d/Silver_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201236",
-    "silver iii": "https://static.wikia.nocookie.net/fortnite/images/0/0a/Silver_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201237",
-    "gold i": "https://static.wikia.nocookie.net/fortnite/images/3/37/Gold_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201229",
-    "gold ii": "https://static.wikia.nocookie.net/fortnite/images/f/fb/Gold_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201230",
-    "gold iii": "https://static.wikia.nocookie.net/fortnite/images/c/cf/Gold_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201231",
-    "platinum i": "https://static.wikia.nocookie.net/fortnite/images/2/2a/Platinum_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201232",
-    "platinum ii": "https://static.wikia.nocookie.net/fortnite/images/3/3e/Platinum_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201233",
-    "platinum iii": "https://static.wikia.nocookie.net/fortnite/images/3/30/Platinum_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201234",
-    "diamond i": "https://static.wikia.nocookie.net/fortnite/images/9/98/Diamond_I_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201224",
-    "diamond ii": "https://static.wikia.nocookie.net/fortnite/images/d/db/Diamond_II_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201226",
-    "diamond iii": "https://static.wikia.nocookie.net/fortnite/images/e/e1/Diamond_III_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201227",
-    "elite": "https://static.wikia.nocookie.net/fortnite/images/2/2e/Elite_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201228",
-    "champion": "https://static.wikia.nocookie.net/fortnite/images/2/2a/Champion_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201223",
-    "unreal": "https://static.wikia.nocookie.net/fortnite/images/6/6c/Unreal_-_Icon_-_Fortnite.png/revision/latest/scale-to-width-down/100?cb=20230531201239",
+RANK_ICONS_URL = "https://static.wikia.nocookie.net/fortnite/images"
+RANK_ICONS_SIZE_PARAM = "/revision/latest/scale-to-width-down/100"
+RANK_ICONS_PATH = {
+    "unranked": "/0/0d/Unknown_Rank_-_Icon_-_Fortnite.png",
+    "bronze i": "/4/44/Bronze_I_-_Icon_-_Fortnite.png",
+    "bronze ii": "/9/92/Bronze_II_-_Icon_-_Fortnite.png",
+    "bronze iii": "/7/74/Bronze_III_-_Icon_-_Fortnite.png",
+    "silver i": "/c/c3/Silver_I_-_Icon_-_Fortnite.png",
+    "silver ii": "/1/1d/Silver_II_-_Icon_-_Fortnite.png",
+    "silver iii": "/0/0a/Silver_III_-_Icon_-_Fortnite.png",
+    "gold i": "/3/37/Gold_I_-_Icon_-_Fortnite.png",
+    "gold ii": "/f/fb/Gold_II_-_Icon_-_Fortnite.png",
+    "gold iii": "/c/cf/Gold_III_-_Icon_-_Fortnite.png",
+    "platinum i": "/2/2a/Platinum_I_-_Icon_-_Fortnite.png",
+    "platinum ii": "/3/3e/Platinum_II_-_Icon_-_Fortnite.png",
+    "platinum iii": "/3/30/Platinum_III_-_Icon_-_Fortnite.png",
+    "diamond i": "/9/98/Diamond_I_-_Icon_-_Fortnite.png",
+    "diamond ii": "/d/db/Diamond_II_-_Icon_-_Fortnite.png",
+    "diamond iii": "/e/e1/Diamond_III_-_Icon_-_Fortnite.png",
+    "elite": "/2/2e/Elite_-_Icon_-_Fortnite.png",
+    "champion": "/2/2a/Champion_-_Icon_-_Fortnite.png",
+    "unreal": "/6/6c/Unreal_-_Icon_-_Fortnite.png"
 }
 
 
@@ -101,8 +103,9 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
         message.add_field(name="[Twitch]", value=twitch_stream, inline=False)
 
     if rank_name:
+        icons_url = f"{RANK_ICONS_URL}{RANK_ICONS_PATH[rank_name.lower()]}{RANK_ICONS_SIZE_PARAM}"
         message.add_field(name="[Rank]", value=rank_name + f" - {rank_progress}%", inline=False)
-        message.set_thumbnail(url=RANK_ICONS[rank_name.lower()])
+        message.set_thumbnail(url=icons_url)
 
     return message
 
@@ -122,32 +125,38 @@ def _create_stats_message_params(title, desc, color_metric, username):
 
 
 def _calculate_skill_color_indicator(overall_kd):
-    """ Return the skill color indicator """
-    if overall_kd >= 5:
+    """ Return the skill color indicator.
+    KD thresholds are calibrated for ranked play as the overall stats
+    returned by the API are not broken out by ranked vs unranked playlists.
+    """
+    if overall_kd >= 2.25:
         return 0x3a0357
-    elif overall_kd >= 4:
+    elif overall_kd >= 2.00:
         return 0xa600ff
-    elif overall_kd >= 3:
+    elif overall_kd >= 1.75:
         return 0xff0000
-    elif overall_kd >= 2:
+    elif overall_kd >= 1.50:
         return 0xff8800
-    elif overall_kd >= 1:
+    elif overall_kd >= 1.25:
         return 0xffff00
     else:
         return 0xfffffe
 
 
 def calculate_skill_rate_indicator(overall_kd):
-    """ Return the skill rate indicator """
-    if overall_kd >= 5:
+    """ Return the skill rate indicator.
+    KD thresholds are calibrated for ranked play as the overall stats
+    returned by the API are not broken out by ranked vs unranked playlists.
+    """
+    if overall_kd >= 2.25:
         return "Hackers"
-    elif overall_kd >= 4:
+    elif overall_kd >= 2.00:
         return "Aim Botters"
-    elif overall_kd >= 3:
+    elif overall_kd >= 1.75:
         return "Sweats"
-    elif overall_kd >= 2:
+    elif overall_kd >= 1.50:
         return "High"
-    elif overall_kd >= 1:
+    elif overall_kd >= 1.25:
         return "Medium"
     else:
         return "Bots"
