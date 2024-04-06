@@ -1,6 +1,5 @@
 import os
 from urllib.parse import quote
-from pathlib import Path
 
 import discord
 
@@ -66,7 +65,7 @@ def left_fortnite_voice_channel(before_voice_state, after_voice_state):
     channel_after = after_voice_state.channel.name if after_voice_state.channel else None
 
     in_fortnite_channel = channel_before == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
-    return in_fortnite_channel and channel_after == None
+    return in_fortnite_channel and channel_after is None
 
 
 def is_first_joiner_of_channel(voice_state):
@@ -104,7 +103,6 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
     if rank_name:
         message.add_field(name="[Rank]", value=rank_name + f" - {rank_progress}%", inline=False)
         message.set_thumbnail(url=RANK_ICONS[rank_name.lower()])
-
 
     return message
 

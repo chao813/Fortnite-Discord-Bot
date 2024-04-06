@@ -17,6 +17,7 @@ ACCOUNT_ID_ADVANCED_LOOKUP_URL = "https://fortniteapi.io/v2/lookup/advanced"
 PLAYER_STATS_BY_SEASON_URL = "https://fortniteapi.io/v1/stats"
 RANKED_INFO_LOOKUP_URL = "https://fortniteapi.io/v2/ranked/user"
 
+
 async def get_player_stats(ctx, player_name, silent):
     """Get player statistics from fortniteapi.io."""
     account_info = await _get_player_account_info(player_name)
@@ -38,10 +39,10 @@ async def get_player_stats(ctx, player_name, silent):
 
 async def _get_player_rank(account_info):
     """Get player rank, latest season? not sure what how fortniteapi handles"""
-    player_name = account_info["readable_name"]
+    account_id = account_info["account_id"]
 
     params = {
-        "username": player_name,
+        "account": account_id
     }
 
     async with aiohttp.ClientSession() as session:
@@ -55,11 +56,11 @@ async def _get_player_rank(account_info):
 
             if resp_json["result"] is True:
                 if not resp_json["rankedData"] and resp_json["gameId"] != "fortnite":
-                    raise UserStatisticsNotFound(f"Player does not have ranked data: {account_info['readable_name']}")               
+                    raise UserStatisticsNotFound(f"Player does not have ranked data: {account_info['readable_name']}")
                 else:
                     return [_ranked_data for _ranked_data in resp_json["rankedData"] if _ranked_data["rankingType"] == "ranked-br"][0]
 
-            return None 
+            return None
 
 
 async def _get_player_account_info(player_name):
@@ -232,9 +233,13 @@ def _create_message(account_info, stats_breakdown, player_rank, twitch_stream):
     wins_count = stats_breakdown["all"]["placetop1"]
     matches_played = stats_breakdown["all"]["matchesplayed"]
     kd_ratio = stats_breakdown["all"]["kd"]
+
     if player_rank:
         rank_name = player_rank["currentDivision"]["name"]
         rank_progress = round(player_rank["promotionProgress"] * 100)
+    else:
+        rank_name = None
+        rank_progress = None
 
     return discord_utils.create_stats_message(
         title=f"Username: {account_info['readable_name']}",
