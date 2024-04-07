@@ -1,0 +1,19 @@
+{
+  "name": "fortnite-replays-parser",
+  "version": "1.0.0",
+  "description": "Fortnite replays parser companion app.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chokidar": "^3.6.0"
+  },
+  "devDependencies": {
+    "electron": "^29.2.0"
+  }
+}

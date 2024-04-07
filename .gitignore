@@ -130,14 +130,14 @@ dmypy.json
 .pyre/
 
 # VS Code
-.vscode/   
+.vscode/
 
-# 
+#
 */.DS_Store
 .DS_Store
 
 # OLD test files
-test 
+test
 
-# Replay files
-replays/
+# NodeJS
+node_modules/
