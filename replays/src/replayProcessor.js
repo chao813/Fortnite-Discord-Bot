@@ -8,7 +8,7 @@ const { log } = require('../utils/logger');
 function processFile(filePath, mainWindow) {
     log(`Processing: ${filePath}`, mainWindow);
 
-    // Logic
+    // Implement replays logic with https://github.com/xNocken/replay-reader
 
     log(`Completed: ${filePath}`, mainWindow);
 }

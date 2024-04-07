@@ -11,7 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chokidar": "^3.6.0"
+    "chokidar": "^3.6.0",
+    "fortnite-replay-parser": "^1.4.8"
   },
   "devDependencies": {
     "electron": "^29.2.0"

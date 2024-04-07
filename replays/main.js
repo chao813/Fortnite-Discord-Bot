@@ -7,11 +7,12 @@ const replaysDirectory = "/Users/kevinl/Documents/GitHub/fortnite-discord-bot/re
 /**
  * TODO:
  * 1. Convert to TS
- * 2. Implement replays processor with https://github.com/xNocken/replay-reader
+ * 2. Implement replays processor
+ * 3. Either break out repo into client and server folders or toss this into a separate repo
  */
 
 /**
- * Create the main application window
+ * Create the main Electron application window
  */
 function createWindow() {
     mainWindow = new BrowserWindow({
