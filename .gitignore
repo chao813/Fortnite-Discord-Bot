@@ -141,3 +141,6 @@ test
 
 # NodeJS
 node_modules/
+
+# Replay files
+replay_files/

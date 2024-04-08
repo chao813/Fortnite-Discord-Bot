@@ -3,9 +3,9 @@ const { log } = require('../utils/logger');
 const { processFile } = require('./replayProcessor');
 const fs = require('fs');
 
-const pollingInterval = 2000 // Ideal: 10 seconds
-const pollingTimeout = 15000 // Ideal: 30 minutes
-const stableThreshold = 5000 // Ideal: 45 seconds
+const pollingInterval = 2000 // 2 seconds. Ideal: 10 seconds
+const pollingTimeout = 30000 // 15 seconds. Ideal: 30 minutes
+const stableThreshold = 5000 // 5 seconds. Ideal: 45 seconds
 
 
 /**
@@ -22,8 +22,14 @@ function watchForFileCreated(mainWindow, directoryToWatch) {
     const watcherStartTime = Date.now();
 
     const watcher = chokidar.watch(directoryToWatch, {
-        ignored: /(^|[\/\\])\../, // Ignore dotfiles
-        persistent: true
+        ignored: /(^|[\/\\])\../, // Ignore dot-files
+        ignoreInitial: false,
+        persistent: true,
+        awaitWriteFinish: {
+            stabilityThreshold: 2000,
+            pollInterval: 100
+        },
+        usePolling: true  // TODO: Disable this for prod, for some reason I need this
     });
 
     watcher.on('add', (filePath, stats) => {
@@ -64,6 +70,7 @@ function monitorFile(filePath, mainWindow, filesBeingProcessed) {
                     fileRecord.stableSince = Date.now();
                 } else if (Date.now() - fileRecord.stableSince > stableThreshold) {
                     // If the file size is stable for at least 45 seconds, process the file
+                    console.log(`Processing: ${filePath}`);
                     processFile(filePath, mainWindow);
                     clearInterval(intervalId);
                     filesBeingProcessed.delete(filePath);
@@ -79,8 +86,7 @@ function monitorFile(filePath, mainWindow, filesBeingProcessed) {
     // Cancel monitoring if the file is not stable after 30 minutes.
     setTimeout(() => {
         if (filesBeingProcessed.has(filePath)) {
-            console.log(`Canceling monitoring of file (not stable after 30 minutes): ${filePath}`);
-            mainWindow.webContents.send('log-event', `Canceling monitoring of file (not stable after 30 minutes): ${filePath}`);
+            log(`Ignoring Long-running File: ${filePath}`, mainWindow, 'warn')
             clearInterval(intervalId);
             filesBeingProcessed.delete(filePath);
         }
