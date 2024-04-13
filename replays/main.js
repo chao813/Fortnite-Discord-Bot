@@ -12,8 +12,8 @@ const replaysDirectory = "/Users/kevinl/Documents/GitHub/fortnite-discord-bot/re
  *
  * Instructions:
  * 1. [Tab 1] rm -f replay_files/test.replay && npm start
- * 2. [Tab 2] cp UnsavedReplay-2024.04.06-22.45.00.replay replay_files/test.replay
- * 3. [Tab 2] cp UnsavedReplay-2024.04.06-22.29.06.replay replay_files/test.replay
+ * 2. [Tab 2 - Option 1] cp UnsavedReplay-2024.04.06-22.45.00.replay replay_files/test.replay
+ * 3. [Tab 2 - Option 2] cp UnsavedReplay-2024.04.06-22.29.06.replay replay_files/test.replay
  */
 
 /**
