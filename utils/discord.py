@@ -20,25 +20,25 @@ MODES = [
 RANK_ICONS_URL = "https://static.wikia.nocookie.net/fortnite/images"
 RANK_ICONS_SIZE_PARAM = "/revision/latest/scale-to-width-down/100"
 RANK_ICONS_PATH = {
-    "unranked": "/0/0d/Unknown_Rank_-_Icon_-_Fortnite.png",
-    "bronze i": "/4/44/Bronze_I_-_Icon_-_Fortnite.png",
-    "bronze ii": "/9/92/Bronze_II_-_Icon_-_Fortnite.png",
-    "bronze iii": "/7/74/Bronze_III_-_Icon_-_Fortnite.png",
-    "silver i": "/c/c3/Silver_I_-_Icon_-_Fortnite.png",
-    "silver ii": "/1/1d/Silver_II_-_Icon_-_Fortnite.png",
-    "silver iii": "/0/0a/Silver_III_-_Icon_-_Fortnite.png",
-    "gold i": "/3/37/Gold_I_-_Icon_-_Fortnite.png",
-    "gold ii": "/f/fb/Gold_II_-_Icon_-_Fortnite.png",
-    "gold iii": "/c/cf/Gold_III_-_Icon_-_Fortnite.png",
-    "platinum i": "/2/2a/Platinum_I_-_Icon_-_Fortnite.png",
-    "platinum ii": "/3/3e/Platinum_II_-_Icon_-_Fortnite.png",
-    "platinum iii": "/3/30/Platinum_III_-_Icon_-_Fortnite.png",
-    "diamond i": "/9/98/Diamond_I_-_Icon_-_Fortnite.png",
-    "diamond ii": "/d/db/Diamond_II_-_Icon_-_Fortnite.png",
-    "diamond iii": "/e/e1/Diamond_III_-_Icon_-_Fortnite.png",
-    "elite": "/2/2e/Elite_-_Icon_-_Fortnite.png",
-    "champion": "/2/2a/Champion_-_Icon_-_Fortnite.png",
-    "unreal": "/6/6c/Unreal_-_Icon_-_Fortnite.png"
+    "Unranked": "/0/0d/Unknown_Rank_-_Icon_-_Fortnite.png",
+    "Bronze I": "/4/44/Bronze_I_-_Icon_-_Fortnite.png",
+    "Bronze II": "/9/92/Bronze_II_-_Icon_-_Fortnite.png",
+    "Bronze III": "/7/74/Bronze_III_-_Icon_-_Fortnite.png",
+    "Silver I": "/c/c3/Silver_I_-_Icon_-_Fortnite.png",
+    "Silver II": "/1/1d/Silver_II_-_Icon_-_Fortnite.png",
+    "Silver III": "/0/0a/Silver_III_-_Icon_-_Fortnite.png",
+    "Gold I": "/3/37/Gold_I_-_Icon_-_Fortnite.png",
+    "Gold II": "/f/fb/Gold_II_-_Icon_-_Fortnite.png",
+    "Gold III": "/c/cf/Gold_III_-_Icon_-_Fortnite.png",
+    "Platinum I": "/2/2a/Platinum_I_-_Icon_-_Fortnite.png",
+    "Platinum II": "/3/3e/Platinum_II_-_Icon_-_Fortnite.png",
+    "Platinum III": "/3/30/Platinum_III_-_Icon_-_Fortnite.png",
+    "Diamond I": "/9/98/Diamond_I_-_Icon_-_Fortnite.png",
+    "Diamond II": "/d/db/Diamond_II_-_Icon_-_Fortnite.png",
+    "Diamond III": "/e/e1/Diamond_III_-_Icon_-_Fortnite.png",
+    "Elite": "/2/2e/Elite_-_Icon_-_Fortnite.png",
+    "Champion": "/2/2a/Champion_-_Icon_-_Fortnite.png",
+    "Unreal": "/6/6c/Unreal_-_Icon_-_Fortnite.png"
 }
 
 
@@ -82,7 +82,7 @@ def get_season_id():
     return int(os.getenv("FORTNITE_SEASON_ID"))
 
 
-def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, rank_name, rank_progress, username=None, twitch_stream=None):
+def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, rank_name=None, rank_progress=None, username=None, twitch_stream=None):
     """ Create Discord message """
     message_params = _create_stats_message_params(title, desc, color_metric, username)
 
@@ -102,8 +102,8 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
     if twitch_stream:
         message.add_field(name="[Twitch]", value=twitch_stream, inline=False)
 
-    if rank_name:
-        icons_url = f"{RANK_ICONS_URL}{RANK_ICONS_PATH[rank_name.lower()]}{RANK_ICONS_SIZE_PARAM}"
+    if rank_name and rank_progress:
+        icons_url = f"{RANK_ICONS_URL}{RANK_ICONS_PATH[rank_name]}{RANK_ICONS_SIZE_PARAM}"
         message.add_field(name="[Rank]", value=rank_name + f" - {rank_progress}%", inline=False)
         message.set_thumbnail(url=icons_url)
 
