@@ -28,10 +28,10 @@ class MySQL:
 
     async def insert_player(self, params):
         """ Insert player into the table """
-        query = """INSERT IGNORE INTO players (`username`, `season`, `mode`, `kd`, `games`,
-                                               `wins`, `win_rate`, `trn`, `date_added`)
+        query = """INSERT IGNORE INTO players (`username`, `season`, `mode`, `kd`, `games`, `wins`,
+                                               `win_rate`, `trn`, `rank_name`, `rank_progress`, `date_added`)
                    VALUES (%(username)s, %(season)s, %(mode)s, %(kd)s, %(games)s, %(wins)s,
-                           %(win_rate)s, %(trn)s, %(date_added)s);
+                           %(win_rate)s, %(trn)s, %(rank_name)s, %(rank_progress)s, %(date_added)s);
                 """
         await self._executemany(query, params)
 

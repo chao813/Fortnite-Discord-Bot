@@ -13,7 +13,7 @@ COMMANDS = {
     },
     "Track Squad": {
         "command": "track",
-        "aliases": ["squad"],
+        "aliases": ["squad", "squads"],
         "description": ("Display current stats for the squad. If a username is provided, "
                         "display only stats for that player (ex: `!track LigmaBalls12`)."),
         "examples": "`!track`, `!squad`"
@@ -75,8 +75,8 @@ HELP_EXAMPLES = COMMANDS["Help"]["examples"]
 
 # Player Search
 PLAYER_SEARCH_COMMAND = COMMANDS["Player Search"]["command"]
-PLAYER_SEARCH_ALIASES =COMMANDS["Player Search"]["aliases"]
-PLAYER_SEARCH_DESCRIPTION =COMMANDS["Player Search"]["description"]
+PLAYER_SEARCH_ALIASES = COMMANDS["Player Search"]["aliases"]
+PLAYER_SEARCH_DESCRIPTION = COMMANDS["Player Search"]["description"]
 PLAYER_SEARCH_EXAMPLES = COMMANDS["Player Search"]["examples"]
 
 # Track Squad

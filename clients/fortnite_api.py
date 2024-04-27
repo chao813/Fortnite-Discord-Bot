@@ -7,8 +7,8 @@ import utils.discord as discord_utils
 import clients.twitch as twitch
 from database.mysql import MySQL
 from exceptions import UserDoesNotExist, UserStatisticsNotFound
-from utils.dates import get_playing_session_date
 from logger import get_logger_with_context
+from utils.dates import get_playing_session_date
 
 
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
@@ -30,37 +30,11 @@ async def get_player_stats(ctx, player_name, silent):
 
     message = _create_message(account_info, player_stats, player_rank, twitch_stream)
 
-    tasks = [_track_player(player_name, player_stats)]
+    tasks = [_track_player(player_name, player_stats, player_rank)]
     if not silent:
         tasks.append(ctx.send(embed=message))
 
     await asyncio.gather(*tasks)
-
-
-async def _get_player_rank(account_info):
-    """Get player rank, latest season? not sure what how fortniteapi handles"""
-    account_id = account_info["account_id"]
-
-    params = {
-        "account": account_id
-    }
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            url=RANKED_INFO_LOOKUP_URL,
-            params=params,
-            headers=_get_headers(),
-            raise_for_status=True
-        ) as resp:
-            resp_json = await resp.json()
-
-            if resp_json["result"] is True:
-                if not resp_json["rankedData"] and resp_json["gameId"] != "fortnite":
-                    raise UserStatisticsNotFound(f"Player does not have ranked data: {account_info['readable_name']}")
-                else:
-                    return [_ranked_data for _ranked_data in resp_json["rankedData"] if _ranked_data["rankingType"] == "ranked-br"][0]
-
-            return None
 
 
 async def _get_player_account_info(player_name):
@@ -87,14 +61,13 @@ async def _get_player_account_info(player_name):
             try:
                 resp_json = await resp.json()
 
-                logger.info("Closest username matches: %s", resp_json['matches'])
+                logger.info("Closest username matches: %s", resp_json["matches"])
 
                 best_match = resp_json["matches"][0]
                 matched_username = best_match["matches"][0]["value"]
                 matched_platform = best_match["matches"][0]["platform"].capitalize()
             except Exception as exc:
-                logger.error("Invalid response received from the API: %s", resp_json)
-                logger.error(repr(exc))
+                logger.error("Invalid response received from the API: %s. Response: %s", repr(exc), resp_json)
                 raise UserDoesNotExist("API broke and returned bad data..")
 
             if player_name.lower() == matched_username.lower():
@@ -135,6 +108,7 @@ async def _get_player_latest_season_stats(account_info):
 async def _get_player_season_stats(account_info, season_id):
     """Get player stats for the specified season."""
     account_id = account_info["account_id"]
+    readable_name = account_info["readable_name"]
 
     params = {
         "account": account_id,
@@ -152,13 +126,13 @@ async def _get_player_season_stats(account_info, season_id):
 
             if resp_json["result"] is True:
                 if not resp_json["global_stats"] or "season" not in resp_json["account"]:
-                    raise UserStatisticsNotFound(f"Player does not have sufficient data: {account_info['readable_name']}")
+                    raise UserStatisticsNotFound(f"Player does not have sufficient data: {readable_name}")
 
             if resp_json["result"] is False:
                 if resp_json["name"] is None:
-                    raise UserStatisticsNotFound(f"Player statistics not found: {account_info['readable_name']}")
+                    raise UserStatisticsNotFound(f"Player statistics not found: {readable_name}")
                 else:
-                    raise UserStatisticsNotFound(f"Player has a private account: {account_info['readable_name']}")
+                    raise UserStatisticsNotFound(f"Player has a private account: {readable_name}")
 
             return resp_json
 
@@ -228,18 +202,42 @@ def _rename_game_modes(mode_breakdown):
     return mode_breakdown
 
 
+async def _get_player_rank(account_info):
+    """Get player rank, latest season? not sure what how fortniteapi handles"""
+    account_id = account_info["account_id"]
+    readable_name = account_info["readable_name"]
+
+    params = {
+        "account": account_id
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url=RANKED_INFO_LOOKUP_URL,
+            params=params,
+            headers=_get_headers(),
+            raise_for_status=True
+        ) as resp:
+            resp_json = await resp.json()
+
+            if resp_json["result"] is True:
+                for data in resp_json["rankedData"]:
+                    if data["gameId"] == "fortnite" and data["rankingType"] == "ranked-br":
+                        return {
+                            "rank_name": data["currentDivision"]["name"],
+                            "rank_progress": data["currentDivision"]["level"]
+                        }
+            else:
+                raise UserStatisticsNotFound(f"Player rank information not found: {readable_name}")
+
+            return None
+
+
 def _create_message(account_info, stats_breakdown, player_rank, twitch_stream):
     """ Create player stats Discord message """
     wins_count = stats_breakdown["all"]["placetop1"]
     matches_played = stats_breakdown["all"]["matchesplayed"]
     kd_ratio = stats_breakdown["all"]["kd"]
-
-    if player_rank:
-        rank_name = player_rank["currentDivision"]["name"]
-        rank_progress = round(player_rank["promotionProgress"] * 100)
-    else:
-        rank_name = None
-        rank_progress = None
 
     return discord_utils.create_stats_message(
         title=f"Username: {account_info['readable_name']}",
@@ -249,8 +247,8 @@ def _create_message(account_info, stats_breakdown, player_rank, twitch_stream):
         stats_breakdown=stats_breakdown,
         username=account_info["platform_username"],
         twitch_stream=twitch_stream,
-        rank_name=rank_name,
-        rank_progress=rank_progress
+        rank_name=player_rank.get("rank_name"),
+        rank_progress=player_rank.get("rank_progress")
     )
 
 
@@ -263,7 +261,7 @@ def _create_stats_str(mode, stats_breakdown):
             f"Matches: {int(mode_stats['matchesplayed']):,}")
 
 
-async def _track_player(username, stats_breakdown):
+async def _track_player(username, stats_breakdown, player_rank):
     """ Insert player stats into database """
     params = []
     for mode, stats in stats_breakdown.items():
@@ -276,6 +274,8 @@ async def _track_player(username, stats_breakdown):
             "wins": stats["placetop1"],
             "win_rate": stats["winrate"],
             "trn": stats["score"],
+            "rank_name": player_rank["rank_name"],
+            "rank_progress": player_rank["rank_progress"],
             "date_added": get_playing_session_date()
         })
 

@@ -109,10 +109,28 @@ async def send_opponent_stats_today(ctx):
         await ctx.send("No opponents played today yet. Get some games in!")
         return
 
+    # TODO: Send histogram of opponent ranks today
     opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_avg_stats)
 
     message = _create_opponents_stats_message(opponent_stats_breakdown)
     await ctx.send(embed=message)
+
+
+# TODO: Combine this with the above: show avg stats and then rate
+async def rate_opponent_stats_today(ctx):
+    """ Send the skill rate keyword indicator for the average opponent faced today """
+    mysql = await MySQL.create()
+    opponent_stats = await mysql.fetch_avg_player_stats_today()
+
+    if not opponent_stats:
+        await ctx.send("No opponents played today yet. Get some games in!")
+        return
+
+    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_stats)
+
+    skill_rate = discord_utils.calculate_skill_rate_indicator(
+        opponent_stats_breakdown["all"]["KD"])
+    await ctx.send(skill_rate)
 
 
 def _breakdown_opponent_average_stats(opponent_avg_stats):
@@ -136,9 +154,13 @@ def _breakdown_opponent_average_stats(opponent_avg_stats):
 
 def _create_opponents_stats_message(opponent_stats_breakdown):
     """ Create opponent stats Discord message """
+    desc = discord_utils.create_wins_str(
+        opponent_stats_breakdown["all"]["Top1"],
+        opponent_stats_breakdown["all"]["Matches"],
+    )
     return discord_utils.create_stats_message(
         title="Opponent Average Stats Today",
-        desc=discord_utils.create_wins_str(opponent_stats_breakdown["all"]),
+        desc=desc,
         color_metric=opponent_stats_breakdown["all"]["KD"],
         create_stats_func=_create_opponent_stats_str,
         stats_breakdown=opponent_stats_breakdown
@@ -153,15 +175,3 @@ def _create_opponent_stats_str(mode, opponent_stats_breakdown):
             f"Win Percentage: {mode_stats['WinRatio']:,.1f}% • "
             f"Matches: {int(mode_stats['Matches'])} • "
             f"TRN: {int(mode_stats['TRNRating'])} ")
-
-
-async def rate_opponent_stats_today(ctx):
-    """ Send the skill rate keyword indicator for the average opponent faced today """
-    mysql = await MySQL.create()
-    opponent_stats = await mysql.fetch_avg_player_stats_today()
-
-    opponent_stats_breakdown = _breakdown_opponent_average_stats(opponent_stats)
-
-    skill_rate = discord_utils.calculate_skill_rate_indicator(
-        opponent_stats_breakdown["all"]["KD"])
-    await ctx.send(skill_rate)

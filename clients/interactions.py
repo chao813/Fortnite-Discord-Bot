@@ -16,8 +16,8 @@ NO_EMOJI  = "❌"
 async def send_commands_list(ctx):
     """ Send the commands list """
     message = discord.Embed(
-        title = "Commands list",
-        colour = discord.Colour.orange()
+        title="Commands list",
+        colour=discord.Colour.orange()
     )
 
     for name, opt in COMMANDS.items():
@@ -71,9 +71,9 @@ async def send_track_question_and_wait(bot, discord_name):
 async def _send_message(bot, discord_name):
     """ Send the question with emojis """
     track_question = discord.Embed(
-        title = f"Welcome, {discord_name.title()}",
-        description = "Get good, noob!",
-        colour = discord.Colour.orange()
+        title=f"Welcome, {discord_name.title()}",
+        description="Get good, noob!",
+        colour=discord.Colour.orange()
     )
 
     track_question.add_field(
@@ -124,12 +124,12 @@ async def _get_message_context(bot, message):
 
 async def send_upgrade_locations(ctx):
     """ Send map of upgrade locations """
-    await ctx.send("https://prod.assets.earlygamecdn.com/images/fortnite-upgrade-bench-locations-chapter-4-season-4.JPG?transform=article3x_webp")
+    await ctx.send("https://www.escapistmagazine.com/wp-content/uploads/2023/12/fortnite-all-vault-and-bunker-locations.jpg")
 
 
 async def send_hirable_npc_locations(ctx):
     """ Send map of hireable NPC locations """
-    await ctx.send("https://www.charlieintel.com/cdn-cgi/image/width=1080,quality=75,format=auto/https://editors.charlieintel.com/wp-content/uploads/2023/07/07/Fortnite-Chapter-4-Season-4-NPC-locations-hireable-characters-1024x576.jpg")
+    await ctx.send("https://dotesports.com/wp-content/uploads/2024/03/Hireable-NPCS.jpg")
 
 
 async def send_chest_locations(ctx):

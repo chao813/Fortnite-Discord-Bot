@@ -25,7 +25,8 @@ from logger import initialize_request_logger, configure_logger, get_logger_with_
 
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-SQUAD_PLAYERS_LIST = []
+ACTIVE_PLAYERS_LIST = []
+SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
 FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
 
 logger = configure_logger()
@@ -107,19 +108,19 @@ async def on_voice_state_update(member, before, after):
     try:
         if interactions.should_add_player_to_squad_player_session_list(member, before, after):
             if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in SQUAD_PLAYERS_LIST:
-                    SQUAD_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
+                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in ACTIVE_PLAYERS_LIST:
+                    ACTIVE_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
         if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
             if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in SQUAD_PLAYERS_LIST:
-                    SQUAD_PLAYERS_LIST.remove(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
+                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in ACTIVE_PLAYERS_LIST:
+                    ACTIVE_PLAYERS_LIST.remove(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
         if not interactions.send_track_question(member, before, after):
             return
     except Exception as exc:
         logger.warning("Failed to run on_voice_state_update: %s", repr(exc), exc_info=True)
-        SQUAD_PLAYERS_LIST.clear()
+        ACTIVE_PLAYERS_LIST.clear()
 
     ctx, silent = await interactions.send_track_question_and_wait(
         bot,
@@ -132,7 +133,7 @@ async def on_voice_state_update(member, before, after):
              help=commands.HELP_DESCRIPTION,
              aliases=commands.HELP_ALIASES)
 @log_command
-async def help(ctx):
+async def help_manual(ctx):
     """ Lists available commands """
     await interactions.send_commands_list(ctx)
 
@@ -140,7 +141,6 @@ async def help(ctx):
 @bot.command(name=commands.PLAYER_SEARCH_COMMAND,
              help=commands.PLAYER_SEARCH_DESCRIPTION,
              aliases=commands.PLAYER_SEARCH_ALIASES)
-
 async def player_search(ctx, *player_name, guid=False, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
@@ -153,18 +153,18 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
 
     if not player_name:
         await ctx.send("Please specify an Epic username after the command, "
-            "ex: `!hunted LigmaBalls12`")
+                       "ex: `!hunted LigmaBalls12`")
         return
 
     try:
         await fortnite_api.get_player_stats(ctx, player_name, silent)
         logger.info("Returned player statistics for: %s", player_name)
     except (NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound) as exc:
-        logger.info("Unable to retrieve statistics for '%s': %s", player_name, exc)
+        logger.warning("Unable to retrieve statistics for '%s': %s", player_name, exc)
         await ctx.send(exc)
     except Exception as exc:
         error_msg = f"Failed to retrieve player statistics: {repr(exc)}"
-        logger.warning(error_msg, exc_info=_should_log_traceback(exc))
+        logger.error(error_msg, exc_info=_should_log_traceback(exc))
         await ctx.send(error_msg)
 
 
@@ -173,8 +173,12 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
              aliases=commands.TRACK_ALIASES)
 @log_command
 async def track(ctx, silent=False):
-    """ Tracks and logs the current stats of the squad players """
-    tasks = [player_search(ctx, username, guid=False, silent=silent) for username in SQUAD_PLAYERS_LIST]
+    """ Tracks and logs the current stats of the current players """
+    logger = get_logger_with_context(ctx)
+    if not (players_list := ACTIVE_PLAYERS_LIST):
+        players_list = SQUAD_PLAYERS_LIST
+        logger.info("No players active on Discord, tracking all squad players instead")
+    tasks = [player_search(ctx, username, guid=False, silent=silent) for username in players_list]
     await asyncio.gather(*tasks)
 
 
@@ -232,7 +236,7 @@ async def stats_operations(ctx, *params):
         await ctx.send(message)
         return
 
-    usernames = params or SQUAD_PLAYERS_LIST
+    usernames = params or ACTIVE_PLAYERS_LIST
 
     if command in commands.STATS_DIFF_COMMANDS:
         logger.info(f"Querying stats diff today for {', '.join(usernames)}")
@@ -252,7 +256,7 @@ async def _stats_diff_today(ctx, usernames):
     calculate_tasks = []
 
     for username in usernames:
-        update_tasks.append(player_search(ctx, username, guid=False ,silent=True))
+        update_tasks.append(player_search(ctx, username, guid=False, silent=True))
         calculate_tasks.append(stats.send_stats_diff_today(ctx, username))
 
     await asyncio.gather(*update_tasks)
@@ -289,11 +293,11 @@ async def replays_operations(ctx, *params):
     if len(params) == 2:
         username = params.pop(1)
         command = params.pop(0)
-        if username not in SQUAD_PLAYERS_LIST:
+        if username not in ACTIVE_PLAYERS_LIST:
             await ctx.send(f"{username} provided is not a valid squad player")
             return
     if len(params) == 1:
-        if params[0] in SQUAD_PLAYERS_LIST:
+        if params[0] in ACTIVE_PLAYERS_LIST:
             username = params.pop(0)
         else:
             command = params.pop(0)
