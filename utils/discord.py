@@ -82,7 +82,7 @@ def get_season_id():
     return int(os.getenv("FORTNITE_SEASON_ID"))
 
 
-def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, rank_name=None, rank_progress=None, username=None, twitch_stream=None):
+def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, rank_name=None, rank_progress=None, username=None, twitch_stream=None, meta_info=None):
     """ Create Discord message """
     message_params = _create_stats_message_params(title, desc, color_metric, username)
 
@@ -99,13 +99,17 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
 
         message.add_field(name=f"[{name}]", value=create_stats_func(mode, stats_breakdown), inline=False)
 
-    if twitch_stream:
-        message.add_field(name="[Twitch]", value=twitch_stream, inline=False)
-
     if rank_name and rank_progress:
         icons_url = f"{RANK_ICONS_URL}{RANK_ICONS_PATH[rank_name]}{RANK_ICONS_SIZE_PARAM}"
         message.add_field(name="[Rank]", value=rank_name + f" - {rank_progress}%", inline=False)
         message.set_thumbnail(url=icons_url)
+
+    if twitch_stream:
+        message.add_field(name="[Twitch]", value=twitch_stream, inline=False)
+
+    if meta_info:
+        message.add_field(name="[Analysis]", value=meta_info["skills_indicator"], inline=False)
+        message.add_field(name="[Ranks Breakdown]", value=meta_info["ranks_breakdown_ordered"], inline=False)
 
     return message
 

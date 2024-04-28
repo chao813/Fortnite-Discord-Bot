@@ -182,15 +182,6 @@ async def track(ctx, silent=False):
     await asyncio.gather(*tasks)
 
 
-@bot.command(name=commands.RATE_COMMAND,
-             help=commands.RATE_DESCRIPTION,
-             aliases=commands.RATE_ALIASES)
-@log_command
-async def rate(ctx):
-    """ Rate how good opponents are today """
-    await stats.rate_opponent_stats_today(ctx)
-
-
 @bot.command(name=commands.UPGRADE_COMMAND,
              help=commands.UPGRADE_DESCRIPTION,
              aliases=commands.UPGRADE_ALIASES)
