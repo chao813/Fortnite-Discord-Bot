@@ -23,15 +23,9 @@ COMMANDS = {
         "description": ("Display stats `diff` of a player or the squad, or average stats "
                         "of the opponents `played` today (ex: `!stats diff`, `!stats diff "
                         "LigmaBalls12`, `!stats played`)."),
-        "diff_commands": ["today", "diff"],
-        "opponent_commands": ["played", "opp", "opponents", "noobs", "enemy"],
-        "examples": "`!stats diff`, `!stats today`, `!stats diff stoobish`, `!stats opponents`"
-    },
-    "Rate Difficulty": {
-        "command": "rate",
-        "aliases": ["gg"],
-        "description": "Rate how good opponents are today",
-        "examples": "`!rate`, `!gg`"
+        "diff_commands": ["diff"],
+        "opponent_commands": ["played", "rate", "killed", "opponents", "enemy", "noobs"],
+        "examples": "`!stats diff`, `!stats diff stoobish`, `!stats played`"
     },
     "Upgrade Locations": {
         "command": "upgrade",
@@ -91,12 +85,6 @@ STATS_DESCRIPTION = COMMANDS["Stats"]["description"]
 STATS_DIFF_COMMANDS = COMMANDS["Stats"]["diff_commands"]
 STATS_OPPONENTS_COMMANDS = COMMANDS["Stats"]["opponent_commands"]
 STATS_EXAMPLES = COMMANDS["Stats"]["examples"]
-
-# Rate Difficulty
-RATE_COMMAND = COMMANDS["Rate Difficulty"]["command"]
-RATE_DESCRIPTION = COMMANDS["Rate Difficulty"]["description"]
-RATE_ALIASES = COMMANDS["Rate Difficulty"]["aliases"]
-RATE_EXAMPLES = COMMANDS["Rate Difficulty"]["examples"]
 
 # Upgrade Locations
 UPGRADE_COMMAND = COMMANDS["Upgrade Locations"]["command"]
