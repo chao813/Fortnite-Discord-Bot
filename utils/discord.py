@@ -109,7 +109,8 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
 
     if meta_info:
         message.add_field(name="[Analysis]", value=meta_info["skills_indicator"], inline=False)
-        message.add_field(name="[Ranks Breakdown]", value=meta_info["ranks_breakdown_ordered"], inline=False)
+        if (ranks_breakdown := meta_info["ranks_breakdown_ordered"]):
+            message.add_field(name="[Ranks Breakdown]", value=ranks_breakdown, inline=False)
 
     return message
 

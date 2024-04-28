@@ -141,7 +141,9 @@ def _create_opponent_ranks_str(opponent_ranks_list):
     # TODO: Decouple ranks list into its own Enum
     ranks_order_ref = list(reversed(discord_utils.RANK_ICONS_PATH.keys()))
     ordered_output_list = [
-        f"{rank_name}: {ranks_histogram[rank_name]}" for rank_name in ranks_order_ref if rank_name in ranks_histogram
+        f"{rank_name}: {ranks_histogram[rank_name]}"
+        for rank_name in ranks_order_ref
+        if rank_name in ranks_histogram and rank_name is not None
     ]
     return "\n".join(ordered_output_list)
 
