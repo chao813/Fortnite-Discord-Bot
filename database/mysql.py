@@ -66,7 +66,7 @@ class MySQL:
         query = f"""SELECT MODE, AVG(kd), AVG(games), AVG(wins), AVG(win_rate)
                    FROM players
                    WHERE date_added = %s
-                         AND username NOT IN ({usernames_list});
+                         AND username NOT IN ({usernames_list})
                    GROUP BY 1;
                 """
         params = [get_playing_session_date()] + self.SQUAD_PLAYERS_LIST
