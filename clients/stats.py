@@ -132,22 +132,18 @@ def _breakdown_opponent_average_stats(opponent_avg_stats):
             "Matches": row["AVG(games)"]
         }
 
-    # Add skills indicator
-    stats["skills_indicator"] = discord_utils.calculate_skill_rate_indicator(
-        stats["all"]["KD"])
-
     return stats
 
 
 def _create_opponent_ranks_str(opponent_ranks_list):
     """ Create ordered opponent ranks list string for output """
-    print(opponent_ranks_list)
     ranks_histogram = Counter([row["rank_name"] for row in opponent_ranks_list])
     # TODO: Decouple ranks list into its own Enum
-    ordered_ranks_list = discord_utils.RANK_ICONS_PATH
-    return {
-        rank_name: ranks_histogram[rank_name] for rank_name in ordered_ranks_list if rank_name in ranks_histogram
-    }
+    ordered_ranks_ref = discord_utils.RANK_ICONS_PATH
+    ordered_output_list = [
+        f"{rank_name}: {ranks_histogram[rank_name]}" for rank_name in ordered_ranks_ref if rank_name in ranks_histogram
+    ]
+    return "\n".join(ordered_output_list)
 
 
 def _create_opponents_stats_message(opponent_stats_breakdown, meta_info):

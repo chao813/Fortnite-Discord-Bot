@@ -62,14 +62,14 @@ class MySQL:
 
     async def fetch_avg_player_stats_today(self):
         """ Fetch avg player stats from the playing session today """
-        query = """SELECT MODE, AVG(kd), AVG(games), AVG(wins), AVG(win_rate)
+        usernames_list = ", ".join(["%s"] * len(self.SQUAD_PLAYERS_LIST))
+        query = f"""SELECT MODE, AVG(kd), AVG(games), AVG(wins), AVG(win_rate)
                    FROM players
-                   WHERE date_added = %(date_added)s
+                   WHERE date_added = %s
+                         AND username NOT IN ({usernames_list});
                    GROUP BY 1;
                 """
-        params = {
-            "date_added": get_playing_session_date()
-        }
+        params = [get_playing_session_date()] + self.SQUAD_PLAYERS_LIST
         return await self._fetch_all(query, params)
 
     async def fetch_player_ranks_today(self):
@@ -77,7 +77,10 @@ class MySQL:
         usernames_list = ", ".join(["%s"] * len(self.SQUAD_PLAYERS_LIST))
         query = f"""SELECT rank_name
                    FROM players
-                   WHERE date_added = %s AND username NOT IN ({usernames_list});"""
+                   WHERE date_added = %s
+                         AND mode = "all"
+                         AND username NOT IN ({usernames_list});
+                 """
         params = [get_playing_session_date()] + self.SQUAD_PLAYERS_LIST
         return await self._fetch_all(query, params)
 
