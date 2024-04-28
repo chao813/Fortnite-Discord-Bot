@@ -141,7 +141,8 @@ def _breakdown_opponent_average_stats(opponent_avg_stats):
 
 def _create_opponent_ranks_str(opponent_ranks_list):
     """ Create ordered opponent ranks list string for output """
-    ranks_histogram = Counter(opponent_ranks_list)
+    print(opponent_ranks_list)
+    ranks_histogram = Counter([row["rank_name"] for row in opponent_ranks_list])
     # TODO: Decouple ranks list into its own Enum
     ordered_ranks_list = discord_utils.RANK_ICONS_PATH
     return {
