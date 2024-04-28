@@ -74,7 +74,7 @@ class MySQL:
 
     async def fetch_player_ranks_today(self):
         """ Fetch player ranks from the playing session today """
-        usernames_list = "", "".join(["%s"] * len(self.SQUAD_PLAYERS_LIST))
+        usernames_list = ", ".join(["%s"] * len(self.SQUAD_PLAYERS_LIST))
         query = f"""SELECT rank_name
                    FROM players
                    WHERE date_added = %s AND username NOT IN ({usernames_list});"""
