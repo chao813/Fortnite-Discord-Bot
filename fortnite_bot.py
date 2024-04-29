@@ -9,7 +9,7 @@ from functools import partial
 from threading import Thread
 
 import discord
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, CommandNotFound
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import BadRequest
 
@@ -91,6 +91,15 @@ async def on_ready():
     logger.info("Started up %s", bot.user.name)
     logger.info("Bot running on servers: %s",
                 ", ".join([guild.name for guild in bot.guilds]))
+    
+
+@bot.event
+async def on_command_error(ctx, error):
+    command = ctx.invoked_with
+    if isinstance(error, CommandNotFound):
+        logger = get_logger_with_context(identifier="Main")
+        logger.warning("Invalid command: %s", command)
+        await ctx.send(f"Command `!{command}` does not exist. Use `!list` to see available commands.")
 
 
 @bot.event
