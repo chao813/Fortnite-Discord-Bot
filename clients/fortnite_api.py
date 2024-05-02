@@ -225,7 +225,7 @@ async def _get_player_rank(account_info):
                     if data["gameId"] == "fortnite" and data["rankingType"] == "ranked-br":
                         return {
                             "rank_name": data["currentDivision"]["name"],
-                            "rank_progress": data["currentDivision"]["level"]
+                            "rank_progress": int(data["promotionProgress"] * 100)
                         }
             else:
                 raise UserStatisticsNotFound(f"Player rank information not found: {readable_name}")
