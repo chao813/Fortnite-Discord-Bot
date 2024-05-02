@@ -51,7 +51,7 @@ def in_fortnite_role(member):
 
 def joined_fortnite_voice_channel(before_voice_state, after_voice_state):
     """ Return True if the channel joined is the Fortnite
-    voice chat
+    voice chat, otherwise False
     """
     channel_before = before_voice_state.channel.name if before_voice_state.channel else None
     channel_after = after_voice_state.channel.name if after_voice_state.channel else None
@@ -66,8 +66,9 @@ def left_fortnite_voice_channel(before_voice_state, after_voice_state):
     channel_before = before_voice_state.channel.name if before_voice_state.channel else None
     channel_after = after_voice_state.channel.name if after_voice_state.channel else None
 
-    in_fortnite_channel = channel_before == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
-    return in_fortnite_channel and channel_after is None
+    was_in_fortnite_channel = channel_before == FORTNITE_DISCORD_VOICE_CHANNEL_NAME
+    left_voice_channel = channel_after is None
+    return was_in_fortnite_channel and left_voice_channel
 
 
 def is_first_joiner_of_channel(voice_state):
