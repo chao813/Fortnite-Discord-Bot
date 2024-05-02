@@ -113,29 +113,20 @@ async def on_guild_join(guild):
 async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
     logger = get_logger_with_context(identifier="Main")
-
-    # TODO: Remove logger statements in this function once the issue has been debugged
-    logger.info("Voice channel update detected. Member: %s (roles: %s). Channel before: %s, channel after: %s",
-                member.display_name, member.roles, before.channel, after.channel)
+    logger.info("Voice channel update detected for member: %s (channel before: %s, channel after: %s)",
+                member.display_name, before.channel, after.channel)
 
     try:
         if interactions.should_add_player_to_squad_player_session_list(member, before, after):
-            logger.info("Member %s should be added to player session list", member.display_name)
             if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-                logger.info("Member %s is a tracked member", member.display_name)
                 if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in ACTIVE_PLAYERS_LIST:
                     ACTIVE_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
-                    logger.info("Member %s added to the active players list", member.display_name)
 
         if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
-            logger.info("Member %s should be removed from player session list", member.display_name)
             if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-                logger.info("Member %s is a tracked member", member.display_name)
                 if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in ACTIVE_PLAYERS_LIST:
                     ACTIVE_PLAYERS_LIST.remove(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
-                    logger.info("Member %s removed from the active players list", member.display_name)
 
-        logger.info("Final active players list state: %s", ACTIVE_PLAYERS_LIST)
 
         if not interactions.send_track_question(member, before, after):
             return
@@ -179,7 +170,8 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
 
     try:
         await fortnite_api.get_player_stats(ctx, player_name, silent)
-        logger.info("Returned player statistics for: %s", player_name)
+        if not silent:
+            logger.info("Returned player statistics for: %s", player_name)
     except (NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound) as exc:
         logger.warning("Unable to retrieve statistics for '%s': %s", player_name, exc)
         await ctx.send(exc)
