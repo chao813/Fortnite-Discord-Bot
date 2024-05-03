@@ -184,7 +184,7 @@ def _append_all_mode_stats(mode_breakdown):
         mode_breakdown[mode]["winrate"] = stats["winrate"] * 100
 
     all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"] * 100
-    all_stats["kd"] = all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"])
+    all_stats["kd"] = round(all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"]),2)
 
     mode_breakdown["all"] = all_stats
 
@@ -225,7 +225,8 @@ async def _get_player_rank(account_info):
                     if data["gameId"] == "fortnite" and data["rankingType"] == "ranked-br":
                         return {
                             "rank_name": data["currentDivision"]["name"],
-                            "rank_progress": int(data["promotionProgress"] * 100)
+                            "rank_progress": int(data["promotionProgress"] * 100),
+                            "rank_level": data["currentDivision"]["level"]
                         }
             else:
                 raise UserStatisticsNotFound(f"Player rank information not found: {readable_name}")
@@ -276,6 +277,7 @@ async def _track_player(username, stats_breakdown, player_rank):
             "trn": stats["score"],
             "rank_name": player_rank["rank_name"],
             "rank_progress": player_rank["rank_progress"],
+            "rank_level": player_rank["rank_level"],
             "date_added": get_playing_session_date()
         })
 
