@@ -8,6 +8,7 @@ import clients.twitch as twitch
 from database.mysql import MySQL
 from exceptions import UserDoesNotExist, UserStatisticsNotFound
 from logger import get_logger_with_context
+from models.source import Source
 from utils.dates import get_playing_session_date
 
 
@@ -18,23 +19,39 @@ PLAYER_STATS_BY_SEASON_URL = "https://fortniteapi.io/v1/stats"
 RANKED_INFO_LOOKUP_URL = "https://fortniteapi.io/v2/ranked/user"
 
 
-async def get_player_stats(ctx, player_name, silent):
+async def get_player_stats(ctx, player_id, silent, source):
     """Get player statistics from fortniteapi.io."""
-    account_info = await _get_player_account_info(player_name)
+    account_info = await _get_player_account_info(player_id)
 
-    player_stats = await _get_player_latest_season_stats(account_info)
-    player_rank = await _get_player_rank(account_info)
+    # Identify proper player name
+    if source == Source.DISCORD:
+        player_name = player_id
+    elif source == Source.API:
+        player_name = account_info["platform_username"]
 
-    # TODO: Asyncio with above
-    twitch_stream = await twitch.get_twitch_stream(player_name)
+    # Get player information
+    tasks = [
+        asyncio.create_task(_get_player_latest_season_stats(account_info), name="stats"),
+        asyncio.create_task(_get_player_rank(account_info), name="rank"),
+        asyncio.create_task(twitch.get_twitch_stream(player_name), name="twitch_stream")
+    ]
+    results = await asyncio.gather(*tasks)
+    player_info = {
+        task.get_name(): result
+        for task, result in zip(tasks, results)
+    }
 
-    message = _create_message(account_info, player_stats, player_rank, twitch_stream)
+    # Create Discord message
+    message = _create_message(account_info, player_info)
 
-    tasks = [_track_player(player_name, player_stats, player_rank)]
+    # Send to Discord and log to database
+    tasks = [_track_player(player_name, player_info)]
     if not silent:
         tasks.append(ctx.send(embed=message))
 
     await asyncio.gather(*tasks)
+
+    return account_info["readable_name"]
 
 
 async def _get_player_account_info(player_name):
@@ -55,7 +72,6 @@ async def _get_player_account_info(player_name):
             if resp.status == 404:
                 raise UserDoesNotExist(f"Player not found: {player_name}")
 
-            # TODO: Move this elsewhere
             logger = get_logger_with_context(identifier=player_name)
 
             try:
@@ -93,7 +109,7 @@ async def _get_player_latest_season_stats(account_info):
     if not _is_latest_season(season_id, player_stats):
         latest_season_id = _get_latest_season_id(player_stats)
         _set_fortnite_season_id(latest_season_id)
-        # TODO: Move this elsewhere
+
         logger = get_logger_with_context(identifier=account_info["readable_name"])
         logger.info("Found new season ID, setting latest season ID to: %s", latest_season_id)
 
@@ -233,22 +249,25 @@ async def _get_player_rank(account_info):
             return None
 
 
-def _create_message(account_info, stats_breakdown, player_rank, twitch_stream):
+def _create_message(account_info, player_info):
     """ Create player stats Discord message """
+    stats_breakdown = player_info["stats"]
+    player_rank = player_info["rank"]
+    twitch_stream = player_info["twitch_stream"]
+
     wins_count = stats_breakdown["all"]["placetop1"]
     matches_played = stats_breakdown["all"]["matchesplayed"]
-    kd_ratio = stats_breakdown["all"]["kd"]
 
     return discord_utils.create_stats_message(
         title=f"Username: {account_info['readable_name']}",
         desc=discord_utils.create_wins_str(wins_count, matches_played),
-        color_metric=kd_ratio,
+        color_metric=stats_breakdown["all"]["kd"],
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
         username=account_info["platform_username"],
-        twitch_stream=twitch_stream,
         rank_name=player_rank.get("rank_name"),
-        rank_progress=player_rank.get("rank_progress")
+        rank_progress=player_rank.get("rank_progress"),
+        twitch_stream=twitch_stream
     )
 
 
@@ -261,12 +280,15 @@ def _create_stats_str(mode, stats_breakdown):
             f"Matches: {int(mode_stats['matchesplayed']):,}")
 
 
-async def _track_player(username, stats_breakdown, player_rank):
+async def _track_player(username, player_info):
     """ Insert player stats into database """
+    stats_breakdown = player_info["stats"]
+    player_rank = player_info["rank"]
+
     params = []
     for mode, stats in stats_breakdown.items():
         params.append({
-            "username": username,
+            "username": username.lower(),
             "season": _get_season_id(),
             "mode": mode,
             "kd": stats["kd"],
@@ -274,8 +296,8 @@ async def _track_player(username, stats_breakdown, player_rank):
             "wins": stats["placetop1"],
             "win_rate": stats["winrate"],
             "trn": stats["score"],
-            "rank_name": player_rank["rank_name"],
-            "rank_progress": player_rank["rank_progress"],
+            "rank_name": player_rank.get("rank_name"),
+            "rank_progress": player_rank.get("rank_progress"),
             "date_added": get_playing_session_date()
         })
 

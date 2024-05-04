@@ -37,7 +37,7 @@ def get_logger_with_context(ctx=None, identifier=None):
         identifier = f"{server}:{author}"
 
     extra = {
-        "identifier" : identifier
+        "identifier": identifier
     }
     return logging.LoggerAdapter(logging.getLogger(__name__), extra)
 
