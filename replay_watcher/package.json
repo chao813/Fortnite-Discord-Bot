@@ -1,0 +1,21 @@
+{
+    "name": "fortnite-replays-watcher",
+    "version": "1.0.0",
+    "description": "Fortnite replays watcher companion app.",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^1.6.8",
+        "chokidar": "^3.6.0",
+        "fortnite-replay-parser": "^1.4.8"
+    },
+    "devDependencies": {
+        "electron": "^29.2.0"
+    }
+}
