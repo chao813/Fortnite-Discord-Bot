@@ -7,7 +7,7 @@ import utils.discord as discord_utils
 from commands import COMMANDS
 
 
-FORTNITE_TEXT_CHANNEL_ID = int(os.getenv("FORTNITE_DISCORD_TEXT_CHANNEL_ID"))
+FORTNITE_TEXT_CHANNEL_ID = int(os.environ["FORTNITE_DISCORD_TEXT_CHANNEL_ID"])
 WAIT_FOR_TIMEOUT_SEC = 180
 YES_EMOJI = "✅"
 NO_EMOJI  = "❌"

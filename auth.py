@@ -7,7 +7,7 @@ from flask import request
 from error_handlers import _make_response
 
 
-FORTNITE_REPLAY_ELIM_API_AUTH_DIGEST = os.getenv("FORTNITE_REPLAY_ELIM_API_AUTH_DIGEST")
+FORTNITE_REPLAY_ELIM_API_AUTH_DIGEST = os.environ["FORTNITE_REPLAY_ELIM_API_AUTH_DIGEST"]
 
 
 def validate(f):

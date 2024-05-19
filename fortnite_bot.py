@@ -25,11 +25,11 @@ from logger import initialize_request_logger, configure_logger, get_logger_with_
 from models.source import Source
 
 
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 ACTIVE_PLAYERS_LIST = []
-SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
-FORTNITE_DISCORD_TEXT_CHANNEL_ID = int(os.getenv("DISCORD_FORTNITE_DISCORD_TEXT_CHANNEL_ID"))
-FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
+SQUAD_PLAYERS_LIST = os.environ["SQUAD_PLAYERS_LIST"].split(",")
+FORTNITE_DISCORD_TEXT_CHANNEL_ID = int(os.environ["FORTNITE_DISCORD_TEXT_CHANNEL_ID"])
+FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.environ["FORTNITE_DISCORD_ROLE_USERS_DICT"]))
 
 logger = configure_logger()
 

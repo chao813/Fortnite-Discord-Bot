@@ -7,8 +7,8 @@ from logging.handlers import TimedRotatingFileHandler
 from flask import request, g
 
 
-LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
-LOG_FILE_PATH = os.getenv("LOG_FILE_PATH")
+LOGGER_LEVEL = os.environ["LOGGER_LEVEL"]
+LOG_FILE_PATH = os.environ["LOG_FILE_PATH"]
 
 
 def configure_logger():
