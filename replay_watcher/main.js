@@ -3,7 +3,6 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
 let mainWindow;
-// const replaysDirectory = "/Users/kevinl/Documents/GitHub/fortnite-discord-bot/replay_files";
 
 /**
  * TODO:

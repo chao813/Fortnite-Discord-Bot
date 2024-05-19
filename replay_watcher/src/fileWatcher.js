@@ -3,12 +3,6 @@ const { log, stripPath } = require('../utils/logger');
 const { processFile } = require('./replayProcessor');
 const fs = require('fs');
 
-// TODO: Add these as options in the UI. Also add dropdown selection for silent mode boolean
-// const pollingInterval = 2000 // 2 seconds. Ideal: 10 seconds
-// const pollingTimeout = 30000 // 15 seconds. Ideal: 30 minutes
-// const stableThreshold = 5000 // 5 seconds. Ideal: 45 seconds
-
-
 /**
  * Watches for new files created in the provided directory, monitors them until
  * they're finished writing, then processes the files and logs messages to the
