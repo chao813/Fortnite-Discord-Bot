@@ -2,9 +2,16 @@ const ul = document.getElementById('log');
 
 // renderer.js (with context bridge)
 window.api.receive('log-event', (message) => {
-    // Create log entries in the HTML
-    const logContainer = document.getElementById('log');
-    const logEntry = document.createElement('div');
-    logEntry.textContent = message;
-    logContainer.appendChild(logEntry);
+    const logContainer = document.getElementById('log-tbody');
+
+    const newRow = document.createElement('tr');
+    const time_cell = document.createElement('td');
+    const message_cell = document.createElement('td');
+
+    time_cell.textContent = new Date().toLocaleTimeString();
+    message_cell.textContent = message;
+
+    newRow.appendChild(time_cell);
+    newRow.appendChild(message_cell);
+    logContainer.appendChild(newRow);
 });

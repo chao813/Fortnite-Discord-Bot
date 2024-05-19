@@ -5,7 +5,37 @@
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder"
+    },
+    "build": {
+        "appId": "com.itskevinlin.fortnitereplayswatcher",
+        "productName": "Fortnite Replays Watcher",
+        "files": [
+            "main.js",
+            "renderer.js",
+            "preload.js",
+            "config.json",
+            "index.html",
+            "styles.css",
+            "src/**/*",
+            "utils/**/*",
+            "node_modules/**/*"
+        ],
+        "directories": {
+            "buildResources": "build"
+        },
+        "win": {
+            "target": [
+                "portable"
+            ]
+        },
+        "mac": {
+            "target": [
+                "zip"
+            ]
+        }
     },
     "keywords": [],
     "author": "",
@@ -16,6 +46,7 @@
         "fortnite-replay-parser": "^1.4.8"
     },
     "devDependencies": {
-        "electron": "^29.2.0"
+        "electron": "^29.2.0",
+        "electron-builder": "^24.13.3"
     }
 }

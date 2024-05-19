@@ -1,12 +1,12 @@
 const chokidar = require('chokidar');
-const { log } = require('../utils/logger');
+const { log, stripPath } = require('../utils/logger');
 const { processFile } = require('./replayProcessor');
 const fs = require('fs');
 
 // TODO: Add these as options in the UI. Also add dropdown selection for silent mode boolean
-const pollingInterval = 2000 // 2 seconds. Ideal: 10 seconds
-const pollingTimeout = 30000 // 15 seconds. Ideal: 30 minutes
-const stableThreshold = 5000 // 5 seconds. Ideal: 45 seconds
+// const pollingInterval = 2000 // 2 seconds. Ideal: 10 seconds
+// const pollingTimeout = 30000 // 15 seconds. Ideal: 30 minutes
+// const stableThreshold = 5000 // 5 seconds. Ideal: 45 seconds
 
 
 /**
@@ -16,13 +16,15 @@ const stableThreshold = 5000 // 5 seconds. Ideal: 45 seconds
  * @param {BrowserWindow} mainWindow The Electron window to log messages to.
  * @param {string} directoryToWatch The directory to watch for new files.
  */
-function watchForFileCreated(mainWindow, directoryToWatch) {
+function watchForFileCreated(mainWindow, config) {
     log('Starting replays watcher', mainWindow);
+
+    const replaysDirectory = config.replays_directory;
 
     const filesBeingProcessed = new Map();
     const watcherStartTime = Date.now();
 
-    const watcher = chokidar.watch(directoryToWatch, {
+    const watcher = chokidar.watch(replaysDirectory, {
         ignored: /(^|[\/\\])\../, // Ignore dot-files
         ignoreInitial: false,
         persistent: true,
@@ -37,10 +39,10 @@ function watchForFileCreated(mainWindow, directoryToWatch) {
         // Only consider the file "new" if it was created after this process started
         if (stats && stats.birthtimeMs && stats.birthtimeMs > watcherStartTime) {
             if (!filesBeingProcessed.has(filePath)) {
-                log(`Detected: ${filePath}`, mainWindow);
+                log(`Detected: ${stripPath(filePath)}`, mainWindow);
 
                 filesBeingProcessed.set(filePath, { lastSize: null, stableSince: null });
-                monitorFile(filePath, mainWindow, filesBeingProcessed);
+                monitorFile(filePath, mainWindow, config, filesBeingProcessed);
             }
         }
     });
@@ -53,45 +55,57 @@ function watchForFileCreated(mainWindow, directoryToWatch) {
  * @param {BrowserWindow} mainWindow The Electron window to log messages to.
  * @param {Map} filesBeingProcessed Map of files being monitored with their state.
  */
-function monitorFile(filePath, mainWindow, filesBeingProcessed) {
-    const intervalId = setInterval(() => {
-        fs.stat(filePath, (err, stats) => {
-            if (err) {
-                log(`Error: Failed to retrieve file size for: ${filePath}. ${err.message}`, 'error');
-                clearInterval(intervalId);
-                filesBeingProcessed.delete(filePath);
-                return;
-            }
+async function monitorFile(filePath, mainWindow, config, filesBeingProcessed) {
+    let fileProcessed = false;
 
-            const fileRecord = filesBeingProcessed.get(filePath);
-            if (fileRecord.lastSize === stats.size) {
-                // If the size hasn't changed since the last check
-                if (!fileRecord.stableSince) {
-                    // Initialize stable timestamp if unchanged for the first time
-                    fileRecord.stableSince = Date.now();
-                } else if (Date.now() - fileRecord.stableSince > stableThreshold) {
-                    // If the file size is stable for at least 45 seconds, process the file
-                    console.log(`Processing: ${filePath}`);
-                    processFile(filePath, mainWindow);
+    // Promise to monitor file size changes
+    const monitorPromise = new Promise((resolve, reject) => {
+        const intervalId = setInterval(async () => {
+            fs.stat(filePath, async (err, stats) => {
+                if (err) {
+                    log(`Error: Failed to retrieve file size for: ${stripPath(filePath)}. ${err.message}`, mainWindow, 'error');
                     clearInterval(intervalId);
                     filesBeingProcessed.delete(filePath);
+                    reject(err);
+                    return;
                 }
-            } else {
-                // If the file size has changed, update the last size and reset stability timer
-                fileRecord.lastSize = stats.size;
-                fileRecord.stableSince = null;
-            }
-        });
-    }, pollingInterval);
 
-    // Cancel monitoring if the file is not stable after 30 minutes.
-    setTimeout(() => {
-        if (filesBeingProcessed.has(filePath)) {
-            log(`Ignoring Long-running File: ${filePath}`, mainWindow, 'warn')
-            clearInterval(intervalId);
-            filesBeingProcessed.delete(filePath);
-        }
-    }, pollingTimeout);
+                const fileRecord = filesBeingProcessed.get(filePath);
+                if (fileRecord.lastSize === stats.size) {
+                    // If the size hasn't changed since the last check
+                    if (!fileRecord.stableSince) {
+                        // Initialize stable timestamp if unchanged for the first time
+                        fileRecord.stableSince = Date.now();
+                    } else if (Date.now() - fileRecord.stableSince > config.stable_threshold) {
+                        // If the file size is stable for at least 45 seconds, process the file
+                        log(`Processing: ${stripPath(filePath)}`, mainWindow);
+                        // await processFile(filePath, mainWindow);
+                        clearInterval(intervalId);
+                        filesBeingProcessed.delete(filePath);
+                        fileProcessed = true;
+                        resolve();
+                    }
+                } else {
+                    // If the file size has changed, update the last size and reset stability timer
+                    fileRecord.lastSize = stats.size;
+                    fileRecord.stableSince = null;
+                }
+            });
+        }, config.polling_interval);
+    });
+
+    // Wait for the monitoring to resolve or time out
+    await monitorPromise;
+
+    // Start the timeout to cancel monitoring if not already processed
+    if (!fileProcessed) {
+        setTimeout(() => {
+            if (filesBeingProcessed.has(filePath)) {
+                log(`Detected: Ignoring long-running file: ${filePath}`, mainWindow, 'warn');
+                filesBeingProcessed.delete(filePath);
+            }
+        }, config.discard_threshold);
+    }
 }
 
 module.exports = { watchForFileCreated };

@@ -1,19 +1,19 @@
-nst { app, BrowserWindow } = require('electron');
+const fs = require('fs');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
 let mainWindow;
-const replaysDirectory = "/Users/kevinl/Documents/GitHub/fortnite-discord-bot/replays/replay_files";
+// const replaysDirectory = "/Users/kevinl/Documents/GitHub/fortnite-discord-bot/replay_files";
 
 /**
  * TODO:
  * 1. Convert to TS
- * 2. Implement replays processor
- * 3. Either break out repo into client and server folders or toss this into a separate repo
+ * 3. Break out repo into client and server folders
  *
  * Instructions:
  * 1. [Tab 1] rm -f replay_files/test.replay && npm start
- * 2. [Tab 2 - Option 1] cp UnsavedReplay-2024.04.06-22.45.00.replay replay_files/test.replay
- * 3. [Tab 2 - Option 2] cp UnsavedReplay-2024.04.06-22.29.06.replay replay_files/test.replay
+ * 2. [Tab 2 - Option 1] cp replay_files/UnsavedReplay-2024.04.06-22.45.00.replay replay_files/test.replay
+ * 3. [Tab 2 - Option 2] cp replay_files/UnsavedReplay-2024.04.06-22.29.06.replay replay_files/test.replay
  */
 
 /**
@@ -32,15 +32,23 @@ function createWindow() {
     // Load HTML into the main window
     mainWindow.loadFile('index.html');
 
+    // Load configuration; this should be UI options in the future
+    const configPath = path.join(__dirname, 'config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    console.log(`Using config replays_directory: ${config.replays_directory}`);
+    console.log(`Using config polling_interval: ${config.polling_interval}`);
+    console.log(`Using config stable_threshold: ${config.stable_threshold}`);
+    console.log(`Using config discard_threshold: ${config.discard_threshold}`);
+
     // Start watching for new files once the main window is fully loaded
     mainWindow.webContents.on('did-finish-load', () => {
          // Delayed require until the window is ready
         const { watchForFileCreated } = require('./src/fileWatcher');
-        watchForFileCreated(mainWindow, replaysDirectory);
+        watchForFileCreated(mainWindow, config);
     });
 
     // Automatically open DevTools for debugging (remove in production)
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', () => {
         mainWindow = null;

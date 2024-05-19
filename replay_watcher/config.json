@@ -1,0 +1,13 @@
+{
+    "replays_directory": "",
+    "polling_interval": 3000,
+    "stable_threshold": 7000,
+    "discard_threshold": 15000,
+
+    "prod": {
+        "replays_directory_prod": "%USERPROFILE%\\AppData\\Local\\FortniteGame\\Saved\\Demos",
+        "polling_interval": 15000,
+        "stable_threshold": 45000,
+        "discard_threshold": 1800000
+    }
+}

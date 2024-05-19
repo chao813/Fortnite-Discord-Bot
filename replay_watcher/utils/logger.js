@@ -1,3 +1,5 @@
+const path = require('path');
+
 /**
  * Define loggers with different log levels.
  */
@@ -32,4 +34,13 @@ function getTimestamp() {
     return new Date().toISOString();
 }
 
-module.exports = { log };
+/**
+ * Returns the file name without the path
+ * @param {string} filePath The file path
+ * @returns {string} The file name without the path
+ */
+function stripPath(filePath) {
+    return path.basename(filePath);
+}
+
+module.exports = { log, stripPath };
