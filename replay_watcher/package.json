@@ -29,7 +29,8 @@
         "win": {
             "target": [
                 "portable"
-            ]
+            ],
+            "signAndEditExecutable": false
         },
         "mac": {
             "target": [
