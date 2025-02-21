@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const { log, stripPath } = require('../utils/logger');
 
 let mainWindow;
 
@@ -32,16 +33,33 @@ function createWindow() {
     mainWindow.loadFile('index.html');
 
     // Load configuration; this should be UI options in the future
-    const configPath = path.join(__dirname, 'config.json');
+    let configPath;
+    if (process.platform === 'darwin') {
+      configPath = path.join(__dirname, 'config.json');
+    } else  {
+      const desktopPath = app.getPath('desktop');
+      configPath = path.join(desktopPath, 'config.json');
+    }
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     console.log(`Using config replays_directory: ${config.replays_directory}`);
     console.log(`Using config polling_interval: ${config.polling_interval}`);
     console.log(`Using config stable_threshold: ${config.stable_threshold}`);
     console.log(`Using config discard_threshold: ${config.discard_threshold}`);
 
+
+    /**
+     * TODO:
+     * - After changing to not user USERPROFILE, no data shows up in the table anymore
+     * - Update to write logs to a file in addition to the console and table, then log everything
+     *     starting from the paths above
+     */
+
+
     // Start watching for new files once the main window is fully loaded
     mainWindow.webContents.on('did-finish-load', () => {
-         // Delayed require until the window is ready
+        log('Starting main window', mainWindow);
+
+        // Delayed require until the window is ready
         const { watchForFileCreated } = require('./src/fileWatcher');
         watchForFileCreated(mainWindow, config);
     });

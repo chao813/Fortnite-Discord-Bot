@@ -16,7 +16,6 @@
             "main.js",
             "renderer.js",
             "preload.js",
-            "config.json",
             "index.html",
             "styles.css",
             "src/**/*",

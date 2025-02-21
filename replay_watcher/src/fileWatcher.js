@@ -40,6 +40,8 @@ function watchForFileCreated(mainWindow, config) {
             }
         }
     });
+
+    log(`Monitoring directory: ${replaysDirectory}`, mainWindow);
 }
 
 /**
