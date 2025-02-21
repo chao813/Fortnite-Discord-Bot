@@ -110,6 +110,7 @@ ENV/
 env.bak/
 venv.bak/
 FTEnv
+envfile
 
 # Spyder project settings
 .spyderproject
@@ -141,6 +142,7 @@ test
 
 # NodeJS
 node_modules/
+yarn.lock
 
 # Replay files
 replay_files/
