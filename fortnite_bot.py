@@ -127,7 +127,6 @@ async def on_voice_state_update(member, before, after):
                 if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in ACTIVE_PLAYERS_LIST:
                     ACTIVE_PLAYERS_LIST.remove(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
-
         if not interactions.send_track_question(member, before, after):
             return
     except Exception as exc:
@@ -148,6 +147,25 @@ async def on_voice_state_update(member, before, after):
 async def help_manual(ctx):
     """ Lists available commands """
     await interactions.send_commands_list(ctx)
+
+
+@bot.command(name=commands.STATS_GAME_MODE_COMMAND,
+             help=commands.STATS_GAME_MODE_DESCRIPTION,
+             aliases=commands.STATS_GAME_MODE_ALIASES)
+async def update_game_mode_for_stats(ctx, game_mode):
+    """ Updates the game mode selected for stats lookup """
+    logger = get_logger_with_context(ctx)
+    logger.info("Updating game mode to: %s", game_mode)
+
+    try:
+        await fortnite_api.set_game_mode_for_stats(game_mode)
+    except ValueError as exc:
+        logger.warning(exc)
+        await ctx.send(exc)
+
+    msg = f"Game mode for stats set to {game_mode}"
+    logger.info(msg)
+    await ctx.send(msg)
 
 
 @bot.command(name=commands.PLAYER_SEARCH_COMMAND,

@@ -2,7 +2,7 @@ import os
 import logging
 import uuid
 from functools import wraps
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import RotatingFileHandler
 
 from flask import request, g
 
@@ -15,15 +15,17 @@ def configure_logger():
     """ Abstract logger setup """
     logging.root.setLevel(LOGGER_LEVEL)
 
-    file_handler = TimedRotatingFileHandler(LOG_FILE_PATH, when="W0", interval=7, backupCount=4)
+    # file_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=50*1024*1024, backupCount=1)
     stream_handler = logging.StreamHandler()
 
-    formatter = logging.Formatter("[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] [%(identifier)s] %(message)s")
-    file_handler.setFormatter(formatter)
+    formatter = logging.Formatter(
+        "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] [%(identifier)s] %(message)s"
+    )
+    # file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
 
     logger = logging.getLogger(__name__)
-    logger.addHandler(file_handler)
+    # logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
 
     return logger
@@ -37,7 +39,7 @@ def get_logger_with_context(ctx=None, identifier=None):
         identifier = f"{server}:{author}"
 
     extra = {
-        "identifier" : identifier
+        "identifier": identifier
     }
     return logging.LoggerAdapter(logging.getLogger(__name__), extra)
 
@@ -66,6 +68,9 @@ def _generate_request_id():
 
 def _log_request():
     """ Log Flask request """
+    if _is_healthcheck():
+        return
+
     log_id = f"request:{g.request_id}"
     logger = get_logger_with_context(identifier=log_id)
 
@@ -82,6 +87,9 @@ def _log_request():
 
 def _log_response(response):
     """ Log Flask response """
+    if _is_healthcheck():
+        return response
+
     log_id = f"request:{g.request_id}"
     logger = get_logger_with_context(identifier=log_id)
 
@@ -95,3 +103,8 @@ def _log_response(response):
     })
 
     return response
+
+
+def _is_healthcheck():
+    """ Returns True if the request is a healthcheck request """
+    return request.path == "/fortnite/healthcheck"
