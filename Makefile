@@ -5,7 +5,7 @@ PORT = 5100
 ENV_VAR_ARGS = --env-file .env
 VOL_MOUNT_ARGS = -v $(shell pwd):/app
 
-TEST_PLAYER_NAME = kwklin
+TEST_PLAYER_NAME ?= username_here
 
 .PHONY: build run run-dev run-interactive test stop logs
 
