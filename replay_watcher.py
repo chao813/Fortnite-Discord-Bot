@@ -1,3 +1,7 @@
+"""
+To be deprecated when Replay Watcher v2 is released.
+"""
+
 import time
 import os
 from datetime import datetime
@@ -7,7 +11,7 @@ from watchdog.events import FileSystemEventHandler
 
 from tkinter import *
 
-import clients.replays as replays
+import core.utils.replays as replays
 import requests
 
 

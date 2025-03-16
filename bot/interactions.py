@@ -3,8 +3,8 @@ import os
 
 import discord
 
-import utils.discord as discord_utils
-from commands import COMMANDS
+import bot.discord_utils as discord_utils
+from bot.commands import COMMANDS
 
 
 FORTNITE_TEXT_CHANNEL_ID = int(os.getenv("FORTNITE_DISCORD_TEXT_CHANNEL_ID"))

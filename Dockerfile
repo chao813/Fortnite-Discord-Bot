@@ -9,10 +9,11 @@ RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir wheel bitstring pycryptodome \
     && pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
+COPY __main__.py /app/
+COPY api /app/api
+COPY bot /app/bot
+COPY core /app/core
 
-EXPOSE 5000
+EXPOSE 5100
 
-ENV FLASK_APP=fortnite_bot.py
-
-CMD ["python3", "fortnite_bot.py"]
+CMD ["python3", "__main__.py"]
