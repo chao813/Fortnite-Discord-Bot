@@ -1,11 +1,6 @@
-from dotenv import load_dotenv
-load_dotenv()
-
-
 import asyncio
 import os
 import ast
-from functools import partial
 from threading import Thread
 
 import discord
@@ -31,10 +26,7 @@ FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISC
 
 logger = configure_logger()
 
-# TODO: Explicitly enable the required privileged intents
-#       then change: intents = discord.Intents.all()
-intents = discord.Intents.default()
-bot = Bot(command_prefix="!", intents=intents)
+bot = Bot(command_prefix="!", intents=discord.Intents.default())
 
 app = Flask(__name__)
 initialize_error_handlers(app)
@@ -127,7 +119,6 @@ async def on_voice_state_update(member, before, after):
                 if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in ACTIVE_PLAYERS_LIST:
                     ACTIVE_PLAYERS_LIST.remove(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
 
-
         if not interactions.send_track_question(member, before, after):
             return
     except Exception as exc:
@@ -148,6 +139,25 @@ async def on_voice_state_update(member, before, after):
 async def help_manual(ctx):
     """ Lists available commands """
     await interactions.send_commands_list(ctx)
+
+
+@bot.command(name=commands.STATS_GAME_MODE_COMMAND,
+             help=commands.STATS_GAME_MODE_DESCRIPTION,
+             aliases=commands.STATS_GAME_MODE_ALIASES)
+async def update_game_mode_for_stats(ctx, game_mode):
+    """ Updates the game mode selected for stats lookup """
+    logger = get_logger_with_context(ctx)
+    logger.info("Updating game mode to: %s", game_mode)
+
+    try:
+        await fortnite_api.set_game_mode_for_stats(game_mode)
+    except ValueError as exc:
+        logger.warning(exc)
+        await ctx.send(exc)
+
+    msg = f"Game mode set to {game_mode}"
+    logger.info(msg)
+    await ctx.send(msg)
 
 
 @bot.command(name=commands.PLAYER_SEARCH_COMMAND,
@@ -306,7 +316,6 @@ async def replays_operations(ctx, *params):
         else:
             command = params.pop(0)
 
-
     if command in commands.REPLAYS_ELIMINATED_COMMANDS:
         logger.info("Outputting players that got eliminated by us")
         await _output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=False)
@@ -387,10 +396,21 @@ def _should_log_traceback(exc):
     )
 
 
-# Make a partial app.run to pass args/kwargs to it
-partial_run = partial(app.run, host="127.0.0.1", port=5000, debug=True, use_reloader=False)
-t = Thread(target=partial_run)
-t.start()
+def run_flask():
+    """ Run Flask service """
+    debug_mode = os.environ["ENVIRONMENT"] != "prod"
+    app.run(
+        host="0.0.0.0",
+        port=5100,
+        debug=debug_mode
+    )
 
-# Run the bot
-bot.run(DISCORD_BOT_TOKEN)
+
+if __name__ == "__main__":
+    # Run Flask service in separate thread
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
+
+    bot.run(DISCORD_BOT_TOKEN)
+
+    flask_thread.join()

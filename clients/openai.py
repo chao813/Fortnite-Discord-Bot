@@ -2,7 +2,7 @@ import os
 
 import openai
 
-OPENAI_MODEL = "gpt-4-turbo"
+OPENAI_MODEL = "gpt-4o"
 PROMPT_PREFIX = "Use young slangs and speak like you're chill. Be sarcastic."
 
 

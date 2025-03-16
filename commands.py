@@ -5,6 +5,12 @@ COMMANDS = {
         "description": "List available commands.",
         "examples": "`!commands`"
     },
+    "Stats Game Mode": {
+        "command": "mode",
+        "aliases": ["m", "game_mode"],
+        "description": "Set game mode for stats lookup",
+        "examples": "`!m ranked_br`, `!mode ranked_reload`"
+    },
     "Player Search": {
         "command": "hunted",
         "aliases": ["h", "player", "findnoob", "wreckedby"],
@@ -66,6 +72,12 @@ HELP_COMMAND = COMMANDS["Help"]["command"]
 HELP_ALIASES = COMMANDS["Help"]["aliases"]
 HELP_DESCRIPTION = COMMANDS["Help"]["description"]
 HELP_EXAMPLES = COMMANDS["Help"]["examples"]
+
+# Stats Game Mode
+STATS_GAME_MODE_COMMAND = COMMANDS["Stats Game Mode"]["command"]
+STATS_GAME_MODE_ALIASES = COMMANDS["Stats Game Mode"]["aliases"]
+STATS_GAME_MODE_DESCRIPTION = COMMANDS["Stats Game Mode"]["description"]
+STATS_GAME_MODE_EXAMPLES = COMMANDS["Stats Game Mode"]["examples"]
 
 # Player Search
 PLAYER_SEARCH_COMMAND = COMMANDS["Player Search"]["command"]
