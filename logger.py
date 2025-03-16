@@ -2,30 +2,25 @@ import os
 import logging
 import uuid
 from functools import wraps
-from logging.handlers import RotatingFileHandler
 
 from flask import request, g
 
 
 LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
-LOG_FILE_PATH = os.getenv("LOG_FILE_PATH")
 
 
 def configure_logger():
     """ Abstract logger setup """
     logging.root.setLevel(LOGGER_LEVEL)
 
-    # file_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=50*1024*1024, backupCount=1)
     stream_handler = logging.StreamHandler()
 
     formatter = logging.Formatter(
         "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] [%(identifier)s] %(message)s"
     )
-    # file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
 
     logger = logging.getLogger(__name__)
-    # logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
 
     return logger
@@ -45,6 +40,7 @@ def get_logger_with_context(ctx=None, identifier=None):
 
 
 def log_command(coro):
+    """ Decorator to log Discord bot commands """
     @wraps(coro)
     async def log_wrapper(*args, **kwargs):
         ctx = args[0]

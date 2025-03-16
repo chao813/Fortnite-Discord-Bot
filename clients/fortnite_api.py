@@ -29,8 +29,7 @@ RANKED_INFO_LOOKUP_URL = "https://fortniteapi.io/v2/ranked/user"
 # Prefix stats_ are for the Player Stats API
 # Prefix rank_ are for the Get Rank API
 GAME_MODE_FIELDS = {
-    "ranked_br": {
-        "stats_rank_prefix": None,
+    "unranked_br": {
         "stats_code_names": [
             "solo",
             "duos",
@@ -39,30 +38,35 @@ GAME_MODE_FIELDS = {
         ],
         "rank_code_name": "ranked-br"
     },
-    "ranked_reload": {
-        "stats_rank_prefix": "habanero",
+    "ranked_br": {
         "stats_code_names": [
-            "blastberry",
-            "punchberry",
-            "sunflower"
+            "habanerosolo",
+            "habaneroduo",
+            "habanerotrio",
+            "habanerosquad"
+        ],
+        "rank_code_name": "ranked-br"
+    },
+    "ranked_reload": {
+        "stats_code_names": [
+            "habanero_blastberry",
+            "habanero_punchberry",
+            "habanero_sunflower"
         ],
         "rank_code_name": "ranked_blastberry_build"
     }
 }
 
 
-# BUG?
-# Ranked BR might be in format "habanerotrio"
-
 async def get_player_stats(ctx, player_name, silent):
     """Get player statistics from fortniteapi.io."""
     account_info = await _get_player_account_info(player_name)
 
-    player_stats = await _get_player_latest_season_stats(account_info)
-    player_rank = await _get_player_rank(account_info)
-
-    # TODO: Asyncio with above
-    twitch_stream = await twitch.get_twitch_stream(player_name)
+    player_stats, player_rank, twitch_stream = await asyncio.gather(
+        _get_player_latest_season_stats(account_info),
+        _get_player_rank(account_info),
+        twitch.get_twitch_stream(player_name)
+    )
 
     message = _create_message(account_info, player_stats, player_rank, twitch_stream)
 
@@ -126,20 +130,18 @@ async def _get_player_latest_season_stats(account_info):
     season_id = _get_season_id()
     player_stats = await _get_player_season_stats(account_info, season_id)
 
-    # latest_season_id = _get_latest_season_id(player_stats)
-    # if not _is_latest_season(season_id, latest_season_id):
-    #     _set_fortnite_season_id(latest_season_id)
-    #     # TODO: Move this elsewhere
-    #     logger = get_logger_with_context(identifier=account_info["readable_name"])
-    #     logger.info("Found new season ID, setting latest season ID to: %s", latest_season_id)
+    latest_season_id = _get_latest_season_id(player_stats)
+    if not _is_latest_season(season_id, latest_season_id):
+        _set_fortnite_season_id(latest_season_id)
+        # TODO: Move this elsewhere
+        logger = get_logger_with_context(identifier=account_info["readable_name"])
+        logger.info("Found new season ID, setting latest season ID to: %s", latest_season_id)
 
-    #     player_stats = await _get_player_season_stats(account_info, latest_season_id)
+        player_stats = await _get_player_season_stats(account_info, latest_season_id)
 
     mode_breakdown = player_stats["global_stats"]
     mode_breakdown = _filter_to_game_mode(mode_breakdown)
     mode_breakdown = _aggregate_mode_stats(mode_breakdown)
-    # mode_breakdown = _append_all_mode_stats(mode_breakdown)
-    # mode_breakdown = _rename_game_modes(mode_breakdown)
     return mode_breakdown
 
 
@@ -170,7 +172,9 @@ async def _get_player_season_stats(account_info, season_id):
                     raise UserStatisticsNotFound(f"Player does not have available seasons data: {readable_name}")
 
             if resp_json["result"] is False:
-                if resp_json["name"] is None:
+                if "name" not in resp_json:
+                    raise UserStatisticsNotFound(f"Player statistics not available at the moment: {readable_name}")
+                elif resp_json["name"] is None:
                     raise UserStatisticsNotFound(f"Player statistics not found: {readable_name}")
                 else:
                     raise UserStatisticsNotFound(f"Player has a private account: {readable_name}")
@@ -223,26 +227,23 @@ def _filter_to_game_mode(mode_breakdown):
     """Filter to stats only for the relevant game mode."""
     game_mode = _get_game_mode_for_stats()
 
-    if game_mode == "ranked_br":
+    if game_mode in ("unranked_br", "ranked_br"):
         # Filter to the exact code names
         filtered_data = {}
         for mode, stats in mode_breakdown.items():
-            ranked_br_code_names = GAME_MODE_FIELDS["ranked_br"]["stats_code_names"]
-            if any(mode == code_name for code_name in ranked_br_code_names):
+            br_code_names = GAME_MODE_FIELDS[game_mode]["stats_code_names"]
+            if any(mode == code_name for code_name in br_code_names):
                 filtered_data[mode] = stats
         return filtered_data
 
     if game_mode == "ranked_reload":
-        # Filter to code names applicable to ranked reload mode
+        # Filter to code names in the game mode
         filtered_data = {}
         for mode, stats in mode_breakdown.items():
-            ranked_prefix = GAME_MODE_FIELDS["ranked_reload"]["stats_rank_prefix"]
-            reload_code_names = GAME_MODE_FIELDS["ranked_reload"]["stats_code_names"]
-            if ranked_prefix in mode and any(code_name in mode for code_name in reload_code_names):
+            reload_code_names = GAME_MODE_FIELDS[game_mode]["stats_code_names"]
+            if any(code_name in mode for code_name in reload_code_names):
                 filtered_data[mode] = stats
         return filtered_data
-
-    raise NotImplementedError(f"Game mode filtering for {game_mode} not defined")
 
 
 def _aggregate_mode_stats(mode_breakdown):
@@ -279,12 +280,12 @@ def _aggregate_mode_stats(mode_breakdown):
             continue
         tracked_modes.add(mode_key)
 
-        # Update duos/trios/squads mode stats
+        # Add individual solo/duo/trio/squad mode stats
         aggregated_mode_breakdown[mode_key]["placetop1"] += stats["placetop1"]
         aggregated_mode_breakdown[mode_key]["matchesplayed"] += stats["matchesplayed"]
         aggregated_mode_breakdown[mode_key]["kills"] += stats["kills"]
 
-        # Add stats to "all" mode stats
+        # Add stats to "all" game mode
         aggregated_mode_breakdown["all"]["placetop1"] += stats["placetop1"]
         aggregated_mode_breakdown["all"]["matchesplayed"] += stats["matchesplayed"]
         aggregated_mode_breakdown["all"]["kills"] += stats["kills"]
@@ -301,46 +302,6 @@ def _aggregate_mode_stats(mode_breakdown):
         filtered_mode_breakdown[mode] = aggregated_mode_breakdown[mode]
 
     return filtered_mode_breakdown
-
-
-# def _append_all_mode_stats(mode_breakdown):
-#     """Append aggregated stats into the dataset as part of the "all" game mode."""
-#     all_stats = {
-#         "placetop1": 0,
-#         "matchesplayed": 0,
-#         "winrate": 0,
-#         "kills": 0,
-#         "kd": 0,
-#         "score": 0
-#     }
-
-#     for mode, stats in mode_breakdown.items():
-#         all_stats["placetop1"] += stats["placetop1"]
-#         all_stats["matchesplayed"] += stats["matchesplayed"]
-#         all_stats["kills"] += stats["kills"]
-#         mode_breakdown[mode]["winrate"] = stats["winrate"] * 100
-
-#     all_stats["winrate"] = all_stats["placetop1"] / all_stats["matchesplayed"] * 100
-#     all_stats["kd"] = all_stats["kills"] / (all_stats["matchesplayed"] - all_stats["placetop1"])
-
-#     mode_breakdown["all"] = all_stats
-
-#     return mode_breakdown
-
-
-# def _rename_game_modes(mode_breakdown):
-#     """Rename game modes to synchronize with what Discord utils expects.
-#     This function is not necessary for reload stats since reload stats are
-#     already preprocessed. For aggregated stats with playlistGrouping=True
-#     however, this remapping is required.
-#     """
-#     if "duo" in mode_breakdown:
-#         mode_breakdown["duos"] = mode_breakdown.pop("duo")
-#     if "trio" in mode_breakdown:
-#         mode_breakdown["trios"] = mode_breakdown.pop("trio")
-#     if "squad" in mode_breakdown:
-#         mode_breakdown["squads"] = mode_breakdown.pop("squad")
-#     return mode_breakdown
 
 
 async def _get_player_rank(account_info):
@@ -414,6 +375,7 @@ async def _track_player(username, stats_breakdown, player_rank):
             "username": username,
             "season": _get_season_id(),
             "mode": mode,
+            "sub_mode": _get_readable_sub_mode(),
             "kd": stats["kd"],
             "games": stats["matchesplayed"],
             "wins": stats["placetop1"],
@@ -426,3 +388,13 @@ async def _track_player(username, stats_breakdown, player_rank):
 
     mysql = await MySQL.create()
     await mysql.insert_player(params)
+
+
+def _get_readable_sub_mode():
+    """ Get the readable sub mode string, where sub mode is equivalent
+    to game mode. Sub mode is used here as `mode` is already used
+    downstream including in the database to differentiate between solo,
+    duos, trios, squads, and all (aggregated) stats.
+    """
+    game_mode = _get_game_mode_for_stats()
+    return game_mode.replace("_", " ")

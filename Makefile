@@ -2,24 +2,29 @@ IMAGE_NAME = discord_bots/fortnite:latest
 CONTAINER_NAME = fornite_discord_bot
 PORT = 5100
 
+ENVIRONMENT ?= local
+ENV_VAR_ARGS = --env-file .env -e ENVIRONMENT=$(ENVIRONMENT)
+VOL_MOUNT_ARGS = -v $(shell pwd):/app
+
 TEST_PLAYER_NAME = kwklin
 
-.PHONY: build run run-detached run-interactive test stop logs
+.PHONY: build run run-dev run-interactive test stop logs
 
 build:
 	docker build -t $(IMAGE_NAME) .
 
 run:
-	docker run --rm --name $(CONTAINER_NAME) -p $(PORT):5000 $(IMAGE_NAME)
+	docker run -d --name $(CONTAINER_NAME) -p $(PORT):$(PORT) $(ENV_VAR_ARGS) $(IMAGE_NAME)
 
-run-detached:
-	docker run -d --name $(CONTAINER_NAME) -p $(PORT):5000 $(IMAGE_NAME)
+run-dev:
+	docker run --rm --name $(CONTAINER_NAME) -p $(PORT):$(PORT) $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME)
+	make logs
 
 run-interactive:
-	docker run --rm -it -v $(shell pwd):/app $(IMAGE_NAME) /bin/sh
+	docker run --rm -it $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME) /bin/sh
 
 test:
-	docker run --rm -v $(shell pwd):/app $(IMAGE_NAME) \
+	docker run --rm $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME) \
 		python3 -m scripts.test_player_stats $(TEST_PLAYER_NAME)
 
 stop:
