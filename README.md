@@ -83,43 +83,43 @@ Fortnite Tracker search (:x: Deprecated, API no longer supported):
 
 ## Examples
 Prompt when joining Fortnite Discord channel:\
-![Alt text](/images/prompt_example.png?raw=true)
+![Alt text](/core/images/prompt_example.png?raw=true)
 
 Player Not Specified:
 ```
 !hunted
 ```
-![Alt text](/images/provide_username_example.png?raw=true)
+![Alt text](/core/images/provide_username_example.png?raw=true)
 
 Player Not Found:
 ```
 !hunted EpicBotAccount
 ```
-![Alt text](/images/fail_example.png?raw=true)
+![Alt text](/core/images/fail_example.png?raw=true)
 
 Player Found (Fortnite API search):
 ```
 !hunted SypherPK
 ```
-![Alt text](/images/example.png?raw=true)
+![Alt text](/core/images/example.png?raw=true)
 
 Player Found (Fortnite API search) and Streaming:
 ```
 !hunted Fresh
 ```
-![Alt text](/images/twitch_example.png?raw=true)
+![Alt text](/core/images/twitch_example.png?raw=true)
 
 Stats Difference for Squad:
 ```
 !stats diff
 ```
-![Alt text](/images/stats_diff_example.png?raw=true)
+![Alt text](/core/images/stats_diff_example.png?raw=true)
 
 Average Stats of all Opponent Faced Today:
 ```
 !stats noobs
 ```
-![Alt text](/images/stats_noobs_example.png?raw=true)
+![Alt text](/core/images/stats_noobs_example.png?raw=true)
 
 ## Setup
 ### Install Fortnite Replay Reader
