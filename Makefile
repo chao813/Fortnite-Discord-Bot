@@ -2,8 +2,7 @@ IMAGE_NAME = discord_bots/fortnite:latest
 CONTAINER_NAME = fornite_discord_bot
 PORT = 5100
 
-ENVIRONMENT ?= local
-ENV_VAR_ARGS = --env-file .env -e ENVIRONMENT=$(ENVIRONMENT)
+ENV_VAR_ARGS = --env-file .env
 VOL_MOUNT_ARGS = -v $(shell pwd):/app
 
 TEST_PLAYER_NAME = kwklin

@@ -1,79 +1,30 @@
-import asyncio
-import os
 import ast
-from threading import Thread
+import asyncio
+import logging
+import os
 
 import discord
 from discord.ext.commands import Bot, CommandNotFound
-from flask import Flask, jsonify, request
-from werkzeug.exceptions import BadRequest
 
-import clients.fortnite_api as fortnite_api
-import clients.interactions as interactions
-import clients.openai as openai
-import clients.stats as stats
-import commands
-from auth import validate
-from error_handlers import initialize_error_handlers
-from exceptions import NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound
-from logger import initialize_request_logger, configure_logger, get_logger_with_context, log_command
+import bot.commands as commands
+import bot.interactions as interactions
+import bot.stats as stats
+import core.clients.fortnite_api as fortnite_api
+import core.clients.openai as openai
+from core.exceptions import NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound
+from core.logger import get_logger_with_context, log_command
+from core.utils.globals import eliminated_by_me_dict, eliminated_me_dict
 
 
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 ACTIVE_PLAYERS_LIST = []
 SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
 FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
 
-logger = configure_logger()
+logger = logging.getLogger(__name__)
 
 bot = Bot(command_prefix="!", intents=discord.Intents.default())
 
-app = Flask(__name__)
-initialize_error_handlers(app)
-initialize_request_logger(app)
-
 openai.initialize()
-
-eliminated_by_me_dict = None
-eliminated_me_dict = None
-
-
-@app.route("/fortnite/healthcheck")
-def healthcheck():
-    """ API Healthcheck """
-    return jsonify({"status": "ok"}), 200
-
-
-@app.route("/fortnite/replay/elims", methods=["POST"])
-@validate
-def post():
-    """
-    POST request Body
-        {
-            "eliminated_by_me": {},
-            "eliminated_me": {}
-        }
-    """
-    try:
-        elim_data = request.get_json()
-    except BadRequest as exc:
-        return jsonify({
-            "message": "Invalid JSON payload",
-            "error": exc
-        }), 400
-
-    global eliminated_by_me_dict
-    global eliminated_me_dict
-    eliminated_by_me_dict = elim_data["eliminated_by_me"]
-    eliminated_me_dict = elim_data["eliminated_me"]
-
-    return jsonify({
-        "status": "success",
-        "data": {
-            "eliminated_by_me": eliminated_by_me_dict,
-            "eliminated_me": eliminated_me_dict
-        }
-    }), 200
 
 
 @bot.event
@@ -87,6 +38,7 @@ async def on_ready():
 
 @bot.event
 async def on_command_error(ctx, error):
+    """ Event handler to log invalid commands """
     command = ctx.invoked_with
     if isinstance(error, CommandNotFound):
         logger = get_logger_with_context(identifier="Main")
@@ -296,8 +248,6 @@ async def replays_operations(ctx, *params):
     logger = get_logger_with_context(ctx)
     params = list(params)
 
-    global eliminated_by_me_dict
-    global eliminated_me_dict
     if not eliminated_me_dict and not eliminated_by_me_dict:
         await ctx.send("No replay file found")
         return
@@ -394,23 +344,3 @@ def _should_log_traceback(exc):
         "UserDoesNotExist",
         "UserStatisticsNotFound",
     )
-
-
-def run_flask():
-    """ Run Flask service """
-    debug_mode = os.environ["ENVIRONMENT"] != "prod"
-    app.run(
-        host="0.0.0.0",
-        port=5100,
-        debug=debug_mode
-    )
-
-
-if __name__ == "__main__":
-    # Run Flask service in separate thread
-    flask_thread = Thread(target=run_flask)
-    flask_thread.start()
-
-    bot.run(DISCORD_BOT_TOKEN)
-
-    flask_thread.join()

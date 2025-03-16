@@ -4,7 +4,7 @@ import os
 import time
 from pprint import pprint
 
-from clients.fortnite_api import (
+from core.clients.fortnite_api import (
     _get_player_account_info,
     _get_player_latest_season_stats,
     _get_player_rank

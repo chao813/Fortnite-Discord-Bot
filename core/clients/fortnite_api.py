@@ -4,12 +4,12 @@ from copy import deepcopy
 
 import aiohttp
 
-import utils.discord as discord_utils
-import clients.twitch as twitch
-from database.mysql import MySQL
-from exceptions import UserDoesNotExist, UserStatisticsNotFound
-from logger import get_logger_with_context
-from utils.dates import get_playing_session_date
+import bot.discord_utils as discord_utils
+import core.clients.twitch as twitch
+from core.database.mysql import MySQL
+from core.exceptions import UserDoesNotExist, UserStatisticsNotFound
+from core.logger import get_logger_with_context
+from core.utils.dates import get_playing_session_date
 
 
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")

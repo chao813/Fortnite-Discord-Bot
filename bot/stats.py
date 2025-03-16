@@ -1,7 +1,7 @@
 from collections import defaultdict, Counter
 
-import utils.discord as discord_utils
-from database.mysql import MySQL
+import bot.discord_utils as discord_utils
+from core.database.mysql import MySQL
 
 
 async def send_stats_diff_today(ctx, username):

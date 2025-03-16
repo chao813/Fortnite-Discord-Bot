@@ -12,9 +12,9 @@ from urllib.parse import unquote
 
 from bs4 import BeautifulSoup
 
-import utils.discord as discord_utils
+import bot.discord_utils as discord_utils
 from database.mysql import MySQL
-from exceptions import UserDoesNotExist, NoSeasonDataError
+from core.exceptions import UserDoesNotExist, NoSeasonDataError
 from utils.cloudscraper import cloudscrape, Method
 from utils.dates import get_playing_session_date
 

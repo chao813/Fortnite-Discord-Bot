@@ -2,7 +2,7 @@ import os
 
 import aiomysql
 
-from utils.dates import get_playing_session_date
+from core.utils.dates import get_playing_session_date
 
 
 class MySQL:
