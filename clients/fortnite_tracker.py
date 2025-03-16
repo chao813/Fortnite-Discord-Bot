@@ -24,7 +24,6 @@ ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season
 STATS_PATTERN = "const profile = "
 STATS_REGEX = f"\s*{STATS_PATTERN}(.*);"
 
-
 MODES = [
     "solo",
     "duos",

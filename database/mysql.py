@@ -7,7 +7,7 @@ from utils.dates import get_playing_session_date
 
 class MySQL:
     """ Super barebone MySQL class """
-    SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
+    SQUAD_PLAYERS_LIST = os.environ["SQUAD_PLAYERS_LIST"].split(",")
 
     @classmethod
     async def create(cls):
@@ -19,11 +19,11 @@ class MySQL:
     async def _instantiate_connection(self):
         """ Instantiate MySQL connection """
         params = {
-            "host": os.getenv("DATABASE_HOST"),
-            "port": int(os.getenv("DATABASE_PORT")),
-            "user": os.getenv("DATABASE_USERNAME"),
-            "password": os.getenv("DATABASE_PASSWORD"),
-            "db": os.getenv("DATABASE_NAME"),
+            "host": os.environ["DATABASE_HOST"],
+            "port": int(os.environ["DATABASE_PORT"]),
+            "user": os.environ["DATABASE_USERNAME"],
+            "password": os.environ["DATABASE_PASSWORD"],
+            "db": os.environ["DATABASE_NAME"],
             "charset": "utf8mb4",
             "cursorclass": aiomysql.cursors.DictCursor
         }

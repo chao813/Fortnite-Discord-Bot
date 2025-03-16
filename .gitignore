@@ -110,6 +110,7 @@ ENV/
 env.bak/
 venv.bak/
 FTEnv
+envfile
 
 # Spyder project settings
 .spyderproject
@@ -130,14 +131,18 @@ dmypy.json
 .pyre/
 
 # VS Code
-.vscode/   
+.vscode/
 
-# 
+# MacOS
 */.DS_Store
 .DS_Store
 
 # OLD test files
-test 
+test
+
+# NodeJS
+node_modules/
+yarn.lock
 
 # Replay files
-replays/
+replay_files/

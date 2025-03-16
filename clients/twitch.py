@@ -1,7 +1,7 @@
 import os
 
-TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
-TWITCH_CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
+TWITCH_CLIENT_ID = os.environ["TWITCH_CLIENT_ID"]
+TWITCH_CLIENT_SECRET = os.environ["TWITCH_CLIENT_SECRET"]
 
 TWITCH_AUTHENTICATION_URL = "https://id.twitch.tv/oauth2/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials"
 TWITCH_STREAM_URL = "https://api.twitch.tv/helix/streams?game_id={game_id}&first=100&user_login={user_login}"

@@ -8,7 +8,7 @@ PROMPT_PREFIX = "Use young slangs and speak like you're chill. Be sarcastic."
 
 def initialize():
     """Initialize OpenAI client."""
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    openai.api_key = os.environ["OPENAI_API_KEY"]
 
 
 async def ask_chatgpt(prompt, logger):
