@@ -103,5 +103,4 @@ def _log_response(response):
 
 def _is_healthcheck():
     """ Returns True if the request is a healthcheck request """
-    # return request.path == "/fortnite/healthcheck"
-    return False
+    return request.path == "/fortnite/healthcheck"
