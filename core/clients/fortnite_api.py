@@ -109,7 +109,7 @@ async def _get_player_account_info(player_name):
                 matched_platform = best_match["matches"][0]["platform"].capitalize()
             except Exception as exc:
                 logger.error("Invalid response received from the API: %s. Response: %s", repr(exc), resp_json)
-                raise UserDoesNotExist("API broke and returned bad data..")
+                raise UserDoesNotExist("API broken again.. :/")
 
             if player_name.lower() == matched_username.lower():
                 name = matched_username

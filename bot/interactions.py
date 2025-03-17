@@ -7,7 +7,6 @@ from bot.commands import COMMANDS
 from core.config import config
 
 
-# FORTNITE_TEXT_CHANNEL_ID = int(os.getenv("FORTNITE_DISCORD_TEXT_CHANNEL_ID"))
 FORTNITE_TEXT_CHANNEL_ID = config["discord"]["text_channel_id"]
 WAIT_FOR_TIMEOUT_SEC = 180
 YES_EMOJI = "✅"
