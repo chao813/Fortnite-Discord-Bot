@@ -1,4 +1,3 @@
-import os
 from urllib.parse import quote
 
 import discord
@@ -8,8 +7,6 @@ from core.config import config
 
 ACCOUNT_PROFILE_URL = "https://fortnitetracker.com/profile/all/{username}?season={season}"
 
-# FORTNITE_DISCORD_ROLE = os.getenv("FORTNITE_DISCORD_ROLE")
-# FORTNITE_DISCORD_VOICE_CHANNEL_NAME = os.getenv("FORTNITE_DISCORD_VOICE_CHANNEL_NAME")
 FORTNITE_DISCORD_ROLE = config["discord"]["role"]
 FORTNITE_DISCORD_VOICE_CHANNEL_NAME = config["discord"]["voice_channel_name"]
 
@@ -84,7 +81,6 @@ def is_first_joiner_of_channel(voice_state):
 
 def get_season_id():
     """ Returns the latest season ID that the bot knows of """
-    # return int(os.getenv("FORTNITE_SEASON_ID"))
     return config["fortnite"]["season_id"]
 
 
