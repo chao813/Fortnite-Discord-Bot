@@ -5,7 +5,6 @@ Fortnite Tracker has been deprecated due to Cloudflare restrictions.
 
 import asyncio
 import json
-import os
 import re
 from collections import defaultdict
 from urllib.parse import unquote
@@ -13,10 +12,11 @@ from urllib.parse import unquote
 from bs4 import BeautifulSoup
 
 import bot.discord_utils as discord_utils
-from database.mysql import MySQL
+from core.config import config
 from core.exceptions import UserDoesNotExist, NoSeasonDataError
-from utils.cloudscraper import cloudscrape, Method
-from utils.dates import get_playing_session_date
+from core.utils.cloudscraper import cloudscrape, Method
+from core.utils.dates import get_playing_session_date
+from database.mysql import MySQL
 
 
 ACCOUNT_SEARCH_URL = "https://fortnitetracker.com/profile/search?q={username}"
@@ -143,12 +143,12 @@ def _newer_season_available(latest_season_id):
 
 def _get_season_id():
     """ Returns the latest season ID that the bot knows of """
-    return int(os.getenv("FORTNITE_SEASON_ID"))
+    return config["fortnite"]["season_id"]
 
 
 def _set_fortnite_season_id(season_id):
     """ Set the Fortnite season ID to the latest season ID """
-    os.environ["FORTNITE_SEASON_ID"] = str(season_id)
+    config["fortnite"]["season_id"] = season_id
 
 
 def _find_season_stats(season_stats, username):

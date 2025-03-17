@@ -2,12 +2,13 @@ import os
 
 import aiomysql
 
+from core.config import config
 from core.utils.dates import get_playing_session_date
 
 
 class MySQL:
     """ Super barebone MySQL class """
-    SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
+    SQUAD_PLAYERS_LIST = list(config["fortnite"]["guid_to_player"].values())
 
     @classmethod
     async def create(cls):

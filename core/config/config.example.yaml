@@ -1,0 +1,12 @@
+log_level: INFO
+
+fortnite:
+    season_id: 34
+    game_mode_for_stats: ranked_reload  # Options: ranked_reload, ranked_br, unranked_br
+    guid_to_player: {}
+
+discord:
+    role: discord_role
+    text_channel_id: 123
+    voice_channel_name: channel_name
+    user_to_fortnite_player: {}

@@ -1,17 +1,15 @@
-import os
 import logging
 import uuid
 from functools import wraps
 
 from flask import request, g
 
-
-LOGGER_LEVEL = os.getenv("LOGGER_LEVEL")
+from core.config import config
 
 
 def configure_logger():
     """ Abstract logger setup """
-    logging.root.setLevel(LOGGER_LEVEL)
+    logging.root.setLevel(config["log_level"])
 
     stream_handler = logging.StreamHandler()
 

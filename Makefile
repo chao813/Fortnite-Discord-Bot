@@ -1,11 +1,9 @@
-IMAGE_NAME = discord_bots/fortnite:latest
-CONTAINER_NAME = fornite_discord_bot
+IMAGE_NAME = discord-bots/fortnite:latest
+CONTAINER_NAME = fornite-discord-bot
 PORT = 5100
 
 ENV_VAR_ARGS = --env-file .env
 VOL_MOUNT_ARGS = -v $(shell pwd):/app
-
-TEST_PLAYER_NAME ?= username_here
 
 .PHONY: build run run-dev run-interactive test stop logs
 
@@ -24,7 +22,7 @@ run-interactive:
 
 test:
 	docker run --rm $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME) \
-		python3 -m scripts.test_player_stats $(TEST_PLAYER_NAME)
+		python3 -m scripts.test_player_stats
 
 stop:
 	docker stop $(CONTAINER_NAME) || true

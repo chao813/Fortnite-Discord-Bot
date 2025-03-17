@@ -1,9 +1,9 @@
-import argparse
 import asyncio
 import os
 import time
 from pprint import pprint
 
+from core.config import config
 from core.clients.fortnite_api import (
     _get_player_account_info,
     _get_player_latest_season_stats,
@@ -12,25 +12,24 @@ from core.clients.fortnite_api import (
 
 
 async def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("player_name", type=str)
-    args = parser.parse_args()
-    player_name = args.player_name
-
     start_time = time.perf_counter()
 
-    await test_player_stats(player_name)
+    await test_player_stats()
 
     elapsed_time = time.perf_counter() - start_time
     print(f"Elapsed time: {elapsed_time:.1f} sec")
 
 
-async def test_player_stats(name):
-    game_mode = os.environ["FORTNITE_GAME_MODE_FOR_STATS"]
+async def test_player_stats():
+    player_name = os.environ["FORTNITE_TEST_PLAYER"]
+    print(f"Player name: {player_name}")
+
+    game_mode = config["fortnite"]["game_mode_for_stats"]
     print(f"Game mode: {game_mode}")
 
-    print("Getting player info..")
-    account_info = await _get_player_account_info(name)
+    account_info = await _get_player_account_info(player_name)
+
+    print("Account info")
     pprint(account_info)
 
     player_stats, player_rank = await asyncio.gather(
