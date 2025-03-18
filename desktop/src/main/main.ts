@@ -4,6 +4,11 @@ import * as path from 'path';
 
 const url = require('url');
 
+// Current state:
+// - UI renders
+// - Logs are not passed
+// - Electron app terminal has an error
+
 function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 800,

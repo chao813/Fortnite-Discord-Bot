@@ -14,6 +14,7 @@ window.onload = () => {
     document.body.insertBefore(heading, logContainer);
 
     ipcRenderer.on('log-message', (event, message) => {
+        console.log(`Received log: ${message}}`)
         const logEntry = document.createElement('p');
         logEntry.textContent = message;
         logContainer.appendChild(logEntry);
