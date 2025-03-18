@@ -6,6 +6,7 @@ import aiohttp
 
 import bot.discord_utils as discord_utils
 import core.clients.twitch as twitch
+from core.config import config
 from core.database.mysql import MySQL
 from core.exceptions import UserDoesNotExist, UserStatisticsNotFound
 from core.logger import get_logger_with_context
@@ -108,7 +109,7 @@ async def _get_player_account_info(player_name):
                 matched_platform = best_match["matches"][0]["platform"].capitalize()
             except Exception as exc:
                 logger.error("Invalid response received from the API: %s. Response: %s", repr(exc), resp_json)
-                raise UserDoesNotExist("API broke and returned bad data..")
+                raise UserDoesNotExist("API broken again.. :/")
 
             if player_name.lower() == matched_username.lower():
                 name = matched_username
@@ -184,12 +185,12 @@ async def _get_player_season_stats(account_info, season_id):
 
 def _get_season_id():
     """Returns the latest season ID that was stored."""
-    return int(os.getenv("FORTNITE_SEASON_ID"))
+    return config["fortnite"]["season_id"]
 
 
 def _set_fortnite_season_id(season_id):
     """Set the Fortnite season ID to the latest season ID."""
-    os.environ["FORTNITE_SEASON_ID"] = str(season_id)
+    config["fortnite"]["season_id"] = season_id
 
 
 def _get_latest_season_id(player_stats):
@@ -206,14 +207,14 @@ def _is_latest_season(season_id, latest_season_id):
 
 def _get_game_mode_for_stats():
     """Returns the game mode set for stats lookup."""
-    return os.getenv("FORTNITE_GAME_MODE_FOR_STATS")
+    return config["fortnite"]["game_mode_for_stats"]
 
 
 def set_game_mode_for_stats(game_mode):
     """Sets the game mode selected for stats lookup."""
     if game_mode not in GAME_MODE_FIELDS:
         raise ValueError(f"Game mode selected {game_mode} is not supported")
-    os.environ["FORTNITE_GAME_MODE_FOR_STATS"] = game_mode
+    config["fortnite"]["game_mode_for_stats"] = game_mode
 
 
 def _get_headers():

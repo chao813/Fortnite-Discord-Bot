@@ -1,7 +1,5 @@
-import ast
 import asyncio
 import logging
-import os
 
 import discord
 from discord.ext.commands import Bot, CommandNotFound
@@ -11,14 +9,15 @@ import bot.interactions as interactions
 import bot.stats as stats
 import core.clients.fortnite_api as fortnite_api
 import core.clients.openai as openai
+from core.config import config
 from core.exceptions import NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound
 from core.logger import get_logger_with_context, log_command
 from core.utils.globals import eliminated_by_me_dict, eliminated_me_dict
 
 
 ACTIVE_PLAYERS_LIST = []
-SQUAD_PLAYERS_LIST = os.getenv("SQUAD_PLAYERS_LIST").split(",")
-FORTNITE_DISCORD_ROLE_USERS_DICT = ast.literal_eval(str(os.getenv("FORTNITE_DISCORD_ROLE_USERS_DICT")))
+SQUAD_PLAYERS_LIST = list(config['fortnite']['guid_to_player'].values())
+FORTNITE_DISCORD_USERS_DICT = config["discord"]["user_to_fortnite_player"]
 
 logger = logging.getLogger(__name__)
 
@@ -62,14 +61,14 @@ async def on_voice_state_update(member, before, after):
 
     try:
         if interactions.should_add_player_to_squad_player_session_list(member, before, after):
-            if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] not in ACTIVE_PLAYERS_LIST:
-                    ACTIVE_PLAYERS_LIST.append(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
+            if member.display_name in FORTNITE_DISCORD_USERS_DICT:
+                if FORTNITE_DISCORD_USERS_DICT[member.display_name] not in ACTIVE_PLAYERS_LIST:
+                    ACTIVE_PLAYERS_LIST.append(FORTNITE_DISCORD_USERS_DICT[member.display_name])
 
         if interactions.should_remove_player_from_squad_player_session_list(member, before, after):
-            if member.display_name in FORTNITE_DISCORD_ROLE_USERS_DICT:
-                if FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name] in ACTIVE_PLAYERS_LIST:
-                    ACTIVE_PLAYERS_LIST.remove(FORTNITE_DISCORD_ROLE_USERS_DICT[member.display_name])
+            if member.display_name in FORTNITE_DISCORD_USERS_DICT:
+                if FORTNITE_DISCORD_USERS_DICT[member.display_name] in ACTIVE_PLAYERS_LIST:
+                    ACTIVE_PLAYERS_LIST.remove(FORTNITE_DISCORD_USERS_DICT[member.display_name])
 
         if not interactions.send_track_question(member, before, after):
             return

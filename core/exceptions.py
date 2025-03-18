@@ -1,3 +1,7 @@
+class ConfigParseError(Exception):
+    """ Invalid config syntax error """
+
+
 class UserDoesNotExist(Exception):
     """ User does not exist """
 

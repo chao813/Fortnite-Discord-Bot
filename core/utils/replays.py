@@ -1,10 +1,10 @@
 import os
-import ast
-import glob
 
 from ray import Reader
 
-SQUAD_PLAYERS_GUID_DICT = ast.literal_eval(str(os.getenv("SQUAD_PLAYERS_GUID_DICT")))
+from core.config import config
+
+SQUAD_PLAYERS_GUID_DICT = config["fortnite"]["guid_to_player"]
 REPLAY_FILE_PATH = os.getenv("REPLAY_FILE_PATH")
 
 def eliminated_me(elim, eliminated_me_dict):
@@ -27,12 +27,12 @@ def generate_eliminations_dict(eliminations, who_elim_who_func):
     eliminations_dict = {}
 
     for elim in eliminations:
-        eliminations_dict = who_elim_who_func(elim, eliminations_dict) 
+        eliminations_dict = who_elim_who_func(elim, eliminations_dict)
 
     return eliminations_dict
-                    
 
-def process_replays(latest_replay_file): 
+
+def process_replays(latest_replay_file):
     try:
         with Reader(latest_replay_file) as replay:
             if latest_replay_file.endswith('.replay'):
