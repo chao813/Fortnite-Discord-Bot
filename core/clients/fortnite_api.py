@@ -69,6 +69,10 @@ async def get_player_stats(ctx, player_name, silent):
         twitch.get_twitch_stream(player_name)
     )
 
+    if not player_stats:
+        await ctx.send(f"Player has no game records for {_get_readable_sub_mode()}")
+        return
+
     message = _create_message(account_info, player_stats, player_rank, twitch_stream)
 
     tasks = [_track_player(player_name, player_stats, player_rank)]
