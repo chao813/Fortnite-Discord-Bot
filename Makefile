@@ -11,7 +11,7 @@ build:
 	docker build -t $(IMAGE_NAME) .
 
 run:
-	docker run -d --name $(CONTAINER_NAME) -p $(PORT):$(PORT) $(ENV_VAR_ARGS) $(IMAGE_NAME)
+	docker run -d --name $(CONTAINER_NAME) --restart unless-stopped -p $(PORT):$(PORT) $(ENV_VAR_ARGS) $(IMAGE_NAME)
 
 run-dev:
 	docker run --rm --name $(CONTAINER_NAME) -p $(PORT):$(PORT) $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME)
