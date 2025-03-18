@@ -291,6 +291,9 @@ def _aggregate_mode_stats(mode_breakdown):
         aggregated_mode_breakdown["all"]["matchesplayed"] += stats["matchesplayed"]
         aggregated_mode_breakdown["all"]["kills"] += stats["kills"]
 
+    # Track "all" game mode after aggregation
+    tracked_modes.add("all")
+
     # Calculate winrate and KD stats
     filtered_mode_breakdown = {}
     for mode, stats in aggregated_mode_breakdown.items():
