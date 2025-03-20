@@ -2,12 +2,12 @@ import asyncio
 import logging
 from collections import defaultdict
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 
 from api.decorators import auth, parse_payload
 from api.error_handlers import initialize_error_handlers
 from api.models import FlaskContext, Guild
-from api.schemas import GameEliminationPayload
+from api.schemas import SendMessagePayload, GameEliminationPayload
 from bot.bot import bot, send_message, player_search
 from bot.discord_utils import create_players_killed_desc
 from core.config import config
@@ -31,13 +31,10 @@ def healthcheck():
 
 @app.route("/fortnite/discord/message", methods=["POST"])
 @auth
-def send_message_in_discord():
+@parse_payload(SendMessagePayload)
+def send_message_in_discord(payload):
     """Send message in Discord channel."""
-    body = request.json
-    message = body.get("message")
-
-    if message is None:
-        return jsonify({"error": "Missing 'message' in body"}), 400
+    message = payload.message
 
     logger.info("Sending message in Discord: %s", message)
 

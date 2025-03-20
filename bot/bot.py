@@ -15,7 +15,7 @@ from core.logger import get_logger_with_context, log_command
 
 
 ACTIVE_PLAYERS_LIST = []
-SQUAD_PLAYERS_LIST = list(config['fortnite']['guid_to_player'].values())
+SQUAD_PLAYERS_LIST = config["fortnite"]["players"]
 FORTNITE_DISCORD_USERS_DICT = config["discord"]["user_to_fortnite_player"]
 FORTNITE_TEXT_CHANNEL_ID = config["discord"]["text_channel_id"]
 

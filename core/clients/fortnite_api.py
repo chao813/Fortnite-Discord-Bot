@@ -74,7 +74,7 @@ async def get_player_stats(ctx, player_name, game_mode, players_killed_desc, is_
     readable_game_mode = get_readable_game_mode(game_mode)
 
     if not player_stats:
-        await ctx.send(f"Player has no game records for {readable_game_mode}")
+        await ctx.send(f"{account_info['readable_name']} has no game records for {readable_game_mode}")
         return
 
     message = _create_message(
