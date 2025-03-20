@@ -1,13 +1,12 @@
 const fs = require('fs');
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
-const { log, stripPath } = require('./utils/logger');
 
 let mainWindow;
 
 /**
  * TODO:
- * 1. Convert to TS
+ * 1. Convert to TypeScript
  * 2. After changing to not user USERPROFILE, no data shows up in the table anymore
  *
  * Instructions:
@@ -30,16 +29,10 @@ function createWindow() {
     });
 
     // Load HTML into the main window
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile('../renderer/index.html');
 
-    // Load configuration; this should be UI options in the future
-    let configPath;
-    if (process.platform === 'darwin') {
-        configPath = path.join(__dirname, 'config.json');
-    } else  {
-        const desktopPath = app.getPath('desktop');
-        configPath = path.join(desktopPath, 'config.json');
-    }
+    // Load configuration
+    const configPath = path.join(__dirname, '../config/config.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     console.log(`Using config replays_directory: ${config.fileMonitor.replays_directory}`);
     console.log(`Using config polling_interval: ${config.fileMonitor.polling_interval}`);
@@ -49,7 +42,7 @@ function createWindow() {
     // Start watching for new files once the main window is fully loaded
     mainWindow.webContents.on('did-finish-load', () => {
         // Delayed require until the window is ready
-        const { watchForFileCreated } = require('./src/fileWatcher');
+        const { watchForFileCreated } = require('./fileWatcher');
         watchForFileCreated(mainWindow, config);
     });
 

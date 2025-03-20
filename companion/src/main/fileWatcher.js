@@ -1,7 +1,11 @@
 const chokidar = require('chokidar');
-const { log, stripPath } = require('../utils/logger');
+const { log, stripPath } = require('./utils/logger');
 const { processFile } = require('./replayProcessor');
 const fs = require('fs');
+
+/**
+ * Note: This file can be severely refactored for simplicity.
+ */
 
 /**
  * Watches for new files created in the provided directory, monitors them until
@@ -74,7 +78,7 @@ async function monitorFile(filePath, mainWindow, config, filesBeingProcessed) {
                         // Initialize stable timestamp if unchanged for the first time
                         fileRecord.stableSince = Date.now();
                     } else if (Date.now() - fileRecord.stableSince > config.fileMonitor.stable_threshold) {
-                        // If the file size is stable for at least 45 seconds, process the file
+                        // If the file size is considered stable, then process the file
                         log(`Processing: ${stripPath(filePath)}`, mainWindow);
                         await processFile(filePath, mainWindow, config);
                         clearInterval(intervalId);

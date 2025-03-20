@@ -13,5 +13,5 @@ yarn-debug.log*
 yarn-error.log*
 
 # Replay data
-/replay_files
+replay_files/
 replayData.json
