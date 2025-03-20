@@ -5,7 +5,6 @@ from api.app import app
 from bot.bot import bot
 from core.logger import configure_logger
 
-
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 

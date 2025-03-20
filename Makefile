@@ -2,7 +2,7 @@ IMAGE_NAME = discord-bots/fortnite:latest
 CONTAINER_NAME = fornite-discord-bot
 PORT = 5100
 
-ENV_VAR_ARGS = --env-file .env
+ENV_VAR_ARGS = --env-file .env -e ENVIRONMENT=$(ENVIRONMENT)
 VOL_MOUNT_ARGS = -v $(shell pwd):/app
 
 .PHONY: build run run-dev run-interactive test stop logs

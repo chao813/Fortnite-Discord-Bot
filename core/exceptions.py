@@ -16,3 +16,7 @@ class NoSeasonDataError(Exception):
 
 class NoRankedDataError(Exception):
     """ No ranked data found """
+
+
+class DiscordExecutionError(Exception):
+    """ Failed to execute Discord command """

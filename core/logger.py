@@ -74,7 +74,7 @@ def _log_request():
         "data": {
             "method": request.method,
             "url": request.url,
-            "data": request.data
+            "data": _decode_to_text(request.data)
         },
     })
 
@@ -92,7 +92,7 @@ def _log_response(response):
         "request_id": g.request_id,
         "data": {
             "status": response.status,
-            "data": response.data
+            "data": _decode_to_text(response.data)
         },
     })
 
@@ -102,3 +102,12 @@ def _log_response(response):
 def _is_healthcheck():
     """ Returns True if the request is a healthcheck request """
     return request.path == "/fortnite/healthcheck"
+
+
+def _decode_to_text(data):
+    """ Decode response data to text when applicable.
+    If a character cannot be decoded, then replace it with a valid placeholder.
+    """
+    if data:
+        return data.decode("utf-8", errors="replace")
+    return ""

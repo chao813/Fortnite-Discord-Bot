@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 import discord
-from discord.ext.commands import Bot, CommandNotFound
+from discord.ext.commands import Bot, max_concurrency, BucketType, CommandNotFound
 
 import bot.commands as commands
 import bot.interactions as interactions
@@ -12,12 +12,12 @@ import core.clients.openai as openai
 from core.config import config
 from core.exceptions import NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound
 from core.logger import get_logger_with_context, log_command
-from core.utils.globals import eliminated_by_me_dict, eliminated_me_dict
 
 
 ACTIVE_PLAYERS_LIST = []
 SQUAD_PLAYERS_LIST = list(config['fortnite']['guid_to_player'].values())
 FORTNITE_DISCORD_USERS_DICT = config["discord"]["user_to_fortnite_player"]
+FORTNITE_TEXT_CHANNEL_ID = config["discord"]["text_channel_id"]
 
 logger = logging.getLogger(__name__)
 
@@ -92,21 +92,37 @@ async def help_manual(ctx):
     await interactions.send_commands_list(ctx)
 
 
+@bot.command(name=commands.MESSAGE_COMMAND,
+             help=commands.MESSAGE_DESCRIPTION,
+             aliases=commands.MESSAGE_ALIASES)
+@log_command
+async def send_message(_, *message):
+    """ Send message to Discord text channel
+    This command is used by external callers such as the Flask service.
+    """
+    msg = " ".join(message)
+    await bot.get_channel(FORTNITE_TEXT_CHANNEL_ID).send(msg)
+
+
 @bot.command(name=commands.STATS_GAME_MODE_COMMAND,
              help=commands.STATS_GAME_MODE_DESCRIPTION,
              aliases=commands.STATS_GAME_MODE_ALIASES)
-async def update_game_mode_for_stats(ctx, game_mode):
+@log_command
+async def update_game_mode_for_stats(ctx, *game_mode):
     """ Updates the game mode selected for stats lookup """
+    game_mode = " ".join(game_mode).lower().replace(" ", "_")
+
     logger = get_logger_with_context(ctx)
     logger.info("Updating game mode to: %s", game_mode)
 
     try:
-        await fortnite_api.set_game_mode_for_stats(game_mode)
+        fortnite_api.set_game_mode_for_stats(game_mode)
     except ValueError as exc:
         logger.warning(exc)
         await ctx.send(exc)
+        return
 
-    msg = f"Game mode set to {game_mode}"
+    msg = f"Game mode set: {fortnite_api.get_readable_game_mode(game_mode)}"
     logger.info(msg)
     await ctx.send(msg)
 
@@ -114,12 +130,11 @@ async def update_game_mode_for_stats(ctx, game_mode):
 @bot.command(name=commands.PLAYER_SEARCH_COMMAND,
              help=commands.PLAYER_SEARCH_DESCRIPTION,
              aliases=commands.PLAYER_SEARCH_ALIASES)
-async def player_search(ctx, *player_name, guid=False, silent=False):
+@max_concurrency(4, per=BucketType.guild, wait=True)
+@log_command
+async def player_search(ctx, *player_name, game_mode=None, players_killed_desc=None, is_guid=False, silent=False):
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
-
-    # TODO: Parse guid for replays
-    # TODO: Change guid to is_guid
 
     logger = get_logger_with_context(ctx)
     logger.info("Searching for player stats: %s", player_name)
@@ -130,7 +145,14 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
         return
 
     try:
-        await fortnite_api.get_player_stats(ctx, player_name, silent)
+        await fortnite_api.get_player_stats(
+            ctx,
+            player_name,
+            game_mode,
+            players_killed_desc,
+            is_guid,
+            silent
+        )
         if not silent:
             logger.info("Returned player statistics for: %s", player_name)
     except (NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound) as exc:
@@ -145,6 +167,7 @@ async def player_search(ctx, *player_name, guid=False, silent=False):
 @bot.command(name=commands.TRACK_COMMAND,
              help=commands.TRACK_DESCRIPTION,
              aliases=commands.TRACK_ALIASES)
+@max_concurrency(1, per=BucketType.guild, wait=True)
 @log_command
 async def track(ctx, silent=False):
     """ Tracks and logs the current stats of the current players """
@@ -152,7 +175,7 @@ async def track(ctx, silent=False):
     if not (players_list := ACTIVE_PLAYERS_LIST):
         players_list = SQUAD_PLAYERS_LIST
         logger.info("No players active on Discord, tracking all squad players instead")
-    tasks = [player_search(ctx, username, guid=False, silent=silent) for username in players_list]
+    tasks = [player_search(ctx, username, is_guid=False, silent=silent) for username in players_list]
     await asyncio.gather(*tasks)
 
 
@@ -221,7 +244,7 @@ async def _stats_diff_today(ctx, usernames):
     calculate_tasks = []
 
     for username in usernames:
-        update_tasks.append(player_search(ctx, username, guid=False, silent=True))
+        update_tasks.append(player_search(ctx, username, is_guid=False, silent=True))
         calculate_tasks.append(stats.send_stats_diff_today(ctx, username))
 
     await asyncio.gather(*update_tasks)
@@ -233,94 +256,15 @@ async def _opponent_stats_today(ctx):
     await stats.send_opponent_stats_today(ctx)
 
 
-@bot.command(name=commands.REPLAYS_COMMAND,
-             help=commands.REPLAYS_DESCRIPTION)
-@log_command
-async def replays_operations(ctx, *params):
-    """ Outputs replays stats based on the command provided.
-    Valid options are:
-        1. killed/elims - show stats of players that we eliminated
-        2. log - log to db
-        3. show stats of players that eliminated us
-    """
-
-    logger = get_logger_with_context(ctx)
-    params = list(params)
-
-    if not eliminated_me_dict and not eliminated_by_me_dict:
-        await ctx.send("No replay file found")
-        return
-
-    command = None
-    username = None
-    if len(params) == 2:
-        username = params.pop(1)
-        command = params.pop(0)
-        if username not in ACTIVE_PLAYERS_LIST:
-            await ctx.send(f"{username} provided is not a valid squad player")
-            return
-    if len(params) == 1:
-        if params[0] in ACTIVE_PLAYERS_LIST:
-            username = params.pop(0)
-        else:
-            command = params.pop(0)
-
-    if command in commands.REPLAYS_ELIMINATED_COMMANDS:
-        logger.info("Outputting players that got eliminated by us")
-        await _output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=False)
-    elif command in commands.REPLAYS_LOG_COMMANDS:
-        logger.info("Silent logging players that got eliminated by us and eliminated us")
-        await _output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=True)
-        await _output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent=True)
-    else:
-        if not command:
-            logger.info("Outputting players that eliminated us")
-            await _output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent=False)
-        elif command != commands.REPLAYS_COMMAND and \
-                command not in commands.REPLAYS_ELIMINATED_COMMANDS and \
-                command not in commands.REPLAYS_LOG_COMMANDS:
-            await ctx.send(f"Command provided '{command}' is not valid")
-        else:
-            await ctx.send(f"{command} left the channel")
-
-
-async def _output_replay_eliminated_me_stats_message(ctx, eliminated_me_dict, username, silent):
-    """ Create Discord Message for the stats of the opponents that eliminated us"""
-    for player_guid in eliminated_me_dict:
-        squad_players_eliminated_by_player = ""
-        send_output = False
-        if username == None:
-            for squad_player in eliminated_me_dict[player_guid]:
-                squad_players_eliminated_by_player += squad_player + ", "
-            send_output = True
-        if username in eliminated_me_dict[player_guid]:
-            squad_players_eliminated_by_player = username + ", "
-            send_output = True
-
-        if send_output:
-            if not silent:
-                await ctx.send(f"Eliminated {squad_players_eliminated_by_player[:-2]}")
-            await player_search(ctx, player_guid, guid=True, silent=silent)
-
-
-async def _output_replay_eliminated_by_me_stats_message(ctx, eliminated_by_me_dict, username, silent):
-    """ Create Discord Message for the stats of the opponents that got eliminated by us"""
-    if username:
-        eliminated_by_me_dict = {username: eliminated_by_me_dict[username]}
-    for squad_player in eliminated_by_me_dict:
-        if not silent:
-            await ctx.send(f"{squad_player} eliminated")
-        for player_guid in eliminated_by_me_dict[squad_player]:
-            await player_search(ctx, player_guid, guid=True, silent=silent)
-
-
 @bot.command(name=commands.ASK_COMMAND,
              help=commands.ASK_DESCRIPTION,
              aliases=commands.ASK_ALIASES)
 @log_command
 async def ask_chatgpt(ctx, *params):
     """ Ask OpenAI ChatGPT a question """
-    # TODO: Allow each file to invoke it's own logger with the correct context
+    # TODO: Instead of an ask command, create a command to fetch stats
+    #       for all the opponents faced today from the database and then
+    #       have GPT analyze the difficulty and provide commentary.
     logger = get_logger_with_context(ctx)
 
     prompt = " ".join(params)

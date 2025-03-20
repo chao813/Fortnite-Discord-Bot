@@ -19,11 +19,14 @@ def internal_server_error(error):
         "Internal server error", 500)
 
 
-def _make_response(message, status_code):
-    """ Construct json response with status code """
-    return jsonify({
-        "error": message
-    }), status_code
+def _make_response(resp, status_code):
+    """ Construct JSON response with status code """
+    if isinstance(resp, str):
+        return jsonify({
+            "error": resp
+        }), status_code
+
+    return jsonify(resp), status_code
 
 
 def initialize_error_handlers(app):
