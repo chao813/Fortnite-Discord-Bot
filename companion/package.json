@@ -1,7 +1,7 @@
 {
-    "name": "fortnite-replays-watcher",
+    "name": "fortnite-replay-monitor",
     "version": "1.0.0",
-    "description": "Fortnite replays watcher companion app.",
+    "description": "A desktop app for monitoring and processing Fortnite replay files.",
     "main": "main.js",
     "scripts": {
         "start": "electron src/main/main.js",
@@ -9,8 +9,8 @@
         "dist": "electron-builder"
     },
     "build": {
-        "appId": "com.itskevinlin.fortnitereplayswatcher",
-        "productName": "Fortnite Replays Watcher",
+        "appId": "com.itskevinlin.fortnitereplaymonitor",
+        "productName": "Fortnite Replay Monitor",
         "files": [
             "main.js",
             "renderer.js",
