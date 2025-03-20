@@ -1,3 +1,5 @@
+import os
+
 import yaml
 
 from core.exceptions import ConfigParseError
@@ -16,6 +18,11 @@ def load_config(file_path="core/config/config.yaml"):
         raise FileNotFoundError(exc_msg)  # pylint: disable=raise-missing-from
     except yaml.YAMLError as exc:
         raise ConfigParseError(f"Error parsing YAML file: {exc}")  # pylint: disable=raise-missing-from
+
+
+def is_prod():
+    """Returns True if the environment is prod, otherwise return False."""
+    return os.getenv("ENVIRONMENT") == "prod"
 
 
 config = load_config()

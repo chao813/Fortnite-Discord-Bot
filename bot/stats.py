@@ -150,7 +150,7 @@ def _create_opponent_ranks_str(opponent_ranks_list):
 
 def _create_opponents_stats_message(opponent_stats_breakdown, meta_info):
     """ Create opponent stats Discord message """
-    desc = discord_utils.create_wins_str(
+    desc = discord_utils.create_description_str(
         opponent_stats_breakdown["all"]["Top1"],
         opponent_stats_breakdown["all"]["Matches"],
     )

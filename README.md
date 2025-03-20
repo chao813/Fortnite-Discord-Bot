@@ -136,20 +136,4 @@ pip install -r requirements.txt
 ```
 
 ### Generate Windows executable
-The following environment variables must be set in `.env`:
-```
-FORTNITE_REPLAY_FILE_PATH={your-fortnite-replay-file-path}
-FORTNITE_REPLAY_ELIM_ENDPOINT={your-api-endpoint}
-FORTNITE_REPLAY_ELIM_API_TOKEN={your-api-token}
-SQUAD_PLAYERS_GUID_DICT={your-squad-usernames:guid-dict-string}
-```
-
-In Windows, run the following:
-```
-venv/Scripts/pyinstaller.exe --onefile --windowed --paths venv/Lib/site-packages replay_watcher.py
-```
-
-This assumes you are using a virtual environment such as `venv`. If you are not, you do not need to include the path for the dependencies. The following can be removed:
-```
---paths venv/Lib/site-packages
-```
+**TODO**

@@ -6,7 +6,7 @@ import aiohttp
 
 import bot.discord_utils as discord_utils
 import core.clients.twitch as twitch
-from core.config import config
+from core.config import config, is_prod
 from core.database.mysql import MySQL
 from core.exceptions import UserDoesNotExist, UserStatisticsNotFound
 from core.logger import get_logger_with_context
@@ -15,6 +15,7 @@ from core.utils.dates import get_playing_session_date
 
 FORTNITE_API_TOKEN = os.getenv("FORTNITE_API_TOKEN")
 
+ACCOUNT_ID_LOOKUP_USERNAME_URL = "https://fortniteapi.io/v1/lookupUsername"
 ACCOUNT_ID_ADVANCED_LOOKUP_URL = "https://fortniteapi.io/v2/lookup/advanced"
 PLAYER_STATS_BY_SEASON_URL = "https://fortniteapi.io/v1/stats"
 RANKED_INFO_LOOKUP_URL = "https://fortniteapi.io/v2/ranked/user"
@@ -59,31 +60,86 @@ GAME_MODE_FIELDS = {
 }
 
 
-async def get_player_stats(ctx, player_name, silent):
+async def get_player_stats(ctx, player_name, game_mode, players_killed_desc, is_guid, silent):
     """Get player statistics from fortniteapi.io."""
-    account_info = await _get_player_account_info(player_name)
+    account_info = await _get_player_account_info(player_name, is_guid)
+    game_mode = _evaluate_game_mode_for_stats(game_mode)
 
     player_stats, player_rank, twitch_stream = await asyncio.gather(
-        _get_player_latest_season_stats(account_info),
-        _get_player_rank(account_info),
+        _get_player_latest_season_stats(account_info, game_mode),
+        _get_player_rank(account_info, game_mode),
         twitch.get_twitch_stream(player_name)
     )
 
+    readable_game_mode = get_readable_game_mode(game_mode)
+
     if not player_stats:
-        await ctx.send(f"Player has no game records for {_get_readable_sub_mode()}")
+        await ctx.send(f"{account_info['readable_name']} has no game records for {readable_game_mode}")
         return
 
-    message = _create_message(account_info, player_stats, player_rank, twitch_stream)
+    message = _create_message(
+        account_info,
+        player_stats,
+        player_rank,
+        twitch_stream,
+        players_killed_desc,
+        readable_game_mode
+    )
 
-    tasks = [_track_player(player_name, player_stats, player_rank)]
+    tasks = [_track_player(player_name, player_stats, player_rank, game_mode)]
     if not silent:
         tasks.append(ctx.send(embed=message))
 
     await asyncio.gather(*tasks)
 
 
-async def _get_player_account_info(player_name):
-    """Get player account ID using advanced lookup. Advanced lookup
+async def _get_player_account_info(player_name, is_guid):
+    """Get player account info including ID, username, and platform.
+    When a username is provided, the v2 Advanced Lookup API is used.
+    When a guid is provided, the v1 LookupUsername API is used, which
+    does not provide platform information.
+    """
+    if is_guid is True:
+        return await _get_player_account_by_id(player_name)
+    return await _get_player_account_by_username(player_name)
+
+
+async def _get_player_account_by_id(player_id):
+    """Get player account ID using v1 LookupUsername. LookupUsername
+    does not return the player's platform unlike v2 Advanced Lookup.
+    """
+    params = {
+        "id": player_id
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            url=ACCOUNT_ID_LOOKUP_USERNAME_URL,
+            params=params,
+            headers=_get_headers(),
+            timeout=30
+        ) as resp:
+            try:
+                resp_json = await resp.json()
+            except Exception as exc:
+                logger = get_logger_with_context(identifier=player_id)
+                logger.error("Invalid response received from the API: %s. Response: %s", repr(exc), await resp.text())
+                raise UserDoesNotExist("Could not parse user lookup response") from exc
+
+            if resp_json["result"] is False or not resp_json.get("accounts"):
+                raise UserDoesNotExist(f"Player not found: {player_id}")
+
+            player_name = resp_json["accounts"][0]["username"]
+
+            return {
+                "account_id": player_id,
+                "platform_username": player_name,
+                "readable_name": player_name
+            }
+
+
+async def _get_player_account_by_username(player_name):
+    """Get player account ID using v2 Advanced Lookup. Advanced lookup
     returns a list of players with similar names, ranked in order of
     match confidence.
     """
@@ -95,7 +151,8 @@ async def _get_player_account_info(player_name):
         async with session.get(
             url=ACCOUNT_ID_ADVANCED_LOOKUP_URL,
             params=params,
-            headers=_get_headers()
+            headers=_get_headers(),
+            timeout=30
         ) as resp:
             if resp.status == 404:
                 raise UserDoesNotExist(f"Player not found: {player_name}")
@@ -113,7 +170,7 @@ async def _get_player_account_info(player_name):
                 matched_platform = best_match["matches"][0]["platform"].capitalize()
             except Exception as exc:
                 logger.error("Invalid response received from the API: %s. Response: %s", repr(exc), resp_json)
-                raise UserDoesNotExist("API broken again.. :/")
+                raise UserDoesNotExist("Could not parse user lookup response") from exc
 
             if player_name.lower() == matched_username.lower():
                 name = matched_username
@@ -127,7 +184,7 @@ async def _get_player_account_info(player_name):
             }
 
 
-async def _get_player_latest_season_stats(account_info):
+async def _get_player_latest_season_stats(account_info, game_mode):
     """"Get player stats for the latest season that the player has played in.
     The API will retry another time if the season queried with originally is
     not the most recent season that the player has played in.
@@ -145,7 +202,7 @@ async def _get_player_latest_season_stats(account_info):
         player_stats = await _get_player_season_stats(account_info, latest_season_id)
 
     mode_breakdown = player_stats["global_stats"]
-    mode_breakdown = _filter_to_game_mode(mode_breakdown)
+    mode_breakdown = _filter_to_game_mode(mode_breakdown, game_mode)
     mode_breakdown = _aggregate_mode_stats(mode_breakdown)
     return mode_breakdown
 
@@ -166,7 +223,8 @@ async def _get_player_season_stats(account_info, season_id):
             url=PLAYER_STATS_BY_SEASON_URL,
             params=params,
             headers=_get_headers(),
-            raise_for_status=True
+            raise_for_status=True,
+            timeout=30
         ) as resp:
             resp_json = await resp.json()
 
@@ -209,16 +267,73 @@ def _is_latest_season(season_id, latest_season_id):
     return season_id == latest_season_id
 
 
-def _get_game_mode_for_stats():
+def get_game_mode_for_stats():
     """Returns the game mode set for stats lookup."""
     return config["fortnite"]["game_mode_for_stats"]
 
 
 def set_game_mode_for_stats(game_mode):
     """Sets the game mode selected for stats lookup."""
+    normalized_game_mode = game_mode.lower().replace(" ", "_")
+    _validate_game_mode_for_stats(normalized_game_mode)
+    config["fortnite"]["game_mode_for_stats"] = normalized_game_mode
+
+
+def _evaluate_game_mode_for_stats(game_mode):
+    """Returns a valid game mode for stats. If none was provided, then the
+    active game mode is returned. If a game mode was provided, as it would
+    if called from the replays workflow, then validate whether the game
+    mode is a valid game mode. Return the provided game mode if it is valid,
+    otherwise return the active game mode.
+    """
+    active_game_mode = get_game_mode_for_stats()
+
+    # Standard workflow
+    if game_mode is None:
+        return active_game_mode
+
+    # Replay workflow
+    expected_game_mode = _construct_expected_game_mode(game_mode, active_game_mode)
+
+    try:
+        _validate_game_mode_for_stats(expected_game_mode)
+    except ValueError:
+        return active_game_mode
+
+    return expected_game_mode
+
+
+def _construct_expected_game_mode(game_mode, active_game_mode):
+    """Based on the game mode provided, attempt to map to a valid game mode.
+    Be careful with this function, it can break anytime the replay file
+    keywords change.
+    """
+    game_mode = game_mode.lower()
+
+    if game_mode in GAME_MODE_FIELDS:
+        return game_mode
+
+    reload_keywords = [
+        kw.removeprefix("habanero_") for kw in GAME_MODE_FIELDS["ranked_reload"]["stats_code_names"]
+    ]
+    br_keywords = [
+        kw.removeprefix("habanero") for kw in GAME_MODE_FIELDS["ranked_br"]["stats_code_names"]
+    ]
+
+    rank = "ranked" if "habanero" in game_mode else "unranked"
+
+    if any(mode_keywords in game_mode for mode_keywords in reload_keywords):
+        return f"{rank}_reload"
+    elif any(mode_keywords in game_mode for mode_keywords in br_keywords):
+        return f"{rank}_br"
+
+    return active_game_mode
+
+
+def _validate_game_mode_for_stats(game_mode):
+    """Validates the game mode. If an invalid mode was provided, then return raise a ValueError."""
     if game_mode not in GAME_MODE_FIELDS:
-        raise ValueError(f"Game mode selected {game_mode} is not supported")
-    config["fortnite"]["game_mode_for_stats"] = game_mode
+        raise ValueError(f"Game mode is not supported: {game_mode}")
 
 
 def _get_headers():
@@ -228,10 +343,8 @@ def _get_headers():
     }
 
 
-def _filter_to_game_mode(mode_breakdown):
+def _filter_to_game_mode(mode_breakdown, game_mode):
     """Filter to stats only for the relevant game mode."""
-    game_mode = _get_game_mode_for_stats()
-
     if game_mode in ("unranked_br", "ranked_br"):
         # Filter to the exact code names
         filtered_data = {}
@@ -312,7 +425,7 @@ def _aggregate_mode_stats(mode_breakdown):
     return filtered_mode_breakdown
 
 
-async def _get_player_rank(account_info):
+async def _get_player_rank(account_info, game_mode):
     """Get player rank, latest season? not sure what how fortniteapi handles"""
     account_id = account_info["account_id"]
     readable_name = account_info["readable_name"]
@@ -326,14 +439,13 @@ async def _get_player_rank(account_info):
             url=RANKED_INFO_LOOKUP_URL,
             params=params,
             headers=_get_headers(),
-            raise_for_status=True
+            raise_for_status=True,
+            timeout=30
         ) as resp:
             resp_json = await resp.json()
 
             if resp_json["result"] is True:
                 for data in resp_json["rankedData"]:
-
-                    game_mode = _get_game_mode_for_stats()
                     ranking_type = GAME_MODE_FIELDS[game_mode]["rank_code_name"]
 
                     if data["gameId"] == "fortnite" and data["rankingType"] == ranking_type:
@@ -347,7 +459,7 @@ async def _get_player_rank(account_info):
             return None
 
 
-def _create_message(account_info, stats_breakdown, player_rank, twitch_stream):
+def _create_message(account_info, stats_breakdown, player_rank, twitch_stream, players_killed_desc, game_mode):
     """ Create player stats Discord message """
     wins_count = stats_breakdown["all"]["placetop1"]
     matches_played = stats_breakdown["all"]["matchesplayed"]
@@ -355,14 +467,16 @@ def _create_message(account_info, stats_breakdown, player_rank, twitch_stream):
 
     return discord_utils.create_stats_message(
         title=f"Username: {account_info['readable_name']}",
-        desc=discord_utils.create_wins_str(wins_count, matches_played),
+        desc=discord_utils.create_description_str(wins_count, matches_played),
         color_metric=kd_ratio,
         create_stats_func=_create_stats_str,
         stats_breakdown=stats_breakdown,
         username=account_info["platform_username"],
+        players_killed_desc=players_killed_desc,
         twitch_stream=twitch_stream,
         rank_name=player_rank.get("rank_name"),
-        rank_progress=player_rank.get("rank_progress")
+        rank_progress=player_rank.get("rank_progress"),
+        game_mode=game_mode
     )
 
 
@@ -375,15 +489,18 @@ def _create_stats_str(mode, stats_breakdown):
             f"Matches: {int(mode_stats['matchesplayed']):,}")
 
 
-async def _track_player(username, stats_breakdown, player_rank):
+async def _track_player(username, stats_breakdown, player_rank, game_mode):
     """ Insert player stats into database """
+    if not is_prod():
+        return
+
     params = []
     for mode, stats in stats_breakdown.items():
         params.append({
             "username": username,
             "season": _get_season_id(),
             "mode": mode,
-            "sub_mode": _get_readable_sub_mode(),
+            "sub_mode": get_readable_game_mode(game_mode, lower=True),
             "kd": stats["kd"],
             "games": stats["matchesplayed"],
             "wins": stats["placetop1"],
@@ -398,11 +515,13 @@ async def _track_player(username, stats_breakdown, player_rank):
     await mysql.insert_player(params)
 
 
-def _get_readable_sub_mode():
-    """ Get the readable sub mode string, where sub mode is equivalent
-    to game mode. Sub mode is used here as `mode` is already used
-    downstream including in the database to differentiate between solo,
-    duos, trios, squads, and all (aggregated) stats.
+def get_readable_game_mode(game_mode, lower=False):
+    """ Get the readable game mode string. In this codebase, sub mode is
+    equivalent to the game mode. Sub mode is used in certain functions as
+    `mode` is already used downstream including in the database to differentiate
+    between solo, duos, trios, squads, and all (aggregated) stats.
     """
-    game_mode = _get_game_mode_for_stats()
-    return game_mode.replace("_", " ")
+    readable_game_mode = game_mode.replace("_", " ")
+    if lower:
+        return readable_game_mode.lower()
+    return readable_game_mode.title().replace("Br", "BR")

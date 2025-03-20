@@ -5,11 +5,17 @@ COMMANDS = {
         "description": "List available commands.",
         "examples": "`!commands`"
     },
+    "Message": {
+        "command": "message",
+        "aliases": ["msg"],
+        "description": "Send message in the Discord text channel.",
+        "examples": "`!msg Hello`"
+    },
     "Stats Game Mode": {
         "command": "mode",
         "aliases": ["m", "game_mode"],
         "description": "Set game mode for stats lookup",
-        "examples": "`!m ranked_br`, `!mode ranked_reload`"
+        "examples": "`!mode ranked_reload`, `!m ranked_br`, `!m unranked_br`"
     },
     "Player Search": {
         "command": "hunted",
@@ -72,6 +78,12 @@ HELP_COMMAND = COMMANDS["Help"]["command"]
 HELP_ALIASES = COMMANDS["Help"]["aliases"]
 HELP_DESCRIPTION = COMMANDS["Help"]["description"]
 HELP_EXAMPLES = COMMANDS["Help"]["examples"]
+
+# Message
+MESSAGE_COMMAND = COMMANDS["Message"]["command"]
+MESSAGE_ALIASES = COMMANDS["Message"]["aliases"]
+MESSAGE_DESCRIPTION = COMMANDS["Message"]["description"]
+MESSAGE_EXAMPLES = COMMANDS["Message"]["examples"]
 
 # Stats Game Mode
 STATS_GAME_MODE_COMMAND = COMMANDS["Stats Game Mode"]["command"]

@@ -1,0 +1,13 @@
+{
+    "fileMonitor": {
+        "replays_directory": "C:\\Users\\YourUsername\\AppData\\Local\\FortniteGame\\Saved\\Demos",
+        "polling_interval": 10000,
+        "stable_threshold": 45000,
+        "discard_threshold": 1800000
+    },
+    "fortnite": {
+        "guidToPlayerId": {
+            "guid": "username"
+        }
+    }
+}

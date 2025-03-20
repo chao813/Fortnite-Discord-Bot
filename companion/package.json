@@ -1,0 +1,51 @@
+{
+    "name": "fortnite-replay-monitor",
+    "version": "1.0.0",
+    "description": "A desktop app for monitoring and processing Fortnite replay files.",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron src/main/main.js",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder"
+    },
+    "build": {
+        "appId": "com.itskevinlin.fortnitereplaymonitor",
+        "productName": "Fortnite Replay Monitor",
+        "files": [
+            "main.js",
+            "renderer.js",
+            "preload.js",
+            "index.html",
+            "styles.css",
+            "src/**/*",
+            "utils/**/*",
+            "node_modules/**/*"
+        ],
+        "directories": {
+            "buildResources": "build"
+        },
+        "win": {
+            "target": [
+                "portable"
+            ],
+            "signAndEditExecutable": false
+        },
+        "mac": {
+            "target": [
+                "zip"
+            ]
+        }
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^1.6.8",
+        "chokidar": "^3.6.0",
+        "fortnite-replay-parser": "^1.4.8"
+    },
+    "devDependencies": {
+        "electron": "^29.2.0",
+        "electron-builder": "^24.13.3"
+    }
+}
