@@ -68,10 +68,3 @@ def parse_payload(payload_model=None):
             return f(*args, **kwargs)
         return parser
     return decorator
-
-    # # Allow decorator usage with or without arguments
-    # if callable(payload_model):
-    #     f = payload_model
-    #     payload_model = None
-    #     return decorator(f)
-    # return decorator

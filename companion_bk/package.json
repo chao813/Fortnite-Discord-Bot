@@ -3,8 +3,6 @@
     "version": "1.0.0",
     "description": "A desktop app for monitoring and processing Fortnite replay files.",
     "main": "dist/main/main.js",
-    "author": "Kevin Lin",
-    "license": "MIT",
     "scripts": {
         "start": "npm run dev",
         "dev": "npm run build:main && parcel src/renderer/index.html --dist-dir dist --public-url ./ --no-hmr & wait-on dist/index.html && electron .",
