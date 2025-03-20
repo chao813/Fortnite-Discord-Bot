@@ -1,0 +1,52 @@
+{
+    "name": "fortnite-replays-watcher",
+    "version": "1.0.0",
+    "description": "Fortnite replays watcher companion app.",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder"
+    },
+    "build": {
+        "appId": "com.itskevinlin.fortnitereplayswatcher",
+        "productName": "Fortnite Replays Watcher",
+        "files": [
+            "main.js",
+            "renderer.js",
+            "preload.js",
+            "index.html",
+            "styles.css",
+            "src/**/*",
+            "utils/**/*",
+            "node_modules/**/*"
+        ],
+        "directories": {
+            "buildResources": "build"
+        },
+        "win": {
+            "target": [
+                "portable"
+            ],
+            "signAndEditExecutable": false
+        },
+        "mac": {
+            "target": [
+                "zip"
+            ]
+        }
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^1.6.8",
+        "chokidar": "^3.6.0",
+        "fortnite-replay-parser": "^1.4.8"
+    },
+    "devDependencies": {
+        "electron": "^29.2.0",
+        "electron-builder": "^24.13.3"
+    }
+}

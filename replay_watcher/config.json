@@ -1,0 +1,23 @@
+{
+    "fileMonitor": {
+        "replays_directory": "/Users/kevinl/Documents/GitHub/fortnite-discord-bot/replay_watcher/replay_files",
+        "polling_interval": 3000,
+        "stable_threshold": 7000,
+        "discard_threshold": 15000,
+
+        "windows": {
+            "replays_directory": "C:\\Users\\YourUsername\\AppData\\Local\\FortniteGame\\Saved\\Demos",
+            "polling_interval": 15000,
+            "stable_threshold": 45000,
+            "discard_threshold": 1800000
+        }
+    },
+    "fortnite": {
+        "guidToPlayerId": {
+            "306073a770ed4a4fac56915732cb23a4": "wolfgrandpa",
+            "3b82f92adc1d4d28acbf17f4c58d2571": "chunchunmaru-_",
+            "c579b25eaf2a48c39666dc88074ff0c8": "stoobish",
+            "fd0525e5e1a7461f9262834561f19f5d": "kwklin"
+        }
+    }
+}
