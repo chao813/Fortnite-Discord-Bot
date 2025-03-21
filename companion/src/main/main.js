@@ -9,6 +9,7 @@ let mainWindow;
 /**
  * TODO:
  * 1. Convert to TypeScript
+ * 2. Find better way to load in env vars to build .exe dist
  *
  * Instructions:
  * 1. [Tab 1] rm -f replay_files/test.replay && npm start

@@ -30,8 +30,11 @@ async function processFile(filePath, mainWindow, config) {
         fs.writeFileSync('replayData.json', JSON.stringify(parsedReplay));
     }
 
-    await parseReplayContent(parsedReplay, mainWindow, config);
-    deleteReplayDataFiles(mainWindow);
+    try {
+        await parseReplayContent(parsedReplay, mainWindow, config);
+    } finally {
+        deleteReplayDataFiles(mainWindow);
+    }
 
     log(`Completed: ${stripPath(filePath)}`, mainWindow);
 }
@@ -68,11 +71,11 @@ async function parseReplayContent(parsedReplay, mainWindow, config) {
         killed_by: playerElimRecords.killed_by
     };
 
-    log(`Replay Content: ${JSON.stringify(payload)}`, mainWindow);
+    log(`Replay Content: ${safeStringify(payload)}`, mainWindow);
 
     const response = await sendToDiscordBot(payload, mainWindow);
 
-    log(`Sent to Discord bot. Response: ${JSON.stringify(response)}`, mainWindow);
+    log(`Sent to Discord bot. Response: ${safeStringify(response)}`, mainWindow);
 }
 
 /**
@@ -113,18 +116,34 @@ async function sendToDiscordBot(payload, mainWindow) {
         let error_msg;
 
         if (error.response) {
-            error_msg = `Error: Failed to call Discord bot. ${error.response.status}: ${error.response.data}`
+            error_msg = `Failed to call Discord bot. ${error.response.status} ` +
+                        `${error.response.statusText}: ${safeStringify(error.response.data)}`
         } else if (error.request) {
-            error_msg = 'Error: Failed to call Discord bot as no response was received.'
+            error_msg = 'Failed to call Discord bot as no response was received.'
         } else {
-            error_msg = `Error: Failed to call Discord bot due to unexpected error. ${error.message}`
+            error_msg = `Failed to call Discord bot due to unexpected error: ${error.message}.`
         }
-        log(error_msg, mainWindow, 'error')
 
-        throw error;
+        throw new Error(error_msg, { cause: error });
     }
 };
 
+/**
+ * Safely converts response data to string format
+ *
+ * @param {any} data Data to format
+ * @return {string} Formatted string of the data
+ */
+function safeStringify(data) {
+    if (typeof data === 'object' && data !== null) {
+        try {
+            return JSON.stringify(data);
+        } catch (e) {
+            return data;
+        }
+    }
+    return String(data);
+}
 
 /**
  * Delete replay data files created by the parser library.
@@ -140,10 +159,6 @@ function deleteReplayDataFiles(mainWindow) {
     }
 }
 
-<<<<<<< HEAD
 module.exports = {
     processFile
 };
-=======
-module.exports = { processFile };
->>>>>>> cc308c436216acfa3fab590753206cbf466acc79
