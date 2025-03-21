@@ -84,11 +84,27 @@ def get_season_id():
     return config["fortnite"]["season_id"]
 
 
-def create_stats_message(title, desc, color_metric, create_stats_func, stats_breakdown, rank_name=None, rank_progress=None, username=None, twitch_stream=None, meta_info=None):
+def create_stats_message(
+    title,
+    desc,
+    color_metric,
+    create_stats_func,
+    stats_breakdown,
+    username=None,
+    players_killed_desc=None,
+    rank_name=None,
+    rank_progress=None,
+    twitch_stream=None,
+    meta_info=None,
+    game_mode=None
+):
     """ Create Discord message """
     message_params = _create_stats_message_params(title, desc, color_metric, username)
 
     message = discord.Embed(**message_params)
+
+    if players_killed_desc:
+        message.add_field(name="[Killed]", value=players_killed_desc, inline=False)
 
     for mode in MODES:
         if mode not in stats_breakdown:
@@ -113,6 +129,9 @@ def create_stats_message(title, desc, color_metric, create_stats_func, stats_bre
         message.add_field(name="[Analysis]", value=meta_info["skills_indicator"], inline=False)
         if (ranks_breakdown := meta_info["ranks_breakdown_ordered"]):
             message.add_field(name="[Ranks Breakdown]", value=ranks_breakdown, inline=False)
+
+    if game_mode:
+        message.add_field(name="[Mode]", value=game_mode, inline=False)
 
     return message
 
@@ -169,8 +188,30 @@ def calculate_skill_rate_indicator(overall_kd):
         return "Bots"
 
 
-def create_wins_str(wins, matches):
-    """ Create opponent stats string for output """
+def create_players_killed_desc(victims):
+    """ Create players killed desc in message """
+    total_kills = victims["total_kills"]
+    last_kills_set = set(victims["last_kills"])
+
+    last_kills = [
+        format_player(player, total_kills) for player in sorted(last_kills_set)
+    ]
+    other_kills = [
+        format_player(player, total_kills) for player in sorted(set(total_kills) - last_kills_set)
+    ]
+
+    return " • ".join(last_kills) + (f" | {' • '.join(other_kills)}" if other_kills else "")
+
+
+def format_player(player, total_kills):
+    """ Get player name with kill count attached if more than 1 """
+    readable_player = player.capitalize()
+    count = total_kills.get(readable_player, 1)
+    return f"{readable_player} ({count}x)" if count > 1 else readable_player
+
+
+def create_description_str(wins, matches):
+    """ Create the Discord embedded message's description string """
     wins_str = int(wins)
     matches_str = int(matches)
     return f"Wins: {wins_str} / {matches_str} played"
