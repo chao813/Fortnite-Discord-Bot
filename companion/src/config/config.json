@@ -1,13 +1,17 @@
 {
     "fileMonitor": {
-        "replays_directory": "C:\\Users\\YourUsername\\AppData\\Local\\FortniteGame\\Saved\\Demos",
-        "polling_interval": 10000,
-        "stable_threshold": 45000,
-        "discard_threshold": 1800000
+        "mac": {
+            "replays_directory": "./src/replay_files",
+            "polling_interval": 1000,
+            "stable_threshold": 3000
+        },
+        "windows": {
+            "replays_directory": "%LOCALAPPDATA%\\FortniteGame\\Saved\\Demos",
+            "polling_interval": 10000,
+            "stable_threshold": 45000
+        }
     },
     "fortnite": {
-        "guidToPlayerId": {
-            "guid": "username"
-        }
+        "guidToPlayerName": {}
     }
 }
