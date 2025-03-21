@@ -140,6 +140,10 @@ function deleteReplayDataFiles(mainWindow) {
     }
 }
 
+<<<<<<< HEAD
 module.exports = {
     processFile
 };
+=======
+module.exports = { processFile };
+>>>>>>> cc308c436216acfa3fab590753206cbf466acc79
