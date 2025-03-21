@@ -70,9 +70,9 @@ async function parseReplayContent(parsedReplay, mainWindow, config) {
 
     log(`Replay Content: ${JSON.stringify(payload)}`, mainWindow);
 
-    await sendToDiscordBot(payload, mainWindow);
+    const response = await sendToDiscordBot(payload, mainWindow);
 
-    log(`Sent to Discord bot. Response: ${JSON.stringify(response)}`)
+    log(`Sent to Discord bot. Response: ${JSON.stringify(response)}`, mainWindow);
 }
 
 /**

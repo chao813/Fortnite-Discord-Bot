@@ -2,7 +2,7 @@ const path = require('path');
 
 const { app, BrowserWindow } = require('electron');
 
-const { initializeConfig } = require('./config/configLoader');
+const { initializeConfig } = require('../config/configLoader');
 
 let mainWindow;
 
