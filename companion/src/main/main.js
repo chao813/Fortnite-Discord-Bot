@@ -1,13 +1,15 @@
-const fs = require('fs');
-const { app, BrowserWindow } = require('electron');
 const path = require('path');
+
+const { app, BrowserWindow } = require('electron');
+
+const { initializeConfig } = require('../config/configLoader');
 
 let mainWindow;
 
 /**
  * TODO:
  * 1. Convert to TypeScript
- * 2. After changing to not user USERPROFILE, no data shows up in the table anymore
+ * 2. Find better way to load in env vars to build .exe dist
  *
  * Instructions:
  * 1. [Tab 1] rm -f replay_files/test.replay && npm start
@@ -16,7 +18,10 @@ let mainWindow;
  */
 
 /**
- * Create the main Electron application window
+ * Creates the main app window, loads the UI, and initializes the replay file monitor.
+ *
+ * @function createWindow
+ * @returns {void}
  */
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -24,30 +29,26 @@ function createWindow() {
         height: 600,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true
+            contextIsolation: true,
+            nodeIntegration: false,
+            enableRemoteModule: false
         }
     });
 
-    // Load HTML into the main window
     mainWindow.loadFile('../renderer/index.html');
 
-    // Load configuration
-    const configPath = path.join(__dirname, '../config/config.json');
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    console.log(`Using config replays_directory: ${config.fileMonitor.replays_directory}`);
-    console.log(`Using config polling_interval: ${config.fileMonitor.polling_interval}`);
-    console.log(`Using config stable_threshold: ${config.fileMonitor.stable_threshold}`);
-    console.log(`Using config discard_threshold: ${config.fileMonitor.discard_threshold}`);
-
-    // Start watching for new files once the main window is fully loaded
-    mainWindow.webContents.on('did-finish-load', () => {
-        // Delayed require until the window is ready
-        const { watchForFileCreated } = require('./fileWatcher');
-        watchForFileCreated(mainWindow, config);
+    const config = initializeConfig()
+    console.log(`Using config:`, {
+        replays_directory: config.fileMonitor.replays_directory,
+        polling_interval: config.fileMonitor.polling_interval,
+        stable_threshold: config.fileMonitor.stable_threshold
     });
 
-    // Automatically open DevTools for debugging (remove in production)
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.on('did-finish-load', () => {
+        // Delayed import until the window is ready
+        const { startReplayMonitoring } = require('./fileMonitor');
+        startReplayMonitoring(mainWindow, config);
+    });
 
     mainWindow.on('closed', () => {
         mainWindow = null;

@@ -12,6 +12,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local config
+config-local.json
+
 # Replay data
 replay_files/
 replayData.json
