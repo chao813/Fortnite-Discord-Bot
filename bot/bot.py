@@ -11,7 +11,7 @@ import core.clients.fortnite_api as fortnite_api
 import core.clients.openai as openai
 from core.config import config
 from core.exceptions import NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound
-from core.logger import log_command, log_event, log_command #get_logger_with_context
+from core.logger import log_command, log_event
 
 
 ACTIVE_PLAYERS_LIST = []
@@ -224,7 +224,7 @@ async def stats_operations(ctx, *params):
     usernames = params or ACTIVE_PLAYERS_LIST
 
     if command in commands.STATS_DIFF_COMMANDS:
-        logger.info(f"Querying stats diff today for {', '.join(usernames)}")
+        logger.info("Querying stats diff today for %s", ", ".join(usernames))
         await _stats_diff_today(ctx, usernames)
     elif command in commands.STATS_OPPONENTS_COMMANDS:
         logger.info("Querying opponent stats today")

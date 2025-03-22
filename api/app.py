@@ -19,7 +19,6 @@ app = Flask(__name__)
 initialize_error_handlers(app)
 initialize_request_logger(app)
 
-# TODO: Flask needs its own logger
 logger = logging.getLogger(__name__)
 
 
