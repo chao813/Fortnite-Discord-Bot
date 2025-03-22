@@ -16,5 +16,5 @@ yarn-error.log*
 config-local.json
 
 # Replay data
-replay_files/
+replay-files/
 replayData.json

@@ -1,6 +1,19 @@
-# Create Windows executable
-build-dist:
-	@env | grep -iE 'DEBUG|NODE_|ELECTRON_|YARN_|NPM_|CI|CIRCLE|TRAVIS_TAG|TRAVIS|TRAVIS_REPO_|TRAVIS_BUILD_|TRAVIS_BRANCH|TRAVIS_PULL_REQUEST_|APPVEYOR_|CSC_|GH_|GITHUB_|BT_|AWS_|STRIP|BUILD_' > envfile
+.PHONY: install start start-dev cp-test build-dist clean clean-all
+
+install:
+	npm install
+
+start:
+	npm start
+
+start-dev:
+	rm -f src/replay-files/test_1.replay && npm start
+
+cp-test:
+	cp src/replay-files/ranked_br_duo_1.replay src/replay-files/test_1.replay
+
+build-win:
+	env | grep -iE 'DEBUG|NODE_|ELECTRON_|NPM_|GH_|GITHUB_' > envfile || true
 	docker run --rm -ti \
 		--env-file envfile \
 		--env ELECTRON_CACHE="/root/.cache/electron" \
@@ -10,5 +23,16 @@ build-dist:
 		-v ~/.cache/electron:/root/.cache/electron \
 		-v ~/.cache/electron-builder:/root/.cache/electron-builder \
 		electronuserland/builder:wine \
-		/bin/bash -c "npm install && npm run dist"
-	@rm -f envfile
+		/bin/bash -c "npm install && npm run dist:win"
+	rm -f envfile
+
+build-mac:
+	npm run dist:mac
+
+clean:
+	rm -rf dist/
+	@echo "Cleaned build artifacts"
+
+clean-all: clean
+	docker volume rm fortnite-node-modules || true
+	@echo "Removed node_modules volume"
