@@ -2,24 +2,30 @@
     "name": "fortnite-replay-monitor",
     "version": "1.0.0",
     "description": "A desktop app for monitoring and processing Fortnite replay files.",
-    "main": "main.js",
+    "main": "src/main/main.js",
+    "author": "Kevin Lin",
+    "license": "GPL-3.0",
+    "keywords": [],
     "scripts": {
-        "start": "electron src/main/main.js",
-        "pack": "electron-builder --dir",
-        "dist": "electron-builder"
+        "start": "electron .",
+        "dist:win": "electron-builder --win",
+        "dist:mac": "electron-builder --mac"
+    },
+    "dependencies": {
+        "axios": "^1.8.4",
+        "chokidar": "^4.0.3",
+        "fortnite-replay-parser": "^1.4.8"
+    },
+    "devDependencies": {
+        "electron": "^35.0.3",
+        "electron-builder": "^25.1.8"
     },
     "build": {
         "appId": "com.itskevinlin.fortnitereplaymonitor",
         "productName": "Fortnite Replay Monitor",
         "files": [
-            "main.js",
-            "renderer.js",
-            "preload.js",
-            "index.html",
-            "styles.css",
             "src/**/*",
-            "utils/**/*",
-            "node_modules/**/*"
+            "package.json"
         ],
         "directories": {
             "buildResources": "build"
@@ -28,24 +34,17 @@
             "target": [
                 "portable"
             ],
-            "signAndEditExecutable": false
+            "executableName": "FN Replay",
+            "artifactName": "FN Replay.${ext}",
+            "signAndEditExecutable": false,
+            "icon": "assets/icons/icon.ico"
         },
         "mac": {
             "target": [
                 "zip"
-            ]
+            ],
+            "executableName": "FN Replay",
+            "icon": "assets/icons/icon.icns"
         }
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "axios": "^1.6.8",
-        "chokidar": "^3.6.0",
-        "fortnite-replay-parser": "^1.4.8"
-    },
-    "devDependencies": {
-        "electron": "^29.2.0",
-        "electron-builder": "^24.13.3"
     }
 }
