@@ -25,8 +25,6 @@ logger = logging.getLogger(__name__)
 @app.route("/fortnite/healthcheck")
 def healthcheck():
     """API Healthcheck."""
-    logger.info("test")
-    logger.error("test again")
     return jsonify({"status": "ok"}), 200
 
 

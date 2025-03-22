@@ -89,7 +89,6 @@ async def on_voice_state_update(member, before, after):
 @log_command
 async def help_manual(ctx):
     """ Lists available commands """
-    logger.error("Help command ran")
     await interactions.send_commands_list(ctx)
 
 
