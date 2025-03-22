@@ -35,7 +35,8 @@ def configure_logger():
     root_logger.setLevel(logging.INFO)
 
     warn_level_loggers = [
-        "discord"
+        "discord",
+        "werkzeug"
     ]
 
     for logger_name in warn_level_loggers:
