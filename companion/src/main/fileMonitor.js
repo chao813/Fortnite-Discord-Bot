@@ -13,7 +13,7 @@ const { processFile } = require('./replayProcessor');
 function startReplayMonitoring(mainWindow, config) {
     log('Starting replays monitor', mainWindow);
 
-    const replaysDirectory = config.fileMonitor.replays_directory;
+    const replaysDirectory = config.fileMonitor.replaysDirectory;
     const watcherStartTime = Date.now();
 
     const watcher = chokidar.watch(replaysDirectory, {
@@ -21,8 +21,8 @@ function startReplayMonitoring(mainWindow, config) {
         ignoreInitial: false,
         persistent: true,
         awaitWriteFinish: {
-            stabilityThreshold: config.fileMonitor.stable_threshold,
-            pollInterval: config.fileMonitor.polling_interval
+            stabilityThreshold: config.fileMonitor.stableThreshold,
+            pollInterval: config.fileMonitor.pollingInterval
         },
         usePolling: true
     });

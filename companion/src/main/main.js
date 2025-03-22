@@ -34,9 +34,9 @@ function createWindow() {
 
     const config = initializeConfig()
     console.log(`Using config:`, {
-        replays_directory: config.fileMonitor.replays_directory,
-        polling_interval: config.fileMonitor.polling_interval,
-        stable_threshold: config.fileMonitor.stable_threshold
+        replaysDirectory: config.fileMonitor.replaysDirectory,
+        pollingInterval: config.fileMonitor.pollingInterval,
+        stableThreshold: config.fileMonitor.stableThreshold
     });
 
     mainWindow.webContents.on('did-finish-load', () => {

@@ -124,8 +124,8 @@ function overrideWithOsSpecificConfig(config) {
         let windowsConfig = { ...config.fileMonitor.windows };
 
         // Replace environment variables in paths
-        if (windowsConfig.replays_directory.includes('%LOCALAPPDATA%')) {
-            windowsConfig.replays_directory = windowsConfig.replays_directory.replace(
+        if (windowsConfig.replaysDirectory.includes('%LOCALAPPDATA%')) {
+            windowsConfig.replaysDirectory = windowsConfig.replaysDirectory.replace(
                 '%LOCALAPPDATA%',
                 process.env.LOCALAPPDATA || ''
             );
