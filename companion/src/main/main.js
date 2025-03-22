@@ -10,11 +10,6 @@ let mainWindow;
  * TODO:
  * 1. Convert to TypeScript
  * 2. Find better way to load in env vars to build .exe dist
- *
- * Instructions:
- * 1. [Tab 1] rm -f replay_files/test.replay && npm start
- * 2. [Tab 2 - Option 1] cp replay_files/UnsavedReplay-2024.04.06-22.45.00.replay replay_files/test.replay
- * 3. [Tab 2 - Option 2] cp replay_files/UnsavedReplay-2024.04.06-22.29.06.replay replay_files/test.replay
  */
 
 /**
@@ -35,7 +30,7 @@ function createWindow() {
         }
     });
 
-    mainWindow.loadFile('../renderer/index.html');
+    mainWindow.loadFile('src/renderer/index.html');
 
     const config = initializeConfig()
     console.log(`Using config:`, {

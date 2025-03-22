@@ -22,7 +22,7 @@ function log(message, mainWindow, level = 'info') {
 
     // If the mainWindow is available and not destroyed, send log to Electron's window
     if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('log-event', message);
+        mainWindow.webContents.send('log-event', { message, level });
     }
 }
 

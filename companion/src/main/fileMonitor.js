@@ -11,7 +11,7 @@ const { processFile } = require('./replayProcessor');
  * @returns {void}
  */
 function startReplayMonitoring(mainWindow, config) {
-    log('Starting replays watcher', mainWindow);
+    log('Starting replays monitor', mainWindow);
 
     const replaysDirectory = config.fileMonitor.replays_directory;
     const watcherStartTime = Date.now();
