@@ -3,25 +3,25 @@ import contextvars
 import uuid
 from functools import wraps
 
-from flask import request, g, Flask, Response
+from flask import request, g
 
 # Context variable to track the source or context of each log message
-DISCORD_IDENTIFIER = contextvars.ContextVar("discord_identifier", default="")
+IDENTIFIER_CONTEXT = contextvars.ContextVar("identifier_context", default="")
 
 
 class IdentifierFormatter(logging.Formatter):
     """Formatter that includes the identifier from either the Discord context
-    or a custom value from the Flask workflow."""
-
+    or custom value manually set for Flask.
+    """
     def format(self, record):
         if not hasattr(record, "identifier"):
-            identifier = DISCORD_IDENTIFIER.get()
+            identifier = IDENTIFIER_CONTEXT.get()
             record.identifier = f" [{identifier}]" if identifier else ""
         return super().format(record)
 
 
 def configure_logger():
-    """Set up logging with the Discord formatter"""
+    """Set up logging with the IdentifierFormatter."""
     formatter = IdentifierFormatter(
         "[%(asctime)s] %(levelname)s [%(name)s]%(identifier)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
@@ -35,8 +35,7 @@ def configure_logger():
     root_logger.setLevel(logging.INFO)
 
     warn_level_loggers = [
-        "discord",
-        # "requests"
+        "discord"
     ]
 
     for logger_name in warn_level_loggers:
@@ -44,25 +43,12 @@ def configure_logger():
         lib_logger.setLevel(logging.WARNING)
 
 
-def get_logger_with_context(name="flask.app", identifier=None):
-    """Get a logger with context identifier if provided."""
-    logger = logging.getLogger(name)
-
-    if identifier:
-        # If an identifier was explicitly provided, temporarily set it for this log
-        token = DISCORD_IDENTIFIER.set(identifier)
-        # Reset after getting the logger (the identifier will be captured in the log record)
-        DISCORD_IDENTIFIER.reset(token)
-
-    return logger
-
-
 def log_command(func):
     """Decorator that sets up logging context for commands"""
     @wraps(func)
     async def wrapper(ctx, *args, **kwargs):
         identifier = _get_identifier_from_context(ctx)
-        token = DISCORD_IDENTIFIER.set(identifier)
+        token = IDENTIFIER_CONTEXT.set(identifier)
 
         cmd_prefix = ctx.prefix if hasattr(ctx, "prefix") else "!"
         cmd_text = _recreate_discord_command_text(ctx, cmd_prefix, args, kwargs)
@@ -76,9 +62,36 @@ def log_command(func):
             logger.error("Error executing command '%s': %s", ctx.invoked_with, str(e), exc_info=True)
             raise
         finally:
-            DISCORD_IDENTIFIER.reset(token)
+            IDENTIFIER_CONTEXT.reset(token)
 
     return wrapper
+
+
+def log_event(identifier="Main"):
+    """Decorator for events to set a default context identifier.
+    If used as @log_event, then the identifier will be set to "Main".
+    If used as @log_event("Custom"), then the identifier will be set
+    to "Custom".
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            token = IDENTIFIER_CONTEXT.set(identifier)
+
+            try:
+                return await func(*args, **kwargs)
+            finally:
+                IDENTIFIER_CONTEXT.reset(token)
+
+        return wrapper
+
+    if callable(identifier):
+        # When an identifier is not provided in the decorator,
+        # identifier here is actually the decorated function
+        f = identifier
+        identifier = "Main"
+        return decorator(f)
+    return decorator
 
 
 def _get_identifier_from_context(ctx):
@@ -103,61 +116,42 @@ def _recreate_discord_command_text(ctx, cmd_prefix, args, kwargs):
     return cmd_text
 
 
-def log_event(identifier="Main"):
-    """Decorator for events to set a default context identifier.
-    If used as @log_event, then the identifier will be set to "Main".
-    If used as @log_event("Custom"), then the identifier will be set
-    to "Custom".
-    """
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            token = DISCORD_IDENTIFIER.set(identifier)
-
-            try:
-                return await func(*args, **kwargs)
-            finally:
-                DISCORD_IDENTIFIER.reset(token)
-
-        return wrapper
-
-    if callable(identifier):
-        # When an identifier is not provided in the decorator,
-        # identifier here is actually the decorated function
-        f = identifier
-        identifier = "Main"
-        return decorator(f)
-    return decorator
-
-
-# Flask Request Logging Integration
 def initialize_request_logger(app):
-    """Initialize Flask request logger"""
+    """Initialize Flask request logger with request ID tracking."""
     app.before_request(_generate_request_id)
     app.before_request(_log_request)
     app.after_request(_log_response)
+    app.teardown_request(reset_request_context)
+
+
+def reset_request_context(_):
+    """Reset the request context identifier at the end of each request."""
+    try:
+        if hasattr(g, "identifier_token"):
+            IDENTIFIER_CONTEXT.reset(g.identifier_token)
+    except Exception as exc:
+        logger = logging.getLogger("flask.error")
+        logger.error("Error resetting context: %s", exc)
 
 
 def _generate_request_id():
-    """Generate a short 8 character request ID"""
+    """Generate a short 8 character request ID."""
     g.request_id = str(uuid.uuid4())[:8]
+    token = IDENTIFIER_CONTEXT.set(f"req:{g.request_id}")
+    g.identifier_token = token
 
 
 def _log_request():
-    """Log Flask request details"""
+    """Log Flask request details."""
     if _is_healthcheck():
         return
 
-    log_id = f"request:{g.request_id}"
-    logger = get_logger_with_context("flask.request", log_id)
+    logger = logging.getLogger("flask.request")
 
     request_data = {
-        "name": "request_log",
-        "request_id": g.request_id,
         "method": request.method,
         "url": request.url,
         "path": request.path,
-        "remote_addr": request.remote_addr,
     }
 
     # Only include request data for non-GET requests
@@ -168,29 +162,27 @@ def _log_request():
 
 
 def _log_response(response):
-    """Log Flask response details"""
+    """Log Flask response details."""
     if _is_healthcheck():
         return response
 
-    log_id = f"request:{g.request_id}"
-    logger = get_logger_with_context("flask.response", log_id)
+    logger = logging.getLogger("flask.response")
 
     response_data = {
-        "name": "response_log",
-        "request_id": g.request_id,
-        "status": response.status_code,
+        "status": response.status_code
     }
 
-    # Only include response data if it's not too large (to prevent huge log entries)
-    if response.data and len(response.data) < 10000:  # Limit to ~10KB
+    # Only include response data if it's not too large
+    if response.data and len(response.data) < 10000:
         response_data["data"] = _decode_to_text(response.data)
 
     logger.info(response_data)
+
     return response
 
 
 def _is_healthcheck():
-    """Returns True if the request is a healthcheck request"""
+    """Returns True if the request is a healthcheck request."""
     return request.path == "/fortnite/healthcheck"
 
 
