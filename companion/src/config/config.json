@@ -1,14 +1,14 @@
 {
     "fileMonitor": {
         "mac": {
-            "replays_directory": "src/replay-files",
-            "polling_interval": 1000,
-            "stable_threshold": 3000
+            "replaysDirectory": "src/replay-files",
+            "pollingInterval": 1000,
+            "stableThreshold": 3000
         },
         "windows": {
-            "replays_directory": "%LOCALAPPDATA%\\FortniteGame\\Saved\\Demos",
-            "polling_interval": 10000,
-            "stable_threshold": 45000
+            "replaysDirectory": "%LOCALAPPDATA%\\FortniteGame\\Saved\\Demos",
+            "pollingInterval": 5000,
+            "stableThreshold": 33000
         }
     },
     "fortnite": {
