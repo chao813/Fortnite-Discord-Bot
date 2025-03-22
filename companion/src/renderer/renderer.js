@@ -1,17 +1,20 @@
 const ul = document.getElementById('log');
 
 // Render with context bridge
-window.api.receive('log-event', (message) => {
+window.api.receive('log-event', (data) => {
     const logContainer = document.getElementById('log-tbody');
+    const { message, level = 'info' } = data;
 
     const newRow = document.createElement('tr');
-    const time_cell = document.createElement('td');
-    const message_cell = document.createElement('td');
+    const timeCell = document.createElement('td');
+    const messageCell = document.createElement('td');
 
-    time_cell.textContent = new Date().toLocaleTimeString();
-    message_cell.textContent = message;
+    newRow.classList.add(`log-${level}`);
 
-    newRow.appendChild(time_cell);
-    newRow.appendChild(message_cell);
+    timeCell.textContent = new Date().toLocaleTimeString();
+    messageCell.textContent = message;
+
+    newRow.appendChild(timeCell);
+    newRow.appendChild(messageCell);
     logContainer.appendChild(newRow);
 });

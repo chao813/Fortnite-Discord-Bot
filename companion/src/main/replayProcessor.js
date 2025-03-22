@@ -96,10 +96,9 @@ function addToAccumulator(obj, key, value) {
  * Send game elimination data to the Fortnite Discord bot.
  *
  * @param {object} payload Data to send to the Discord bot
- * @param {BrowserWindow} mainWindow The Electron window to log messages to
  * @returns {Promise<object|null>} The response from the Discord bot or null if an error occurred
  */
-async function sendToDiscordBot(payload, mainWindow) {
+async function sendToDiscordBot(payload) {
     try {
         const response = await axios.post(
             process.env.FORTNITE_DISCORD_BOT_GAME_URL,

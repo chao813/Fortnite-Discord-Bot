@@ -1,7 +1,7 @@
 {
     "fileMonitor": {
         "mac": {
-            "replays_directory": "./src/replay_files",
+            "replays_directory": "src/replay-files",
             "polling_interval": 1000,
             "stable_threshold": 3000
         },
