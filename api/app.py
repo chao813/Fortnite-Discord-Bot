@@ -19,13 +19,15 @@ app = Flask(__name__)
 initialize_error_handlers(app)
 initialize_request_logger(app)
 
-# TODO: Flask needs its own logger with request_id
+# TODO: Flask needs its own logger
 logger = logging.getLogger(__name__)
 
 
 @app.route("/fortnite/healthcheck")
 def healthcheck():
     """API Healthcheck."""
+    logger.info("test")
+    logger.error("test again")
     return jsonify({"status": "ok"}), 200
 
 
