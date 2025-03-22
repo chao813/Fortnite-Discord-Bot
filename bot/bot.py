@@ -11,7 +11,7 @@ import core.clients.fortnite_api as fortnite_api
 import core.clients.openai as openai
 from core.config import config
 from core.exceptions import NoSeasonDataError, UserDoesNotExist, UserStatisticsNotFound
-from core.logger import get_logger_with_context, log_command
+from core.logger import log_command, log_event
 
 
 ACTIVE_PLAYERS_LIST = []
@@ -27,35 +27,35 @@ openai.initialize()
 
 
 @bot.event
+@log_event
 async def on_ready():
     """ Event handler to setup logger on load """
-    logger = get_logger_with_context(identifier="Main")
     logger.info("Started up %s", bot.user.name)
     logger.info("Bot running on servers: %s",
                 ", ".join([guild.name for guild in bot.guilds]))
 
 
 @bot.event
+@log_event
 async def on_command_error(ctx, error):
     """ Event handler to log invalid commands """
     command = ctx.invoked_with
     if isinstance(error, CommandNotFound):
-        logger = get_logger_with_context(identifier="Main")
         logger.warning("Invalid command: %s", command)
         await ctx.send(f"Command `!{command}` does not exist. Use `!list` to see available commands.")
 
 
 @bot.event
+@log_event
 async def on_guild_join(guild):
     """ Event handler to log when the bot joins a new server """
-    logger = get_logger_with_context(identifier="Main")
     logger.info("Bot added to new server! Server name: %s", guild.name)
 
 
 @bot.event
+@log_event
 async def on_voice_state_update(member, before, after):
     """ Event handler to track squad stats on voice channel join """
-    logger = get_logger_with_context(identifier="Main")
     logger.info("Voice channel update detected for member: %s (channel before: %s, channel after: %s)",
                 member.display_name, before.channel, after.channel)
 
@@ -112,7 +112,6 @@ async def update_game_mode_for_stats(ctx, *game_mode):
     """ Updates the game mode selected for stats lookup """
     game_mode = " ".join(game_mode).lower().replace(" ", "_")
 
-    logger = get_logger_with_context(ctx)
     logger.info("Updating game mode to: %s", game_mode)
 
     try:
@@ -136,7 +135,6 @@ async def player_search(ctx, *player_name, game_mode=None, players_killed_desc=N
     """ Searches for a player's stats, output to Discord, and log in database """
     player_name = " ".join(player_name)
 
-    logger = get_logger_with_context(ctx)
     logger.info("Searching for player stats: %s", player_name)
 
     if not player_name:
@@ -171,7 +169,6 @@ async def player_search(ctx, *player_name, game_mode=None, players_killed_desc=N
 @log_command
 async def track(ctx, silent=False):
     """ Tracks and logs the current stats of the current players """
-    logger = get_logger_with_context(ctx)
     if not (players_list := ACTIVE_PLAYERS_LIST):
         players_list = SQUAD_PLAYERS_LIST
         logger.info("No players active on Discord, tracking all squad players instead")
@@ -214,7 +211,6 @@ async def stats_operations(ctx, *params):
         1. Stats diff of the squad players today
         2. Average stats of the players faced today
     """
-    logger = get_logger_with_context(ctx)
     params = list(params)
 
     command = params.pop(0) if params else None
@@ -227,7 +223,7 @@ async def stats_operations(ctx, *params):
     usernames = params or ACTIVE_PLAYERS_LIST
 
     if command in commands.STATS_DIFF_COMMANDS:
-        logger.info(f"Querying stats diff today for {', '.join(usernames)}")
+        logger.info("Querying stats diff today for %s", ", ".join(usernames))
         await _stats_diff_today(ctx, usernames)
     elif command in commands.STATS_OPPONENTS_COMMANDS:
         logger.info("Querying opponent stats today")
@@ -265,7 +261,6 @@ async def ask_chatgpt(ctx, *params):
     # TODO: Instead of an ask command, create a command to fetch stats
     #       for all the opponents faced today from the database and then
     #       have GPT analyze the difficulty and provide commentary.
-    logger = get_logger_with_context(ctx)
 
     prompt = " ".join(params)
 

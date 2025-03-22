@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 from copy import deepcopy
 
 import aiohttp
@@ -9,7 +10,7 @@ import core.clients.twitch as twitch
 from core.config import config, is_prod
 from core.database.mysql import MySQL
 from core.exceptions import UserDoesNotExist, UserStatisticsNotFound
-from core.logger import get_logger_with_context
+# from core.logger import get_logger_with_context
 from core.utils.dates import get_playing_session_date
 
 
@@ -58,6 +59,8 @@ GAME_MODE_FIELDS = {
         "rank_code_name": "ranked_blastberry_build"
     }
 }
+
+logger = logging.getLogger(__name__)
 
 
 async def get_player_stats(ctx, player_name, game_mode, players_killed_desc, is_guid, silent):
@@ -122,7 +125,6 @@ async def _get_player_account_by_id(player_id):
             try:
                 resp_json = await resp.json()
             except Exception as exc:
-                logger = get_logger_with_context(identifier=player_id)
                 logger.error("Invalid response received from the API: %s. Response: %s", repr(exc), await resp.text())
                 raise UserDoesNotExist("Could not parse user lookup response") from exc
 
@@ -156,9 +158,6 @@ async def _get_player_account_by_username(player_name):
         ) as resp:
             if resp.status == 404:
                 raise UserDoesNotExist(f"Player not found: {player_name}")
-
-            # TODO: Move this elsewhere
-            logger = get_logger_with_context(identifier=player_name)
 
             try:
                 resp_json = await resp.json()
@@ -195,8 +194,6 @@ async def _get_player_latest_season_stats(account_info, game_mode):
     latest_season_id = _get_latest_season_id(player_stats)
     if not _is_latest_season(season_id, latest_season_id):
         _set_fortnite_season_id(latest_season_id)
-        # TODO: Move this elsewhere
-        logger = get_logger_with_context(identifier=account_info["readable_name"])
         logger.info("Found new season ID, setting latest season ID to: %s", latest_season_id)
 
         player_stats = await _get_player_season_stats(account_info, latest_season_id)
