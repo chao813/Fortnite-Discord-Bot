@@ -1,5 +1,5 @@
 IMAGE_NAME = discord-bots/fortnite:latest
-CONTAINER_NAME = fornite-discord-bot
+CONTAINER_NAME = fortnite-discord-bot
 PORT = 5100
 
 ENV_VAR_ARGS = --env-file .env -e ENVIRONMENT=$(ENVIRONMENT)
