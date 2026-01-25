@@ -2,6 +2,8 @@ FROM python:3.11-alpine
 
 WORKDIR /app
 
+LABEL diun.enable=false
+
 COPY requirements.txt /app
 
 # Install prerequisite packages and dependencies
