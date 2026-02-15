@@ -1,6 +1,6 @@
 services:
   app:
-    image: fortnite-discord-bot:latest
+    image: discord-bots/fortnite
     container_name: fortnite-discord-bot
     build:
       context: .
