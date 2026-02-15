@@ -1,0 +1,17 @@
+services:
+  app:
+    image: fortnite-discord-bot:latest
+    container_name: fortnite-discord-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:5100:5100"
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-local}
+    volumes:
+      - ./:/app
+    labels:
+      - diun.enable=false

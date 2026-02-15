@@ -2,19 +2,14 @@ FROM python:3.11-alpine
 
 WORKDIR /app
 
-LABEL diun.enable=false
-
-COPY requirements.txt /app
+COPY requirements.txt .
 
 # Install prerequisite packages and dependencies
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir wheel bitstring pycryptodome \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir --no-build-isolation -r requirements.txt
 
-COPY __main__.py /app/
-COPY api /app/api
-COPY bot /app/bot
-COPY core /app/core
+COPY . .
 
 EXPOSE 5100
 

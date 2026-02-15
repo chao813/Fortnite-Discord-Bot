@@ -1,32 +1,22 @@
-IMAGE_NAME = discord-bots/fortnite:latest
-CONTAINER_NAME = fortnite-discord-bot
-PORT = 5100
-
-ENV_VAR_ARGS = --env-file .env -e ENVIRONMENT=$(ENVIRONMENT)
-VOL_MOUNT_ARGS = -v $(shell pwd):/app
-
-.PHONY: build run run-dev run-interactive test stop logs
+.PHONY: build run run-dev run-interactive stop logs test
 
 build:
-	docker build -t $(IMAGE_NAME) .
+	docker compose build
 
 run:
-	docker run -d --name $(CONTAINER_NAME) --restart unless-stopped -p $(PORT):$(PORT) $(ENV_VAR_ARGS) $(IMAGE_NAME)
+	docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
 
 run-dev:
-	docker run --rm --name $(CONTAINER_NAME) -p $(PORT):$(PORT) $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME)
-	make logs
+	docker compose up
 
 run-interactive:
-	docker run --rm -it $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME) /bin/sh
+	docker compose run --rm --entrypoint /bin/sh app
 
 test:
-	docker run --rm $(VOL_MOUNT_ARGS) $(ENV_VAR_ARGS) $(IMAGE_NAME) \
-		python3 -m scripts.test_player_stats
+	docker compose run --rm app python3 -m scripts.test_player_stats
 
 stop:
-	docker stop $(CONTAINER_NAME) || true
-	docker rm $(CONTAINER_NAME) || true
+	docker compose down
 
 logs:
-	docker logs -f $(CONTAINER_NAME)
+	docker compose logs -f
