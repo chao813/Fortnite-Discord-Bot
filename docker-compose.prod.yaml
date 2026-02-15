@@ -1,0 +1,9 @@
+services:
+  app:
+    restart: unless-stopped
+    networks:
+      - monitor
+
+networks:
+  monitor:
+    external: true

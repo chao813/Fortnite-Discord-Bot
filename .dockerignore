@@ -1,7 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Python
 __pycache__
 *.pyc
 *.pyo
 *.pyd
-*.log
-*.md
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+
+# Environment variables
+.env
+
+# Docker
+Dockerfile
+docker-compose.yaml
+docker-compose.*.yaml
 Makefile
+
+# Node
+**/node_modules
+**/dist
+companion/
+
+# IDEs
+.vscode
