@@ -18,8 +18,8 @@ pip-log.txt
 
 # Docker
 Dockerfile
-docker-compose.yml
-docker-compose.*.yml
+docker-compose.yaml
+docker-compose.*.yaml
 Makefile
 
 # Node
