@@ -14,4 +14,4 @@ services:
     volumes:
       - ./:/app
     labels:
-      - diun.enable=false
+      - wud.watch=false
